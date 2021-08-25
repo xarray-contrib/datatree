@@ -311,6 +311,6 @@ class TestIO:
         print([n.pathstr for n in original_dt.subtree_nodes])
         print([n.pathstr for n in roundtrip_dt.subtree_nodes])
 
-        assert original_dt.ds.identical(original_dt.ds)
-        for node in original_dt.subtree_nodes:
-            assert node.ds.identical(original_dt["root/" + node.pathstr])
+        assert original_dt.ds.identical(roundtrip_dt.ds)
+        for node in original_dt.descendants:
+            assert node.ds.identical(roundtrip_dt[node.pathstr])

@@ -99,9 +99,10 @@ def _datatree_to_netcdf(
     ds = dt.ds
     if ds is None:
         ds = Dataset()
+    group_path = dt.pathstr.replace(dt.root.pathstr, "")
     ds.to_netcdf(
         filepath,
-        group=dt.pathstr,
+        group=group_path,
         mode=mode,
         encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
         unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
@@ -109,13 +110,14 @@ def _datatree_to_netcdf(
     )
     mode = "a"
 
-    for node in dt.subtree_nodes:
+    for node in dt.descendants:
         ds = node.ds
         if ds is None:
             ds = Dataset()
+        group_path = node.pathstr.replace(dt.root.pathstr, "")
         ds.to_netcdf(
             filepath,
-            group=node.pathstr,
+            group=group_path,
             mode=mode,
             encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
             unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
