@@ -31,14 +31,14 @@ def create_test_datatree():
     |   Dimensions:  (x: 2, y: 3)
     |   Data variables:
     |       a        (y) int64 6, 7, 8
-    |       set1     (x) int64 9, 10
+    |       set0     (x) int64 9, 10
 
     The structure has deliberately repeated names of tags, variables, and
     dimensions in order to better check for bugs caused by name conflicts.
     """
     set1_data = xr.Dataset({"a": 0, "b": 1})
     set2_data = xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])})
-    root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set1": ("x", [9, 10])})
+    root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])})
 
     # Avoid using __init__ so we can independently test it
     # TODO change so it has a DataTree at the bottom
@@ -297,4 +297,8 @@ class TestRepr:
 
 
 class TestIO:
-    ...
+    
+    def test_to_netcdf(self, tmpdir):
+        filepath = str(tmpdir / 'test.nc')  # casting to str avoids a pathlib bug in xarray
+        dt = create_test_datatree()
+        dt.to_netcdf(filepath, engine='netcdf4')
