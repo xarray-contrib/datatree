@@ -310,9 +310,59 @@ _DATA_WITH_COORDS_METHODS_TO_MAP = [
     "astype",
 ]
 
+_TYPED_DATASET_OPS_TO_MAP = [
+    "__add__",
+    "__sub__",
+    "__mul__",
+    "__pow__",
+    "__truediv__",
+    "__floordiv__",
+    "__mod__",
+    "__and__",
+    "__xor__",
+    "__or__",
+    "__lt__",
+    "__le__",
+    "__gt__",
+    "__ge__",
+    "__eq__",
+    "__ne__",
+    "__radd__",
+    "__rsub__",
+    "__rmul__",
+    "__rpow__",
+    "__rtruediv__",
+    "__rfloordiv__",
+    "__rmod__",
+    "__rand__",
+    "__rxor__",
+    "__ror__",
+    "__iadd__",
+    "__isub__",
+    "__imul__",
+    "__ipow__",
+    "__itruediv__",
+    "__ifloordiv__",
+    "__imod__",
+    "__iand__",
+    "__ixor__",
+    "__ior__",
+    "__neg__",
+    "__pos__",
+    "__abs__",
+    "__invert__",
+    "round",
+    "argsort",
+    "conj",
+    "conjugate",
+]
 # TODO NUM_BINARY_OPS apparently aren't defined on DatasetArithmetic, and don't appear to be injected anywhere...
 _ARITHMETIC_METHODS_TO_MAP = (
-    REDUCE_METHODS + NAN_REDUCE_METHODS + NAN_CUM_METHODS + ["__array_ufunc__"]
+    REDUCE_METHODS
+    + NAN_REDUCE_METHODS
+    + NAN_CUM_METHODS
+    + _TYPED_DATASET_OPS_TO_MAP
+    + ["__array_ufunc__"]
 )
 
 
