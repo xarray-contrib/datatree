@@ -75,27 +75,27 @@ def _maybe_extract_group_kwargs(enc, group):
 def _datatree_to_netcdf(
     dt: DataTree,
     filepath,
-    mode: str='w',
+    mode: str = "w",
     encoding=None,
     unlimited_dims=None,
     **kwargs
 ):
 
-    if kwargs.get('format', None) not in [None, 'NETCDF4']:
-        raise ValueError('to_netcdf only supports the NETCDF4 format')
-    
-    if kwargs.get('engine', None) not in [None, 'netcdf4', 'h5netcdf']:
-        raise ValueError('to_netcdf only supports the netcdf4 and h5netcdf engines')
-        
-    if not kwargs.get('compute', True):
-        raise NotImplementedError('compute=False has not been implemented yet')
-                  
+    if kwargs.get("format", None) not in [None, "NETCDF4"]:
+        raise ValueError("to_netcdf only supports the NETCDF4 format")
+
+    if kwargs.get("engine", None) not in [None, "netcdf4", "h5netcdf"]:
+        raise ValueError("to_netcdf only supports the netcdf4 and h5netcdf engines")
+
+    if not kwargs.get("compute", True):
+        raise NotImplementedError("compute=False has not been implemented yet")
+
     if encoding is None:
         encoding = {}
-    
+
     if unlimited_dims is None:
         unlimited_dims = {}
-    
+
     if dt.has_data:
         dt.ds.to_netcdf(
             filepath,
@@ -105,8 +105,8 @@ def _datatree_to_netcdf(
             unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
             **kwargs
         )
-        mode = 'a'
-    
+        mode = "a"
+
     for node in dt.subtree_nodes:
         if node.has_data:
             node.ds.to_netcdf(
@@ -117,4 +117,4 @@ def _datatree_to_netcdf(
                 unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
                 **kwargs
             )
-            mode = 'a'
+            mode = "a"

@@ -297,8 +297,9 @@ class TestRepr:
 
 
 class TestIO:
-    
     def test_to_netcdf(self, tmpdir):
-        filepath = str(tmpdir / 'test.nc')  # casting to str avoids a pathlib bug in xarray
+        filepath = str(
+            tmpdir / "test.nc"
+        )  # casting to str avoids a pathlib bug in xarray
         dt = create_test_datatree()
-        dt.to_netcdf(filepath, engine='netcdf4')
+        dt.to_netcdf(filepath, engine="netcdf4")

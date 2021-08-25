@@ -874,16 +874,12 @@ class DataTree(
         """Return all netCDF4 groups in the tree, given as a tuple of path-like strings."""
         return tuple(node.pathstr for node in self.subtree_nodes)
 
-    def to_netcdf(self,
-        filepath,
-        mode: str='w',
-        encoding=None,
-        unlimited_dims=None,
-        **kwargs
-        ):
-        '''
+    def to_netcdf(
+        self, filepath, mode: str = "w", encoding=None, unlimited_dims=None, **kwargs
+    ):
+        """
         Write datatree contents to a netCDF file.
-        
+
         Paramters
         ---------
         filepath : str or Path
@@ -905,10 +901,17 @@ class DataTree(
             ``dataset.encoding["unlimited_dims"]``.
         kwargs :
             Addional keyword arguments to be passed to ``xarray.Dataset.to_netcdf``
-        '''
+        """
         from .io import _datatree_to_netcdf
 
-        _datatree_to_netcdf(self, filepath, mode=mode, encoding=encoding, unlimited_dims=unlimited_dims, **kwargs)
+        _datatree_to_netcdf(
+            self,
+            filepath,
+            mode=mode,
+            encoding=encoding,
+            unlimited_dims=unlimited_dims,
+            **kwargs,
+        )
 
     def plot(self):
         raise NotImplementedError
