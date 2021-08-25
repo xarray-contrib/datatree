@@ -2,9 +2,16 @@ import os
 from typing import Dict, Sequence
 
 import netCDF4
-from xarray import Dataset, open_dataset
+from xarray import open_dataset
 
 from .datatree import DataNode, DataTree, PathType
+
+
+def _ds_or_none(ds):
+    """return none if ds is empty"""
+    if any(ds.coords) or any(ds.variables) or any(ds.attrs):
+        return ds
+    return None
 
 
 def _open_group_children_recursively(filename, node, ncgroup, chunks, **kwargs):
@@ -13,6 +20,7 @@ def _open_group_children_recursively(filename, node, ncgroup, chunks, **kwargs):
         # Open and add this node's dataset to the tree
         name = os.path.basename(g.path)
         ds = open_dataset(filename, group=g.path, chunks=chunks, **kwargs)
+        ds = _ds_or_none(ds)
         child_node = DataNode(name, ds)
         node.add_child(child_node)
 
@@ -72,6 +80,11 @@ def _maybe_extract_group_kwargs(enc, group):
         return None
 
 
+def _create_empty_group(filename, group, mode):
+    with netCDF4.Dataset(filename, mode=mode) as rootgrp:
+        rootgrp.createGroup(group)
+
+
 def _datatree_to_netcdf(
     dt: DataTree,
     filepath,
@@ -87,6 +100,11 @@ def _datatree_to_netcdf(
     if kwargs.get("engine", None) not in [None, "netcdf4", "h5netcdf"]:
         raise ValueError("to_netcdf only supports the netcdf4 and h5netcdf engines")
 
+    if kwargs.get("group", None) is not None:
+        raise NotImplementedError(
+            "specifying a root group for the tree has not been implemented"
+        )
+
     if not kwargs.get("compute", True):
         raise NotImplementedError("compute=False has not been implemented yet")
 
@@ -97,24 +115,10 @@ def _datatree_to_netcdf(
         unlimited_dims = {}
 
     ds = dt.ds
-    if ds is None:
-        ds = Dataset()
     group_path = dt.pathstr.replace(dt.root.pathstr, "")
-    ds.to_netcdf(
-        filepath,
-        group=group_path,
-        mode=mode,
-        encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
-        unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
-        **kwargs
-    )
-    mode = "a"
-
-    for node in dt.descendants:
-        ds = node.ds
-        if ds is None:
-            ds = Dataset()
-        group_path = node.pathstr.replace(dt.root.pathstr, "")
+    if ds is None:
+        _create_empty_group(filepath, group_path, mode)
+    else:
         ds.to_netcdf(
             filepath,
             group=group_path,
@@ -123,3 +127,19 @@ def _datatree_to_netcdf(
             unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
             **kwargs
         )
+    mode = "a"
+
+    for node in dt.descendants:
+        ds = node.ds
+        group_path = node.pathstr.replace(dt.root.pathstr, "")
+        if ds is None:
+            _create_empty_group(filepath, group_path, mode)
+        else:
+            ds.to_netcdf(
+                filepath,
+                group=group_path,
+                mode=mode,
+                encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
+                unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
+                **kwargs
+            )

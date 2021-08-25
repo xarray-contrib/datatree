@@ -307,10 +307,12 @@ class TestIO:
 
         roundtrip_dt = open_datatree(filepath)
 
-        # Q: why does the roundtrip_dt have an extra `root/` in all paths
-        print([n.pathstr for n in original_dt.subtree_nodes])
-        print([n.pathstr for n in roundtrip_dt.subtree_nodes])
-
+        original_dt.name == roundtrip_dt.name
         assert original_dt.ds.identical(roundtrip_dt.ds)
-        for node in original_dt.descendants:
-            assert node.ds.identical(roundtrip_dt[node.pathstr])
+        for a, b in zip(original_dt.descendants, roundtrip_dt.descendants):
+            assert a.name == b.name
+            assert a.pathstr == b.pathstr
+            if a.has_data:
+                assert a.ds.identical(b.ds)
+            else:
+                assert a.ds is b.ds
