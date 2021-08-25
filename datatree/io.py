@@ -2,7 +2,7 @@ import os
 from typing import Dict, Sequence
 
 import netCDF4
-from xarray import open_dataset
+from xarray import Dataset, open_dataset
 
 from .datatree import DataNode, DataTree, PathType
 
