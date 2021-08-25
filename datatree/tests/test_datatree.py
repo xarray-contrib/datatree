@@ -4,6 +4,7 @@ from anytree.resolver import ChildResolverError
 from xarray.testing import assert_identical
 
 from datatree import DataNode, DataTree
+from datatree.io import open_datatree
 
 
 def create_test_datatree():
@@ -301,5 +302,15 @@ class TestIO:
         filepath = str(
             tmpdir / "test.nc"
         )  # casting to str avoids a pathlib bug in xarray
-        dt = create_test_datatree()
-        dt.to_netcdf(filepath, engine="netcdf4")
+        original_dt = create_test_datatree()
+        original_dt.to_netcdf(filepath, engine="netcdf4")
+
+        roundtrip_dt = open_datatree(filepath)
+
+        # Q: why does the roundtrip_dt have an extra `root/` in all paths
+        print([n.pathstr for n in original_dt.subtree_nodes])
+        print([n.pathstr for n in roundtrip_dt.subtree_nodes])
+
+        assert original_dt.ds.identical(original_dt.ds)
+        for node in original_dt.subtree_nodes:
+            assert node.ds.identical(original_dt["root/" + node.pathstr])

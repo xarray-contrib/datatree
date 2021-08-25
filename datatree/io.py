@@ -2,7 +2,7 @@ import os
 from typing import Dict, Sequence
 
 import netCDF4
-from xarray import open_dataset
+from xarray import Dataset, open_dataset
 
 from .datatree import DataNode, DataTree, PathType
 
@@ -96,25 +96,28 @@ def _datatree_to_netcdf(
     if unlimited_dims is None:
         unlimited_dims = {}
 
-    if dt.has_data:
-        dt.ds.to_netcdf(
+    ds = dt.ds
+    if ds is None:
+        ds = Dataset()
+    ds.to_netcdf(
+        filepath,
+        group=dt.pathstr,
+        mode=mode,
+        encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
+        unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
+        **kwargs
+    )
+    mode = "a"
+
+    for node in dt.subtree_nodes:
+        ds = node.ds
+        if ds is None:
+            ds = Dataset()
+        ds.to_netcdf(
             filepath,
-            group=dt.pathstr,
+            group=node.pathstr,
             mode=mode,
             encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
             unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
             **kwargs
         )
-        mode = "a"
-
-    for node in dt.subtree_nodes:
-        if node.has_data:
-            node.ds.to_netcdf(
-                filepath,
-                group=node.pathstr,
-                mode=mode,
-                encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
-                unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
-                **kwargs
-            )
-            mode = "a"
