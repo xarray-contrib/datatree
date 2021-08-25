@@ -147,11 +147,11 @@ class TestSetNodes:
         mary = john.children[0]
         assert mary.name == "mary"
         assert isinstance(mary, TreeNode)
-        assert mary.children is ()
+        assert mary.children == ()
 
     def test_child_already_exists(self):
         john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
+        TreeNode("mary", parent=john)
         marys_replacement = TreeNode("mary")
 
         with pytest.raises(KeyError):
@@ -172,7 +172,7 @@ class TestSetNodes:
         rose = mary.children[0]
         assert rose.name == "rose"
         assert isinstance(rose, TreeNode)
-        assert rose.children is ()
+        assert rose.children == ()
 
     def test_set_grandchild_and_create_intermediate_child(self):
         john = TreeNode("john")
@@ -187,7 +187,7 @@ class TestSetNodes:
         rose = mary.children[0]
         assert rose.name == "rose"
         assert isinstance(rose, TreeNode)
-        assert rose.children is ()
+        assert rose.children == ()
 
     def test_no_intermediate_children_allowed(self):
         john = TreeNode("john")
@@ -256,8 +256,8 @@ class TestRenderTree:
         mary = TreeNode("mary")
         kate = TreeNode("kate")
         john = TreeNode("john", children=[mary, kate])
-        sam = TreeNode("Sam", parent=mary)
-        ben = TreeNode("Ben", parent=mary)
+        TreeNode("Sam", parent=mary)
+        TreeNode("Ben", parent=mary)
 
         printout = john.__str__()
         expected_nodes = [

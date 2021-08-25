@@ -44,11 +44,11 @@ def create_test_datatree():
     # TODO change so it has a DataTree at the bottom
     root = DataNode(name="root", data=root_data)
     set1 = DataNode(name="set1", parent=root, data=set1_data)
-    set1_set1 = DataNode(name="set1", parent=set1)
-    set1_set2 = DataNode(name="set2", parent=set1)
+    DataNode(name="set1", parent=set1)
+    DataNode(name="set2", parent=set1)
     set2 = DataNode(name="set2", parent=root, data=set2_data)
-    set2_set1 = DataNode(name="set1", parent=set2)
-    set3 = DataNode(name="set3", parent=root)
+    DataNode(name="set1", parent=set2)
+    DataNode(name="set3", parent=root)
 
     return root
 
@@ -95,13 +95,13 @@ class TestGetItems:
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataNode("folder1")
         results = DataNode("results", parent=folder1)
-        highres = DataNode("highres", parent=results, data=data)
+        DataNode("highres", parent=results, data=data)
         assert_identical(folder1["results/highres/temp"], data["temp"])
         assert_identical(folder1[("results", "highres", "temp")], data["temp"])
 
     def test_get_nonexistent_node(self):
         folder1 = DataNode("folder1")
-        results = DataNode("results", parent=folder1)
+        DataNode("results", parent=folder1)
         with pytest.raises(ChildResolverError):
             folder1["results/highres"]
 
@@ -132,7 +132,7 @@ class TestSetItems:
 
     def test_set_new_grandchild_node(self):
         john = DataNode("john")
-        mary = DataNode("mary", parent=john)
+        DataNode("mary", parent=john)
         rose = DataNode("rose")
         john["mary/"] = rose
         assert john["mary/rose"] is rose
@@ -207,7 +207,7 @@ class TestTreeCreation:
         dt = DataTree()
         assert dt.name == "root"
         assert dt.parent is None
-        assert dt.children is ()
+        assert dt.children == ()
         assert dt.ds is None
 
     def test_data_in_root(self):
@@ -215,7 +215,7 @@ class TestTreeCreation:
         dt = DataTree({"root": dat})
         assert dt.name == "root"
         assert dt.parent is None
-        assert dt.children is ()
+        assert dt.children == ()
         assert dt.ds is dat
 
     def test_one_layer(self):

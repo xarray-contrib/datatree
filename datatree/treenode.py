@@ -216,7 +216,7 @@ class TreeNode(anytree.NodeMixin):
     @tags.setter
     def tags(self, value):
         raise AttributeError(
-            f"tags cannot be set, except via changing the children and/or parent of a node."
+            "tags cannot be set, except via changing the children and/or parent of a node."
         )
 
     @property
