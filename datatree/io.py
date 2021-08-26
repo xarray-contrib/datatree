@@ -27,14 +27,33 @@ def _iter_nc_groups(root, parrent=""):
         yield from _iter_nc_groups(group, parrent=gpath)
 
 
+def _get_nc_dataset_class(engine):
+    if engine == "netcdf4":
+        from netCDF4 import Dataset
+    elif engine == "h5netcdf":
+        from h5netcdf import Dataset
+    elif engine is None:
+        try:
+            from netCDF4 import Dataset
+        except ImportError:
+            from h5netcdf import Dataset
+    else:
+        raise ValueError(f"unsupported engine: {engine}")
+    return Dataset
+
+
 def open_datatree(filename_or_obj, engine=None, **kwargs) -> DataTree:
     """
     Open and decode a dataset from a file or file-like object, creating one Tree node for each group in the file.
 
     Parameters
     ----------
-    filename
-    chunks
+    filename_or_obj : str, Path, file-like, or DataStore
+        Strings and Path objects are interpreted as a path to a netCDF file or Zarr store.
+    engine : str, optional
+        Xarray backend engine to us. Valid options include `{"netcdf4", "h5netcdf", "zarr"}`.
+    kwargs :
+        Additional keyword arguments passed to ``xarray.open_dataset`` for each group.
 
     Returns
     -------
@@ -43,32 +62,37 @@ def open_datatree(filename_or_obj, engine=None, **kwargs) -> DataTree:
 
     if engine == "zarr":
         return _open_datatree_zarr(filename_or_obj, **kwargs)
-    else:
+    elif engine in [None, "netcdf4", "h5netcdf"]:
         return _open_datatree_netcdf(filename_or_obj, engine=engine, **kwargs)
 
 
 def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
-    import netCDF4
+    ncDataset = _get_nc_dataset_class(kwargs.get("engine", None))
 
-    with netCDF4.Dataset(filename, mode="r") as ncds:
+    with ncDataset(filename, mode="r") as ncds:
         ds = open_dataset(filename, **kwargs).pipe(_ds_or_none)
         tree_root = DataTree(data_objects={"root": ds})
         for key in _iter_nc_groups(ncds):
             tree_root[key] = open_dataset(filename, group=key, **kwargs).pipe(
                 _ds_or_none
             )
+    return tree_root
 
 
 def _open_datatree_zarr(store, **kwargs) -> DataTree:
     import zarr
 
-    with zarr.Dataset(store, mode="r") as zds:
+    with zarr.open_group(store, mode="r") as zds:
         ds = open_dataset(store, engine="zarr", **kwargs).pipe(_ds_or_none)
         tree_root = DataTree(data_objects={"root": ds})
         for key in _iter_zarr_groups(zds):
-            tree_root[key] = open_dataset(
-                store, engine="zarr", group=key, **kwargs
-            ).pipe(_ds_or_none)
+            try:
+                tree_root[key] = open_dataset(
+                    store, engine="zarr", group=key, **kwargs
+                ).pipe(_ds_or_none)
+            except zarr.errors.PathNotFoundError:
+                tree_root[key] = None
+    return tree_root
 
 
 def open_mfdatatree(
@@ -103,10 +127,10 @@ def _maybe_extract_group_kwargs(enc, group):
         return None
 
 
-def _create_empty_netcdf_group(filename, group, mode):
-    import netCDF4
+def _create_empty_netcdf_group(filename, group, mode, engine):
+    ncDataset = _get_nc_dataset_class(engine)
 
-    with netCDF4.Dataset(filename, mode=mode) as rootgrp:
+    with ncDataset(filename, mode=mode) as rootgrp:
         rootgrp.createGroup(group)
 
 
@@ -116,13 +140,14 @@ def _datatree_to_netcdf(
     mode: str = "w",
     encoding=None,
     unlimited_dims=None,
-    **kwargs
+    **kwargs,
 ):
 
     if kwargs.get("format", None) not in [None, "NETCDF4"]:
         raise ValueError("to_netcdf only supports the NETCDF4 format")
 
-    if kwargs.get("engine", None) not in [None, "netcdf4", "h5netcdf"]:
+    engine = kwargs.get("engine", None)
+    if engine not in [None, "netcdf4", "h5netcdf"]:
         raise ValueError("to_netcdf only supports the netcdf4 and h5netcdf engines")
 
     if kwargs.get("group", None) is not None:
@@ -142,7 +167,7 @@ def _datatree_to_netcdf(
     ds = dt.ds
     group_path = dt.pathstr.replace(dt.root.pathstr, "")
     if ds is None:
-        _create_empty_netcdf_group(filepath, group_path, mode)
+        _create_empty_netcdf_group(filepath, group_path, mode, engine)
     else:
         ds.to_netcdf(
             filepath,
@@ -150,7 +175,7 @@ def _datatree_to_netcdf(
             mode=mode,
             encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
             unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
-            **kwargs
+            **kwargs,
         )
     mode = "a"
 
@@ -158,7 +183,7 @@ def _datatree_to_netcdf(
         ds = node.ds
         group_path = node.pathstr.replace(dt.root.pathstr, "")
         if ds is None:
-            _create_empty_netcdf_group(filepath, group_path, mode)
+            _create_empty_netcdf_group(filepath, group_path, mode, engine)
         else:
             ds.to_netcdf(
                 filepath,
@@ -166,7 +191,7 @@ def _datatree_to_netcdf(
                 mode=mode,
                 encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
                 unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
-                **kwargs
+                **kwargs,
             )
 
 
@@ -200,7 +225,7 @@ def _datatree_to_zarr(dt: DataTree, store, mode: str = "w", encoding=None, **kwa
             group=group_path,
             mode=mode,
             encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
-            **kwargs
+            **kwargs,
         )
     if "w" in mode:
         mode = "a"
@@ -216,5 +241,5 @@ def _datatree_to_zarr(dt: DataTree, store, mode: str = "w", encoding=None, **kwa
                 group=group_path,
                 mode=mode,
                 encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
-                **kwargs
+                **kwargs,
             )
