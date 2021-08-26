@@ -4,11 +4,26 @@ import xarray as xr
 from test_datatree import create_test_datatree
 from xarray.testing import assert_equal
 
+from test_datatree import assert_tree_equal
 from datatree import DataNode, DataTree, map_over_subtree
 
 
+class TestCheckTreesMatch:
+    def test_different_widths(self):
+        ...
+
+    def test_different_heights(self):
+        ...
+
+    def test_only_some_have_data(self):
+        ...
+
+    def test_incompatible_dt_args(self):
+        ...
+
+
 class TestMapOverSubTree:
-    def test_map_over_subtree(self):
+    def test_single_dt_arg(self):
         dt = create_test_datatree()
 
         @map_over_subtree
@@ -29,7 +44,7 @@ class TestMapOverSubTree:
             else:
                 assert not result_node.has_data
 
-    def test_map_over_subtree_with_args_and_kwargs(self):
+    def test_single_dt_arg_plus_args_and_kwargs(self):
         dt = create_test_datatree()
 
         @map_over_subtree
@@ -49,7 +64,30 @@ class TestMapOverSubTree:
             else:
                 assert not result_node.has_data
 
-    def test_map_over_subtree_method(self):
+    def test_multiple_dt_args(self):
+        ds = xr.Dataset({"a": ("x", [1, 2, 3])})
+        dt = DataNode("root", data=ds)
+        DataNode("results", data=ds + 0.2, parent=dt)
+
+        @map_over_subtree
+        def add(ds1, ds2):
+            return ds1 + ds2
+
+        expected = DataNode("root", data=ds * 2)
+        DataNode("results", data=(ds + 0.2) * 2, parent=expected)
+
+        result = add(dt, dt)
+
+        #dt1 = create_test_datatree()
+        #dt2 = create_test_datatree()
+        #expected = create_test_datatree(modify=lambda ds: 2 * ds)
+
+        assert_tree_equal(result, expected)
+
+    def test_dt_as_kwarg(self):
+        ...
+
+    def test_dt_method(self):
         dt = create_test_datatree()
 
         def multiply_then_add(ds, times, add=0.0):
@@ -68,7 +106,9 @@ class TestMapOverSubTree:
             else:
                 assert not result_node.has_data
 
-    @pytest.mark.xfail
+
+@pytest.mark.xfail
+class TestMapOverSubTreeInplace:
     def test_map_over_subtree_inplace(self):
         raise NotImplementedError
 

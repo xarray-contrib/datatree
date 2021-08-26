@@ -50,6 +50,15 @@ tree) and some will get overridden by the class definition of DataTree.
 """
 
 
+def _check_trees_match(*trees):
+    """
+    Function to check that trees have the same structure. Does not require the names (and therefore paths) of the nodes
+    to be equal. Also does not check the data in the nodes (but it does check that data does/doesn't exist for all nodes
+    at the location.
+    """
+    ...
+
+
 def map_over_subtree(func):
     """
     Decorator which turns a function which acts on (and returns) single Datasets into one which acts on DataTrees.
@@ -66,13 +75,13 @@ def map_over_subtree(func):
     ----------
     func : callable
         Function to apply to datasets with signature:
-        `func(node.ds, *args, **kwargs) -> Dataset`.
+        `func(*args, **kwargs) -> Dataset`.
 
         Function will not be applied to any nodes without datasets.
     *args : tuple, optional
-        Positional arguments passed on to `func`.
+        Positional arguments passed on to `func`. Will be converted to Datasets via .ds if DataTrees.
     **kwargs : Any
-        Keyword arguments passed on to `func`.
+        Keyword arguments passed on to `func`. Will be converted to Datasets via .ds if DataTrees.
 
     Returns
     -------
@@ -86,15 +95,27 @@ def map_over_subtree(func):
     """
 
     @functools.wraps(func)
-    def _map_over_subtree(tree, *args, **kwargs):
+    def _map_over_subtree(*args, **kwargs):
         """Internal function which maps func over every node in tree, returning a tree of the results."""
 
-        # Recreate and act on root node
+        all_tree_inputs = [a for a in args if isinstance(a, DataTree)] + [a for a in args if isinstance(a, DataTree)]
+        first_tree = _check_trees_match(all_tree_inputs)
+
+        args_as_datasets = [a.ds if isinstance(a, DataTree) else a for a in args]
+        kwargs_as_datasets = {k: v.ds if isinstance(v, DataTree) else v for k, v in kwargs}
+
+
+        # Recreate root node
         out_tree = DataNode(name=tree.name, data=tree.ds)
+
+        # Act on root node
         if out_tree.has_data:
-            out_tree.ds = func(out_tree.ds, *args, **kwargs)
+            out_tree.ds = func(*args_as_datasets, **kwargs_as_datasets)
 
         # Act on every other node in the tree, and rebuild from results
+
+        # TODO walk all tree arguments simultaneously, applying func to the all nodes that lie in same position in different trees
+
         for node in tree.descendants:
             # TODO make a proper relative_path method
             relative_path = node.pathstr.replace(tree.pathstr, "")
