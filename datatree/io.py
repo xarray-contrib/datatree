@@ -1,10 +1,9 @@
 import os
-from typing import Dict, Sequence
+from typing import Sequence
 
-import netCDF4
 from xarray import open_dataset
 
-from .datatree import DataNode, DataTree, PathType
+from .datatree import DataTree, PathType
 
 
 def _ds_or_none(ds):
@@ -14,20 +13,21 @@ def _ds_or_none(ds):
     return None
 
 
-def _open_group_children_recursively(filename, node, ncgroup, chunks, **kwargs):
-    for g in ncgroup.groups.values():
-
-        # Open and add this node's dataset to the tree
-        name = os.path.basename(g.path)
-        ds = open_dataset(filename, group=g.path, chunks=chunks, **kwargs)
-        ds = _ds_or_none(ds)
-        child_node = DataNode(name, ds)
-        node.add_child(child_node)
-
-        _open_group_children_recursively(filename, node[name], g, chunks, **kwargs)
+def _iter_zarr_groups(root, parrent=""):
+    for path, group in root.groups():
+        gpath = os.path.join(parrent, path)
+        yield gpath
+        yield from _iter_zarr_groups(group, parrent=gpath)
 
 
-def open_datatree(filename: str, chunks: Dict = None, **kwargs) -> DataTree:
+def _iter_nc_groups(root, parrent=""):
+    for path, group in root.groups.items():
+        gpath = os.path.join(parrent, path)
+        yield gpath
+        yield from _iter_nc_groups(group, parrent=gpath)
+
+
+def open_datatree(filename_or_obj, engine=None, **kwargs) -> DataTree:
     """
     Open and decode a dataset from a file or file-like object, creating one Tree node for each group in the file.
 
@@ -41,11 +41,34 @@ def open_datatree(filename: str, chunks: Dict = None, **kwargs) -> DataTree:
     DataTree
     """
 
-    with netCDF4.Dataset(filename, mode="r") as ncfile:
-        ds = open_dataset(filename, chunks=chunks, **kwargs)
+    if engine == "zarr":
+        return _open_datatree_zarr(filename_or_obj, **kwargs)
+    else:
+        return _open_datatree_netcdf(filename_or_obj, engine=engine, **kwargs)
+
+
+def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
+    import netCDF4
+
+    with netCDF4.Dataset(filename, mode="r") as ncds:
+        ds = open_dataset(filename, **kwargs).pipe(_ds_or_none)
         tree_root = DataTree(data_objects={"root": ds})
-        _open_group_children_recursively(filename, tree_root, ncfile, chunks, **kwargs)
-    return tree_root
+        for key in _iter_nc_groups(ncds):
+            tree_root[key] = open_dataset(filename, group=key, **kwargs).pipe(
+                _ds_or_none
+            )
+
+
+def _open_datatree_zarr(store, **kwargs) -> DataTree:
+    import zarr
+
+    with zarr.Dataset(store, mode="r") as zds:
+        ds = open_dataset(store, engine="zarr", **kwargs).pipe(_ds_or_none)
+        tree_root = DataTree(data_objects={"root": ds})
+        for key in _iter_zarr_groups(zds):
+            tree_root[key] = open_dataset(
+                store, engine="zarr", group=key, **kwargs
+            ).pipe(_ds_or_none)
 
 
 def open_mfdatatree(
@@ -80,7 +103,9 @@ def _maybe_extract_group_kwargs(enc, group):
         return None
 
 
-def _create_empty_group(filename, group, mode):
+def _create_empty_netcdf_group(filename, group, mode):
+    import netCDF4
+
     with netCDF4.Dataset(filename, mode=mode) as rootgrp:
         rootgrp.createGroup(group)
 
@@ -117,7 +142,7 @@ def _datatree_to_netcdf(
     ds = dt.ds
     group_path = dt.pathstr.replace(dt.root.pathstr, "")
     if ds is None:
-        _create_empty_group(filepath, group_path, mode)
+        _create_empty_netcdf_group(filepath, group_path, mode)
     else:
         ds.to_netcdf(
             filepath,
@@ -133,7 +158,7 @@ def _datatree_to_netcdf(
         ds = node.ds
         group_path = node.pathstr.replace(dt.root.pathstr, "")
         if ds is None:
-            _create_empty_group(filepath, group_path, mode)
+            _create_empty_netcdf_group(filepath, group_path, mode)
         else:
             ds.to_netcdf(
                 filepath,
@@ -141,5 +166,55 @@ def _datatree_to_netcdf(
                 mode=mode,
                 encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
                 unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
+                **kwargs
+            )
+
+
+def _create_empty_zarr_group(store, group, mode):
+    import zarr
+
+    root = zarr.open_group(store, mode=mode)
+    root.create_group(group, overwrite=True)
+
+
+def _datatree_to_zarr(dt: DataTree, store, mode: str = "w", encoding=None, **kwargs):
+
+    if kwargs.get("group", None) is not None:
+        raise NotImplementedError(
+            "specifying a root group for the tree has not been implemented"
+        )
+
+    if not kwargs.get("compute", True):
+        raise NotImplementedError("compute=False has not been implemented yet")
+
+    if encoding is None:
+        encoding = {}
+
+    ds = dt.ds
+    group_path = dt.pathstr.replace(dt.root.pathstr, "")
+    if ds is None:
+        _create_empty_zarr_group(store, group_path, mode)
+    else:
+        ds.to_zarr(
+            store,
+            group=group_path,
+            mode=mode,
+            encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
+            **kwargs
+        )
+    if "w" in mode:
+        mode = "a"
+
+    for node in dt.descendants:
+        ds = node.ds
+        group_path = node.pathstr.replace(dt.root.pathstr, "")
+        if ds is None:
+            _create_empty_zarr_group(store, group_path, mode)
+        else:
+            ds.to_zarr(
+                store,
+                group=group_path,
+                mode=mode,
+                encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
                 **kwargs
             )
