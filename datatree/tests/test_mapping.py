@@ -2,6 +2,7 @@ import pytest
 import xarray as xr
 from xarray.testing import assert_equal
 
+from datatree.treenode import TreeNode
 from datatree.datatree import DataNode, DataTree
 from datatree.mapping import _check_isomorphic, TreeIsomorphismError, map_over_subtree
 
@@ -26,17 +27,15 @@ class TestCheckTreesIsomorphic:
 
     def test_different_heights(self):
         dt1 = DataTree(data_objects={'a': empty})
-        print(dt1)
         dt2 = DataTree(data_objects={'a': empty, 'a/b': empty})
-        print(dt2)
         expected_err_str = "'root/a' in the first tree has 0 children, whereas its counterpart node 'root/a' in the " \
                            "second tree has 1 children"
         with pytest.raises(TreeIsomorphismError, match=expected_err_str):
             _check_isomorphic(dt1, dt2)
 
     def test_only_one_has_data(self):
-        dt1 = DataTree(data_objects={'/': None})
-        dt2 = DataTree(data_objects={'a': empty})
+        dt1 = DataTree(data_objects={'a': xr.Dataset({'a': 0})})
+        dt2 = DataTree(data_objects={'a': None})
         expected_err_str = "'root/a' in the first tree has data, whereas its counterpart node 'root/a' in the " \
                            "second tree has no data"
         with pytest.raises(TreeIsomorphismError, match=expected_err_str):
@@ -45,26 +44,32 @@ class TestCheckTreesIsomorphic:
     def test_names_different(self):
         dt1 = DataTree(data_objects={'a': xr.Dataset()})
         dt2 = DataTree(data_objects={'b': empty})
-        expected_err_str = "'root/a' in the first tree has name a, whereas its counterpart node 'root/b' in the " \
-                           "second tree has name b"
+        expected_err_str = "'root/a' in the first tree has name 'a', whereas its counterpart node 'root/b' in the " \
+                           "second tree has name 'b'"
         with pytest.raises(TreeIsomorphismError, match=expected_err_str):
             _check_isomorphic(dt1, dt2, require_names_equal=True)
 
     def test_isomorphic_names_equal(self):
         dt1 = DataTree(data_objects={'a': empty, 'b': empty, 'b/c': empty, 'b/d': empty})
         dt2 = DataTree(data_objects={'a': empty, 'b': empty, 'b/c': empty, 'b/d': empty})
-        expected_err_str = "'root/a' in the first tree has name a, whereas its counterpart node 'root/b' in the " \
-                           "second tree has name b"
-        with pytest.raises(TreeIsomorphismError, match=expected_err_str):
-            _check_isomorphic(dt1, dt2, require_names_equal=True)
+        _check_isomorphic(dt1, dt2, require_names_equal=True)
+
+    def test_isomorphic_ordering(self):
+        dt1 = DataTree(data_objects={'a': empty, 'b': empty, 'b/d': empty, 'b/c': empty})
+        dt2 = DataTree(data_objects={'a': empty, 'b': empty, 'b/c': empty, 'b/d': empty})
+        _check_isomorphic(dt1, dt2, require_names_equal=False)
 
     def test_isomorphic_names_not_equal(self):
         dt1 = DataTree(data_objects={'a': empty, 'b': empty, 'b/c': empty, 'b/d': empty})
         dt2 = DataTree(data_objects={'A': empty, 'B': empty, 'B/C': empty, 'B/D': empty})
-        expected_err_str = "'root/a' in the first tree has name a, whereas its counterpart node 'root/b' in the " \
-                           "second tree has name b"
-        with pytest.raises(TreeIsomorphismError, match=expected_err_str):
-            _check_isomorphic(dt1, dt2, require_names_equal=True)
+        _check_isomorphic(dt1, dt2)
+
+    def test_not_isomorphic_complex_tree(self):
+        dt1 = create_test_datatree()
+        dt2 = create_test_datatree()
+        dt2.set_node('set1/set2', TreeNode('set3'))
+        with pytest.raises(TreeIsomorphismError, match="root/set1/set2"):
+            _check_isomorphic(dt1, dt2)
 
 
 class TestMapOverSubTree:

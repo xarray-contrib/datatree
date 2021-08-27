@@ -4,7 +4,6 @@ from anytree.iterators import LevelOrderIter
 from xarray import Dataset, DataArray
 
 from .treenode import TreeNode
-#from datatree import DataTree
 
 
 class TreeIsomorphismError(ValueError):
@@ -56,9 +55,9 @@ def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
 
         if require_names_equal:
             if node_a.name != node_b.name:
-                raise TreeIsomorphismError(f"Trees are not isomorphic because node '{path_a}' in the first tree has name"
-                                           f"'{node_a.name}', whereas its counterpart node '{path_b}' in the second "
-                                           f"tree has name '{node_b.name}'.")
+                raise TreeIsomorphismError(f"Trees are not isomorphic because node '{path_a}' in the first tree has "
+                                           f"name '{node_a.name}', whereas its counterpart node '{path_b}' in the "
+                                           f"second tree has name '{node_b.name}'.")
 
         if node_a.has_data != node_b.has_data:
             dat_a = 'no ' if not node_a.has_data else ''
