@@ -73,35 +73,41 @@ class TestCheckTreesIsomorphic:
 
 
 class TestMapOverSubTree:
+    @pytest.mark.xfail
     def test_no_trees_passed(self):
-        ...
+        raise NotImplementedError
 
+    @pytest.mark.xfail
     def test_not_isomorphic(self):
-        ...
+        raise NotImplementedError
 
+    @pytest.mark.xfail
     def test_no_trees_returned(self):
-        ...
+        raise NotImplementedError
 
     def test_single_dt_arg(self):
-        dt = create_test_datatree(modify=lambda ds: 10.0 * ds)
+        dt = create_test_datatree()
 
         @map_over_subtree
         def times_ten(ds):
             return 10.0 * ds
 
         result_tree = times_ten(dt)
-        assert_tree_equal(result_tree, dt)
+        expected = create_test_datatree(modify=lambda ds: 10.0 * ds)
+        assert_tree_equal(result_tree, expected)
 
     def test_single_dt_arg_plus_args_and_kwargs(self):
-        dt = create_test_datatree(modify=lambda ds: (10.0 * ds) + 2.0)
+        dt = create_test_datatree()
 
         @map_over_subtree
         def multiply_then_add(ds, times, add=0.0):
             return times * ds + add
 
         result_tree = multiply_then_add(dt, 10.0, add=2.0)
-        assert_tree_equal(result_tree, dt)
+        expected = create_test_datatree(modify=lambda ds: (10.0 * ds) + 2.0)
+        assert_tree_equal(result_tree, expected)
 
+    @pytest.mark.xfail
     def test_multiple_dt_args(self):
         ds = xr.Dataset({"a": ("x", [1, 2, 3])})
         dt = DataNode("root", data=ds)
@@ -122,15 +128,17 @@ class TestMapOverSubTree:
 
         assert_tree_equal(result, expected)
 
+    @pytest.mark.xfail
     def test_dt_as_kwarg(self):
-        ...
+        raise NotImplementedError
 
     @pytest.mark.xfail
     def test_return_multiple_dts(self):
         raise NotImplementedError
 
+    @pytest.mark.xfail
     def test_return_no_dts(self):
-        ...
+        raise NotImplementedError
 
     def test_dt_method(self):
         dt = create_test_datatree()

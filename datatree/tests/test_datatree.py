@@ -51,9 +51,9 @@ def create_test_datatree(modify=lambda ds: ds):
     The structure has deliberately repeated names of tags, variables, and
     dimensions in order to better check for bugs caused by name conflicts.
     """
-    set1_data = xr.Dataset({"a": 0, "b": 1})
-    set2_data = xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])})
-    root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])})
+    set1_data = modify(xr.Dataset({"a": 0, "b": 1}))
+    set2_data = modify(xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])}))
+    root_data = modify(xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])}))
 
     # Avoid using __init__ so we can independently test it
     root = DataNode(name="root", data=root_data)
