@@ -4,7 +4,7 @@ from anytree.iterators import LevelOrderIter
 from xarray import Dataset, DataArray
 
 from .treenode import TreeNode
-from .datatree import DataNode, DataTree
+#from datatree import DataTree
 
 
 class TreeIsomorphismError(ValueError):
@@ -43,9 +43,10 @@ def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
     """
     # TODO turn this into a public function called assert_isomorphic
 
-    for i, dt in enumerate(subtree_a, subtree_b):
-        if not isinstance(dt, TreeNode):
-            raise TypeError(f"Argument number {i+1} is not a tree, it is of type {type(dt)}")
+    if not isinstance(subtree_a, TreeNode):
+        raise TypeError(f"Argument `subtree_a is not a tree, it is of type {type(subtree_a)}")
+    if not isinstance(subtree_b, TreeNode):
+        raise TypeError(f"Argument `subtree_b is not a tree, it is of type {type(subtree_b)}")
 
     # Walking nodes in "level-order" fashion means walking down from the root breadth-first.
     # Checking by walking in this way implicitly assumes that the tree is an ordered tree (which it is so long as
@@ -55,21 +56,21 @@ def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
 
         if require_names_equal:
             if node_a.name != node_b.name:
-                raise TreeIsomorphismError(f"Trees are not isomorphic because node {path_a} in the first tree has name"
-                                           f"{node_a.name}, whereas its counterpart node {path_b} in the second tree "
-                                           f"has name {node_b.name}.")
+                raise TreeIsomorphismError(f"Trees are not isomorphic because node '{path_a}' in the first tree has name"
+                                           f"'{node_a.name}', whereas its counterpart node '{path_b}' in the second "
+                                           f"tree has name '{node_b.name}'.")
 
         if node_a.has_data != node_b.has_data:
             dat_a = 'no ' if not node_a.has_data else ''
             dat_b = 'no ' if not node_b.has_data else ''
-            raise TreeIsomorphismError(f"Trees are not isomorphic because node {path_a} in the first tree has "
-                                       f"{dat_a}data, whereas its counterpart node {path_b} in the second tree "
+            raise TreeIsomorphismError(f"Trees are not isomorphic because node '{path_a}' in the first tree has "
+                                       f"{dat_a}data, whereas its counterpart node '{path_b}' in the second tree "
                                        f"has {dat_b}data.")
 
         if len(node_a.children) != len(node_b.children):
-            raise TreeIsomorphismError(f"Trees are not isomorphic because node {path_a} in the first tree has "
-                                       f"{len(node_a.children)} children, whereas its counterpart node {path_b} in the "
-                                       f"second tree has {len(node_b.children)} children.")
+            raise TreeIsomorphismError(f"Trees are not isomorphic because node '{path_a}' in the first tree has "
+                                       f"{len(node_a.children)} children, whereas its counterpart node '{path_b}' in "
+                                       f"the second tree has {len(node_b.children)} children.")
 
 
 def map_over_subtree(func):
@@ -115,6 +116,7 @@ def map_over_subtree(func):
     @functools.wraps(func)
     def _map_over_subtree(*args, **kwargs):
         """Internal function which maps func over every node in tree, returning a tree of the results."""
+        from .datatree import DataTree
 
         all_tree_inputs = [a for a in args if isinstance(a, DataTree)] + [
             a for a in kwargs.values() if isinstance(a, DataTree)
@@ -143,12 +145,62 @@ def map_over_subtree(func):
                 k: v.ds if isinstance(v, DataTree) else v for k, v in kwargs
             }
 
-            # TODO should we allow mapping functions that return zero datasets?
-            # TODO generalise to functions that return multiple values
-            result = func(*node_args_as_datasets, **node_kwargs_as_datasets) if node_first_tree.has_data else None
-            out_data_objects[relative_path] = result
+            results = func(*node_args_as_datasets, **node_kwargs_as_datasets) if node_first_tree.has_data else None
+            out_data_objects[relative_path] = results
 
-        # TODO: Possible bug - what happens if another tree argument does not have root named the same way?
-        return DataTree(name=first_tree.name, data_objects=out_data_objects)
+        # Find out how many return values we had
+        num_return_values = _check_return_values(out_data_objects)
+
+        # Reconstruct potentially multiple subtrees from the dict of results
+        # Fill in all nodes of all result trees
+        result_trees = []
+        for _ in range(num_return_values):
+            out_tree_contents = {}
+            for n in first_tree.subtree:
+                p = n.pathstr
+                out_tree_contents[p] = out_data_objects[p] if p in out_data_objects.keys() else None
+
+            # TODO: Possible bug - what happens if another tree argument does not have root named the same way?
+            new_tree = DataTree(name=first_tree.name, data_objects=out_tree_contents)
+            result_trees.append(new_tree)
+
+        # If only one result then don't wrap it in a tuple
+        if len(result_trees) == 1:
+            return next(result_trees)
+        else:
+            return tuple(result_trees)
 
     return _map_over_subtree
+
+
+def _check_return_values(returned_objects):
+    """Walk through all values returned by mapping func over subtrees, raising on any invalid types or inconsistency."""
+    result_data_objects = [(p, r) for p, r in returned_objects if r is not None]
+
+    if result_data_objects is None:
+        raise TypeError("Called supplied function on all nodes but found a return value of None for"
+                        "all of them.")
+
+    prev_path, prev_obj = result_data_objects[0]
+    prev_num_return_values, num_return_values = None, None
+    for p, obj in result_data_objects[1:]:
+        if isinstance(obj, (Dataset, DataArray)):
+            num_return_values = 1
+        elif isinstance(obj, tuple):
+            for r in enumerate(obj):
+                if not isinstance(r, (Dataset, DataArray)):
+                    raise TypeError(f"One of the results of calling func on datasets on the nodes at position {p} is "
+                                    f"of type {type(r)}, not Dataset or DataArray.")
+
+            num_return_values = len(tuple)
+        else:
+            raise TypeError(f"The result of calling func on the node at position {p} is of type {type(obj)}, not "
+                            f"Dataset or DataArray, nor a tuple of such types.")
+
+        if num_return_values != prev_num_return_values and prev_num_return_values is not None:
+            raise TypeError(f"Calling func on the nodes at position {p} returns {num_return_values}, whereas calling"
+                            f"func on the nodes at position {prev_path} returns {prev_num_return_values}.")
+
+        prev_path, prev_obj, prev_num_return_values = p, obj, num_return_values
+
+    return num_return_values
