@@ -1,7 +1,6 @@
 import functools
 
 from anytree.iterators import LevelOrderIter
-from xarray import Dataset, DataArray
 
 from .treenode import TreeNode
 
@@ -43,9 +42,13 @@ def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
     # TODO turn this into a public function called assert_isomorphic
 
     if not isinstance(subtree_a, TreeNode):
-        raise TypeError(f"Argument `subtree_a is not a tree, it is of type {type(subtree_a)}")
+        raise TypeError(
+            f"Argument `subtree_a is not a tree, it is of type {type(subtree_a)}"
+        )
     if not isinstance(subtree_b, TreeNode):
-        raise TypeError(f"Argument `subtree_b is not a tree, it is of type {type(subtree_b)}")
+        raise TypeError(
+            f"Argument `subtree_b is not a tree, it is of type {type(subtree_b)}"
+        )
 
     # Walking nodes in "level-order" fashion means walking down from the root breadth-first.
     # Checking by walking in this way implicitly assumes that the tree is an ordered tree (which it is so long as
@@ -55,21 +58,27 @@ def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
 
         if require_names_equal:
             if node_a.name != node_b.name:
-                raise TreeIsomorphismError(f"Trees are not isomorphic because node '{path_a}' in the first tree has "
-                                           f"name '{node_a.name}', whereas its counterpart node '{path_b}' in the "
-                                           f"second tree has name '{node_b.name}'.")
+                raise TreeIsomorphismError(
+                    f"Trees are not isomorphic because node '{path_a}' in the first tree has "
+                    f"name '{node_a.name}', whereas its counterpart node '{path_b}' in the "
+                    f"second tree has name '{node_b.name}'."
+                )
 
         if node_a.has_data != node_b.has_data:
-            dat_a = 'no ' if not node_a.has_data else ''
-            dat_b = 'no ' if not node_b.has_data else ''
-            raise TreeIsomorphismError(f"Trees are not isomorphic because node '{path_a}' in the first tree has "
-                                       f"{dat_a}data, whereas its counterpart node '{path_b}' in the second tree "
-                                       f"has {dat_b}data.")
+            dat_a = "no " if not node_a.has_data else ""
+            dat_b = "no " if not node_b.has_data else ""
+            raise TreeIsomorphismError(
+                f"Trees are not isomorphic because node '{path_a}' in the first tree has "
+                f"{dat_a}data, whereas its counterpart node '{path_b}' in the second tree "
+                f"has {dat_b}data."
+            )
 
         if len(node_a.children) != len(node_b.children):
-            raise TreeIsomorphismError(f"Trees are not isomorphic because node '{path_a}' in the first tree has "
-                                       f"{len(node_a.children)} children, whereas its counterpart node '{path_b}' in "
-                                       f"the second tree has {len(node_b.children)} children.")
+            raise TreeIsomorphismError(
+                f"Trees are not isomorphic because node '{path_a}' in the first tree has "
+                f"{len(node_a.children)} children, whereas its counterpart node '{path_b}' in "
+                f"the second tree has {len(node_b.children)} children."
+            )
 
 
 def map_over_subtree(func):
@@ -113,6 +122,7 @@ def map_over_subtree(func):
 
         # Recreate and act on root node
         from .datatree import DataNode
+
         out_tree = DataNode(name=tree.name, data=tree.ds)
         if out_tree.has_data:
             out_tree.ds = func(out_tree.ds, *args, **kwargs)
