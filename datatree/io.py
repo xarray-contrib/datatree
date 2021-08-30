@@ -20,9 +20,9 @@ def _iter_zarr_groups(root, parrent=""):
         yield from _iter_zarr_groups(group, parrent=gpath)
 
 
-def _iter_nc_groups(root, parrent=""):
+def _iter_nc_groups(root, parent=""):
     for path, group in root.groups.items():
-        gpath = os.path.join(parrent, path)
+        gpath = os.path.join(parent, path)
         yield gpath
         yield from _iter_nc_groups(group, parrent=gpath)
 

@@ -916,9 +916,9 @@ class DataTree(
         """
         Write datatree contents to a netCDF file.
 
-        Paramters
+        Parameters
         ---------
-        store :MutableMapping, str or Path, optional
+        store : MutableMapping, str or Path, optional
             Store or path to directory in file system
         mode : {{"w", "w-", "a", "r+", None}, default: "w"
             Persistence mode: “w” means create (overwrite if exists); “w-” means create (fail if exists);
