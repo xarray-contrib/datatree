@@ -74,13 +74,35 @@ class TestCheckTreesIsomorphic:
 
 class TestMapOverSubTree:
     def test_no_trees_passed(self):
-        ...
+        @map_over_subtree
+        def times_ten(ds):
+            return 10.0 * ds
+
+        with pytest.raises(TypeError, match="Must pass at least one tree"):
+            times_ten("dt")
 
     def test_not_isomorphic(self):
-        ...
+        dt1 = create_test_datatree()
+        dt2 = create_test_datatree()
+        dt2['set4'] = None
+
+        @map_over_subtree
+        def times_ten(ds1, ds2):
+            return ds1 * ds2
+
+        with pytest.raises(TreeIsomorphismError):
+            times_ten(dt1, dt2)
 
     def test_no_trees_returned(self):
-        ...
+        dt1 = create_test_datatree()
+        dt2 = create_test_datatree()
+
+        @map_over_subtree
+        def bad_func(ds1, ds2):
+            return None
+
+        with pytest.raises(TypeError, match="return value of None"):
+            bad_func(dt1, dt2)
 
     def test_single_dt_arg(self):
         dt = create_test_datatree(modify=lambda ds: 10.0 * ds)
@@ -103,34 +125,79 @@ class TestMapOverSubTree:
         assert_tree_equal(result_tree, dt)
 
     def test_multiple_dt_args(self):
-        ds = xr.Dataset({"a": ("x", [1, 2, 3])})
-        dt = DataNode("root", data=ds)
-        DataNode("results", data=ds + 0.2, parent=dt)
+        dt1 = create_test_datatree()
+        dt2 = create_test_datatree()
 
         @map_over_subtree
         def add(ds1, ds2):
             return ds1 + ds2
 
-        expected = DataNode("root", data=ds * 2)
-        DataNode("results", data=(ds + 0.2) * 2, parent=expected)
-
-        result = add(dt, dt)
-
-        # dt1 = create_test_datatree()
-        # dt2 = create_test_datatree()
-        # expected = create_test_datatree(modify=lambda ds: 2 * ds)
-
+        expected = create_test_datatree(modify=lambda ds: 2.0 * ds)
+        result = add(dt1, dt2)
         assert_tree_equal(result, expected)
 
     def test_dt_as_kwarg(self):
-        ...
+        dt1 = create_test_datatree()
+        dt2 = create_test_datatree()
+
+        @map_over_subtree
+        def add(ds1, value=0.0):
+            return ds1 + value
+
+        expected = create_test_datatree(modify=lambda ds: 2.0 * ds)
+        result = add(dt1, value=dt2)
+        assert_tree_equal(result, expected)
+
+    def test_return_multiple_dts(self):
+        dt1 = create_test_datatree()
+        dt2 = create_test_datatree()
+
+        @map_over_subtree
+        def minmax(ds):
+            return ds.min(), ds.max()
+
+        dt_min, dt_max = minmax(dt1, dt2)
+        expected_min = create_test_datatree(modify=lambda ds: ds.min())
+        assert_tree_equal(dt_min, expected_min)
+        expected_max = create_test_datatree(modify=lambda ds: ds.max())
+        assert_tree_equal(dt_max, expected_max)
+
+    def test_return_wrong_type(self):
+        dt1 = create_test_datatree()
+
+        @map_over_subtree
+        def bad_func(ds1):
+            return "string"
+
+        with pytest.raises(TypeError, match="not Dataset or DataArray"):
+            bad_func(dt1)
+
+    def test_return_tuple_of_wrong_types(self):
+        dt1 = create_test_datatree()
+
+        @map_over_subtree
+        def bad_func(ds1):
+            return xr.Dataset(), "string"
+
+        with pytest.raises(TypeError, match="not Dataset or DataArray"):
+            bad_func(dt1)
 
     @pytest.mark.xfail
-    def test_return_multiple_dts(self):
-        raise NotImplementedError
+    def test_return_inconsistent_number_of_results(self):
+        dt1 = create_test_datatree()
+        counter = 0
 
-    def test_return_no_dts(self):
-        ...
+        @map_over_subtree
+        def bad_func(ds1):
+            if (counter % 2) == 0:
+                counter += 1
+                return xr.Dataset()
+            else:
+                counter += 1
+                return xr.Dataset(), xr.Dataset()
+
+        with pytest.raises(TypeError, match="not Dataset or DataArray"):
+            bad_func(dt1)
 
     def test_dt_method(self):
         dt = create_test_datatree()
