@@ -1,4 +1,4 @@
-import os
+import pathlib
 from typing import Sequence
 
 from xarray import open_dataset
@@ -14,16 +14,18 @@ def _ds_or_none(ds):
 
 
 def _iter_zarr_groups(root, parrent=""):
+    parrent = pathlib.Path(parrent)
     for path, group in root.groups():
-        gpath = os.path.join(parrent, path)
-        yield gpath
+        gpath = parrent / path
+        yield str(gpath)
         yield from _iter_zarr_groups(group, parrent=gpath)
 
 
-def _iter_nc_groups(root, parent=""):
+def _iter_nc_groups(root, parrent=""):
+    parrent = pathlib.Path(parrent)
     for path, group in root.groups.items():
-        gpath = os.path.join(parent, path)
-        yield gpath
+        gpath = parrent / path
+        yield str(gpath)
         yield from _iter_nc_groups(group, parrent=gpath)
 
 
@@ -164,27 +166,13 @@ def _datatree_to_netcdf(
     if unlimited_dims is None:
         unlimited_dims = {}
 
-    ds = dt.ds
-    group_path = dt.pathstr.replace(dt.root.pathstr, "")
-    if ds is None:
-        _create_empty_netcdf_group(filepath, group_path, mode, engine)
-    else:
-        ds.to_netcdf(
-            filepath,
-            group=group_path,
-            mode=mode,
-            encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
-            unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
-            **kwargs,
-        )
-    mode = "a"
-
-    for node in dt.descendants:
+    for node in dt.subtree:
         ds = node.ds
         group_path = node.pathstr.replace(dt.root.pathstr, "")
         if ds is None:
             _create_empty_netcdf_group(filepath, group_path, mode, engine)
         else:
+
             ds.to_netcdf(
                 filepath,
                 group=group_path,
@@ -193,6 +181,7 @@ def _datatree_to_netcdf(
                 unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.pathstr),
                 **kwargs,
             )
+        mode = "a"
 
 
 def _create_empty_zarr_group(store, group, mode):
@@ -215,22 +204,7 @@ def _datatree_to_zarr(dt: DataTree, store, mode: str = "w", encoding=None, **kwa
     if encoding is None:
         encoding = {}
 
-    ds = dt.ds
-    group_path = dt.pathstr.replace(dt.root.pathstr, "")
-    if ds is None:
-        _create_empty_zarr_group(store, group_path, mode)
-    else:
-        ds.to_zarr(
-            store,
-            group=group_path,
-            mode=mode,
-            encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
-            **kwargs,
-        )
-    if "w" in mode:
-        mode = "a"
-
-    for node in dt.descendants:
+    for node in dt.subtree:
         ds = node.ds
         group_path = node.pathstr.replace(dt.root.pathstr, "")
         if ds is None:
@@ -243,3 +217,5 @@ def _datatree_to_zarr(dt: DataTree, store, mode: str = "w", encoding=None, **kwa
                 encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
                 **kwargs,
             )
+        if "w" in mode:
+            mode = "a"
