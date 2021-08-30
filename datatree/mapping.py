@@ -1,4 +1,6 @@
 import functools
+import itertools
+from collections import OrderedDict
 
 from anytree.iterators import LevelOrderIter
 from xarray import Dataset, DataArray
@@ -120,6 +122,8 @@ def map_over_subtree(func):
         all_tree_inputs = [a for a in args if isinstance(a, DataTree)] + [
             a for a in kwargs.values() if isinstance(a, DataTree)
         ]
+        which_args_are_trees = [isinstance(a, DataTree) for a in args]
+        which_kwargs_are_trees = {k: isinstance(v, DataTree) for k, v in kwargs.items()}
 
         if len(all_tree_inputs) > 0:
             first_tree, *other_trees = all_tree_inputs
@@ -133,17 +137,28 @@ def map_over_subtree(func):
         # Walk all trees simultaneously, applying func to all nodes that lie in same position in different trees
         # Store tuples of results in a dict because we don't yet know how many trees we need to rebuild to return
         out_data_objects = {}
-        for nodes in zip(dt.subtree for dt in all_tree_inputs):
-
+        subtrees = [dt.subtree for dt in all_tree_inputs]
+        for nodes in zip(*subtrees):
             node_first_tree, *_ = nodes
 
             # TODO make a proper relative_path method
+            path = node_first_tree.pathstr#.replace(first_tree.pathstr, "")
             relative_path = node_first_tree.pathstr.replace(first_tree.pathstr, "")
+            print(relative_path)
 
-            node_args_as_datasets = [a.ds if isinstance(a, DataTree) else a for a in args]
-            node_kwargs_as_datasets = {
-                k: v.ds if isinstance(v, DataTree) else v for k, v in kwargs
-            }
+            # Extract all node datasets from trees
+            node_args_as_datasets = []
+            for position, (node, is_tree) in enumerate(itertools.zip_longest(nodes, which_args_are_trees)):
+                if is_tree:
+                    node_args_as_datasets.append(node.ds)
+                else:
+                    node_args_as_datasets.append(args[position])
+            node_kwargs_as_datasets = {}
+            for node, (k, is_tree) in itertools.zip_longest(nodes, which_kwargs_are_trees):
+                if is_tree:
+                    node_kwargs_as_datasets[k] = node
+                else:
+                    node_kwargs_as_datasets[k] = kwargs[k]
 
             results = func(*node_args_as_datasets, **node_kwargs_as_datasets) if node_first_tree.has_data else None
 
@@ -152,6 +167,8 @@ def map_over_subtree(func):
 
         # Find out how many return values we had
         num_return_values = _check_return_values(out_data_objects)
+
+        print(out_data_objects)
 
         # Reconstruct potentially multiple subtrees from the dict of results
         # Fill in all nodes of all result trees
@@ -165,11 +182,12 @@ def map_over_subtree(func):
             # TODO: document how names are just taken from first dt passed
             # TODO: Possible bug - what happens if another tree argument does not have root named the same way?
             new_tree = DataTree(name=first_tree.name, data_objects=out_tree_contents)
+            print(new_tree)
             result_trees.append(new_tree)
 
         # If only one result then don't wrap it in a tuple
         if len(result_trees) == 1:
-            return next(result_trees)
+            return result_trees[0]
         else:
             return tuple(result_trees)
 
@@ -178,11 +196,13 @@ def map_over_subtree(func):
 
 def _check_return_values(returned_objects):
     """Walk through all values returned by mapping func over subtrees, raising on any invalid or inconsistent types."""
-    result_data_objects = [(p, r) for p, r in returned_objects if r is not None]
+    #print(returned_objects)
 
-    if result_data_objects is None:
+    if all(r is None for r in returned_objects.values()):
         raise TypeError("Called supplied function on all nodes but found a return value of None for"
                         "all of them.")
+
+    result_data_objects = [(p, r) for p, r in returned_objects.items() if r is not None]
 
     prev_path, prev_obj = result_data_objects[0]
     prev_num_return_values, num_return_values = None, None
