@@ -105,14 +105,16 @@ class TestMapOverSubTree:
             bad_func(dt1, dt2)
 
     def test_single_dt_arg(self):
-        dt = create_test_datatree(modify=lambda ds: 10.0 * ds)
+        dt = create_test_datatree()
 
         @map_over_subtree
         def times_ten(ds):
             return 10.0 * ds
 
+        expected = create_test_datatree(modify=lambda ds: 10.0 * ds)
+        print(expected)
         result_tree = times_ten(dt)
-        assert_tree_equal(result_tree, dt)
+        assert_tree_equal(result_tree, expected)
 
     def test_single_dt_arg_plus_args_and_kwargs(self):
         dt = create_test_datatree(modify=lambda ds: (10.0 * ds) + 2.0)
@@ -198,6 +200,10 @@ class TestMapOverSubTree:
 
         with pytest.raises(TypeError, match="not Dataset or DataArray"):
             bad_func(dt1)
+
+    @pytest.mark.xfail
+    def test_trees_with_different_node_names(self):
+        raise NotImplementedError
 
     def test_dt_method(self):
         dt = create_test_datatree()
