@@ -43,9 +43,9 @@ def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
     # TODO turn this into a public function called assert_isomorphic
 
     if not isinstance(subtree_a, TreeNode):
-        raise TypeError(f"Argument `subtree_a is not a tree, it is of type {type(subtree_a)}")
+        raise TypeError(f"Argument `subtree_a` is not a tree, it is of type {type(subtree_a)}")
     if not isinstance(subtree_b, TreeNode):
-        raise TypeError(f"Argument `subtree_b is not a tree, it is of type {type(subtree_b)}")
+        raise TypeError(f"Argument `subtree_b` is not a tree, it is of type {type(subtree_b)}")
 
     # Walking nodes in "level-order" fashion means walking down from the root breadth-first.
     # Checking by walking in this way implicitly assumes that the tree is an ordered tree (which it is so long as
@@ -131,6 +131,7 @@ def map_over_subtree(func):
             _check_isomorphic(first_tree, other_tree, require_names_equal=False)
 
         # Walk all trees simultaneously, applying func to all nodes that lie in same position in different trees
+        # Store tuples of results in a dict because we don't yet know how many trees we need to rebuild to return
         out_data_objects = {}
         for nodes in zip(dt.subtree for dt in all_tree_inputs):
 
@@ -145,6 +146,8 @@ def map_over_subtree(func):
             }
 
             results = func(*node_args_as_datasets, **node_kwargs_as_datasets) if node_first_tree.has_data else None
+
+            # TODO implement mapping over multiple trees inplace using if conditions from here on?
             out_data_objects[relative_path] = results
 
         # Find out how many return values we had
@@ -159,6 +162,7 @@ def map_over_subtree(func):
                 p = n.pathstr
                 out_tree_contents[p] = out_data_objects[p] if p in out_data_objects.keys() else None
 
+            # TODO: document how names are just taken from first dt passed
             # TODO: Possible bug - what happens if another tree argument does not have root named the same way?
             new_tree = DataTree(name=first_tree.name, data_objects=out_tree_contents)
             result_trees.append(new_tree)
@@ -173,7 +177,7 @@ def map_over_subtree(func):
 
 
 def _check_return_values(returned_objects):
-    """Walk through all values returned by mapping func over subtrees, raising on any invalid types or inconsistency."""
+    """Walk through all values returned by mapping func over subtrees, raising on any invalid or inconsistent types."""
     result_data_objects = [(p, r) for p, r in returned_objects if r is not None]
 
     if result_data_objects is None:
@@ -197,8 +201,9 @@ def _check_return_values(returned_objects):
                             f"Dataset or DataArray, nor a tuple of such types.")
 
         if num_return_values != prev_num_return_values and prev_num_return_values is not None:
-            raise TypeError(f"Calling func on the nodes at position {p} returns {num_return_values}, whereas calling"
-                            f"func on the nodes at position {prev_path} returns {prev_num_return_values}.")
+            raise TypeError(f"Calling func on the nodes at position {p} returns {num_return_values} separate return "
+                            f"values, whereas calling func on the nodes at position {prev_path} instead returns "
+                            f"{prev_num_return_values} separate return values.")
 
         prev_path, prev_obj, prev_num_return_values = p, obj, num_return_values
 
