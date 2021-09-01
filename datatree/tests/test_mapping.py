@@ -186,25 +186,41 @@ class TestMapOverSubTree:
     @pytest.mark.xfail
     def test_return_inconsistent_number_of_results(self):
         dt1 = create_test_datatree()
-        counter = 0
 
         @map_over_subtree
-        def bad_func(ds1):
-            if (counter % 2) == 0:
-                counter += 1
-                return xr.Dataset()
-            else:
-                counter += 1
-                return xr.Dataset(), xr.Dataset()
+        def bad_func(ds):
+            # Datasets in create_test_datatree() have different numbers of dims
+            # TODO need to instead return different numbers of Dataset objects for this test to catch the intended error
+            return tuple(ds.dims)
 
-        with pytest.raises(TypeError, match="not Dataset or DataArray"):
+        with pytest.raises(TypeError, match="instead returns"):
             bad_func(dt1)
 
     def test_wrong_number_of_arguments_for_func(self):
-        ...
+        dt = create_test_datatree()
+
+        @map_over_subtree
+        def times_ten(ds):
+            return 10.0 * ds
+
+        with pytest.raises(TypeError, match="takes 1 positional argument but 2 were given"):
+            times_ten(dt, dt)
+
+    def test_map_single_dataset_against_whole_tree(self):
+        dt = create_test_datatree()
+
+        @map_over_subtree
+        def nodewise_merge(node_ds, fixed_ds):
+            return xr.merge([node_ds, fixed_ds])
+
+        other_ds = xr.Dataset({'z': ('z', [0])})
+        expected = create_test_datatree(modify=lambda ds: xr.merge([ds, other_ds]))
+        result_tree = nodewise_merge(dt, other_ds)
+        assert_tree_equal(result_tree, expected)
 
     @pytest.mark.xfail
     def test_trees_with_different_node_names(self):
+        # TODO test this after I've got good tests for renaming nodes
         raise NotImplementedError
 
     def test_dt_method(self):
@@ -213,18 +229,9 @@ class TestMapOverSubTree:
         def multiply_then_add(ds, times, add=0.0):
             return times * ds + add
 
+        expected = create_test_datatree(modify=lambda ds: (10.0 * ds) + 2.0)
         result_tree = dt.map_over_subtree(multiply_then_add, 10.0, add=2.0)
-
-        for (
-            result_node,
-            original_node,
-        ) in zip(result_tree.subtree, dt.subtree):
-            assert isinstance(result_node, DataTree)
-
-            if original_node.has_data:
-                assert_equal(result_node.ds, (original_node.ds * 10.0) + 2.0)
-            else:
-                assert not result_node.has_data
+        assert_tree_equal(result_tree, expected)
 
 
 @pytest.mark.xfail
