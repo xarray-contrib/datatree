@@ -1,6 +1,7 @@
 import functools
 import itertools
 from collections import OrderedDict
+from itertools import repeat
 
 from anytree.iterators import LevelOrderIter
 from xarray import Dataset, DataArray
@@ -96,9 +97,11 @@ def map_over_subtree(func):
         (i.e. func must accept at least one Dataset and return at least one Dataset.)
         Function will not be applied to any nodes without datasets.
     *args : tuple, optional
-        Positional arguments passed on to `func`. Will be converted to Datasets via .ds if DataTrees.
+        Positional arguments passed on to `func`. If DataTrees any data-containing nodes will be converted to Datasets \
+        via .ds .
     **kwargs : Any
-        Keyword arguments passed on to `func`. Will be converted to Datasets via .ds if DataTrees.
+        Keyword arguments passed on to `func`. If DataTrees any data-containing nodes will be converted to Datasets 
+        via .ds .
 
     Returns
     -------
@@ -110,6 +113,7 @@ def map_over_subtree(func):
     --------
     DataTree.map_over_subtree
     DataTree.map_over_subtree_inplace
+    DataTree.subtree
     """
 
     # TODO inspect function to work out immediately if the wrong number of arguments were passed for it?
@@ -122,8 +126,6 @@ def map_over_subtree(func):
         all_tree_inputs = [a for a in args if isinstance(a, DataTree)] + [
             a for a in kwargs.values() if isinstance(a, DataTree)
         ]
-        which_args_are_trees = [isinstance(a, DataTree) for a in args]
-        which_kwargs_are_trees = {k: isinstance(v, DataTree) for k, v in kwargs.items()}
 
         if len(all_tree_inputs) > 0:
             first_tree, *other_trees = all_tree_inputs
@@ -131,43 +133,49 @@ def map_over_subtree(func):
             raise TypeError("Must pass at least one tree object")
 
         for other_tree in other_trees:
-            # isomorphism is transitive
+            # isomorphism is transitive so this is enough to guarantee all trees are mutually isomorphic
             _check_isomorphic(first_tree, other_tree, require_names_equal=False)
 
         # Walk all trees simultaneously, applying func to all nodes that lie in same position in different trees
-        # Store tuples of results in a dict because we don't yet know how many trees we need to rebuild to return
+        # We don't know which arguments are DataTrees so we zip all arguments together
+        # TODO : do we even need to tell repeat the length of the subtree?
         out_data_objects = {}
-        subtrees = [dt.subtree for dt in all_tree_inputs]
-        for nodes in zip(*subtrees):
-            node_first_tree, *_ = nodes
+        #size_tree = len(list(first_tree.subtree))
+        args_as_subtrees = [a.subtree if isinstance(a, DataTree) else repeat(a) for a in args]
+        n_args = len(args_as_subtrees)
+        kwargs_as_subtrees = {k: v.subtree if isinstance(v, DataTree) else repeat(v) for k, v in kwargs.items()}
 
-            # TODO make a proper relative_path method
-            path = node_first_tree.pathstr#.replace(first_tree.pathstr, "")
-            relative_path = node_first_tree.pathstr.replace(first_tree.pathstr, "")
-            print(relative_path)
+        #print(args_as_subtrees)
+        #print(kwargs_as_subtrees)
+        #print(list(kwargs_as_subtrees.values()))
+        # node_args_as_datasets, node_kwargs_as_datasets \
+        for node_of_first_tree, *all_node_args_as_subtrees in zip(first_tree.subtree, *args_as_subtrees, *list(kwargs_as_subtrees.values())):
+            # (outdated) node_args_as_datasets will now be in form tuple(Union[a.ds, a] for a in args)
+            # (outdated) so make node_kwargs_as_datasets into form dict(k: Union[v.ds, v] for k, v in kwargs)
 
-            # Extract all node datasets from trees
-            node_args_as_datasets = []
-            for position, (node, is_tree) in enumerate(itertools.zip_longest(nodes, which_args_are_trees)):
-                if is_tree:
-                    node_args_as_datasets.append(node.ds)
-                else:
-                    node_args_as_datasets.append(args[position])
-            node_kwargs_as_datasets = {}
-            for node, (k, is_tree) in itertools.zip_longest(nodes, which_kwargs_are_trees):
-                if is_tree:
-                    node_kwargs_as_datasets[k] = node
-                else:
-                    node_kwargs_as_datasets[k] = kwargs[k]
+            print("node args")
+            #print(all_node_args_as_subtrees)
+            node_args_as_datasets = [a.ds for a in all_node_args_as_subtrees[:n_args]]
+            print(node_args_as_datasets)
+            node_kwargs_as_datasets = dict(zip(kwargs_as_subtrees.keys(),
+                                               [v.ds for v in all_node_args_as_subtrees[n_args:]]))
+            print(node_kwargs_as_datasets)
 
-            results = func(*node_args_as_datasets, **node_kwargs_as_datasets) if node_first_tree.has_data else None
+            # Now we can call func on the data in this particular set of corresponding nodes
+            results = func(*node_args_as_datasets, **node_kwargs_as_datasets) if node_of_first_tree.has_data else None
+            print(results)
 
+            # Store tuples of results in a dict because we don't yet know how many trees we need to rebuild to return
             # TODO implement mapping over multiple trees inplace using if conditions from here on?
+            # TODO make a proper relative_path method
+            #path = node_first_tree.pathstr  # .replace(first_tree.pathstr, "")
+            relative_path = node_of_first_tree.pathstr#.replace(first_tree.pathstr, "")
+            #print(relative_path)
             out_data_objects[relative_path] = results
+
 
         # Find out how many return values we had
         num_return_values = _check_return_values(out_data_objects)
-
         print(out_data_objects)
 
         # Reconstruct potentially multiple subtrees from the dict of results
@@ -176,13 +184,14 @@ def map_over_subtree(func):
         for _ in range(num_return_values):
             out_tree_contents = {}
             for n in first_tree.subtree:
-                p = n.pathstr
+                p = n.pathstr#.replace(first_tree.pathstr, "")
                 out_tree_contents[p] = out_data_objects[p] if p in out_data_objects.keys() else None
 
             # TODO: document how names are just taken from first dt passed
             # TODO: Possible bug - what happens if another tree argument does not have root named the same way?
+            print(out_tree_contents)
             new_tree = DataTree(name=first_tree.name, data_objects=out_tree_contents)
-            print(new_tree)
+            #print(new_tree)
             result_trees.append(new_tree)
 
         # If only one result then don't wrap it in a tuple

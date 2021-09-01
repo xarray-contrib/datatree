@@ -106,6 +106,7 @@ class TestMapOverSubTree:
 
     def test_single_dt_arg(self):
         dt = create_test_datatree()
+        print(dt)
 
         @map_over_subtree
         def times_ten(ds):
@@ -114,6 +115,7 @@ class TestMapOverSubTree:
         expected = create_test_datatree(modify=lambda ds: 10.0 * ds)
         print(expected)
         result_tree = times_ten(dt)
+        print(result_tree)
         assert_tree_equal(result_tree, expected)
 
     def test_single_dt_arg_plus_args_and_kwargs(self):
@@ -200,6 +202,9 @@ class TestMapOverSubTree:
 
         with pytest.raises(TypeError, match="not Dataset or DataArray"):
             bad_func(dt1)
+
+    def test_wrong_number_of_arguments_for_func(self):
+        ...
 
     @pytest.mark.xfail
     def test_trees_with_different_node_names(self):
