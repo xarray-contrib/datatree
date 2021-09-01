@@ -1,6 +1,4 @@
 import functools
-import itertools
-from collections import OrderedDict
 from itertools import repeat
 
 from anytree.iterators import LevelOrderIter
@@ -155,10 +153,10 @@ def map_over_subtree(func):
 
             print("node args")
             #print(all_node_args_as_subtrees)
-            node_args_as_datasets = [a.ds for a in all_node_args_as_subtrees[:n_args]]
+            node_args_as_datasets = [a.ds if isinstance(a, DataTree) else a for a in all_node_args_as_subtrees[:n_args]]
             print(node_args_as_datasets)
-            node_kwargs_as_datasets = dict(zip(kwargs_as_subtrees.keys(),
-                                               [v.ds for v in all_node_args_as_subtrees[n_args:]]))
+            node_kwargs_as_datasets = dict(zip([k for k in kwargs_as_subtrees.keys()],
+                                               [v.ds if isinstance(v, DataTree) else v for v in all_node_args_as_subtrees[n_args:]]))
             print(node_kwargs_as_datasets)
 
             # Now we can call func on the data in this particular set of corresponding nodes
@@ -173,7 +171,6 @@ def map_over_subtree(func):
             #print(relative_path)
             out_data_objects[relative_path] = results
 
-
         # Find out how many return values we had
         num_return_values = _check_return_values(out_data_objects)
         print(out_data_objects)
@@ -181,7 +178,7 @@ def map_over_subtree(func):
         # Reconstruct potentially multiple subtrees from the dict of results
         # Fill in all nodes of all result trees
         result_trees = []
-        for _ in range(num_return_values):
+        for i in range(num_return_values):
             out_tree_contents = {}
             for n in first_tree.subtree:
                 p = n.pathstr#.replace(first_tree.pathstr, "")
@@ -205,7 +202,7 @@ def map_over_subtree(func):
 
 def _check_return_values(returned_objects):
     """Walk through all values returned by mapping func over subtrees, raising on any invalid or inconsistent types."""
-    #print(returned_objects)
+    print(returned_objects)
 
     if all(r is None for r in returned_objects.values()):
         raise TypeError("Called supplied function on all nodes but found a return value of None for"
@@ -219,12 +216,12 @@ def _check_return_values(returned_objects):
         if isinstance(obj, (Dataset, DataArray)):
             num_return_values = 1
         elif isinstance(obj, tuple):
-            for r in enumerate(obj):
+            for r in obj:
                 if not isinstance(r, (Dataset, DataArray)):
                     raise TypeError(f"One of the results of calling func on datasets on the nodes at position {p} is "
                                     f"of type {type(r)}, not Dataset or DataArray.")
 
-            num_return_values = len(tuple)
+            num_return_values = len(obj)
         else:
             raise TypeError(f"The result of calling func on the node at position {p} is of type {type(obj)}, not "
                             f"Dataset or DataArray, nor a tuple of such types.")

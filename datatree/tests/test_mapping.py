@@ -106,27 +106,25 @@ class TestMapOverSubTree:
 
     def test_single_dt_arg(self):
         dt = create_test_datatree()
-        print(dt)
 
         @map_over_subtree
         def times_ten(ds):
             return 10.0 * ds
 
         expected = create_test_datatree(modify=lambda ds: 10.0 * ds)
-        print(expected)
         result_tree = times_ten(dt)
-        print(result_tree)
         assert_tree_equal(result_tree, expected)
 
     def test_single_dt_arg_plus_args_and_kwargs(self):
-        dt = create_test_datatree(modify=lambda ds: (10.0 * ds) + 2.0)
+        dt = create_test_datatree()
 
         @map_over_subtree
         def multiply_then_add(ds, times, add=0.0):
-            return times * ds + add
+            return (times * ds) + add
 
+        expected = create_test_datatree(modify=lambda ds: (10.0 * ds) + 2.0)
         result_tree = multiply_then_add(dt, 10.0, add=2.0)
-        assert_tree_equal(result_tree, dt)
+        assert_tree_equal(result_tree, expected)
 
     def test_multiple_dt_args(self):
         dt1 = create_test_datatree()
@@ -153,14 +151,13 @@ class TestMapOverSubTree:
         assert_tree_equal(result, expected)
 
     def test_return_multiple_dts(self):
-        dt1 = create_test_datatree()
-        dt2 = create_test_datatree()
+        dt = create_test_datatree()
 
         @map_over_subtree
         def minmax(ds):
             return ds.min(), ds.max()
 
-        dt_min, dt_max = minmax(dt1, dt2)
+        dt_min, dt_max = minmax(dt)
         expected_min = create_test_datatree(modify=lambda ds: ds.min())
         assert_tree_equal(dt_min, expected_min)
         expected_max = create_test_datatree(modify=lambda ds: ds.max())
