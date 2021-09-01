@@ -174,6 +174,8 @@ def map_over_subtree(func):
         # Find out how many return values we had
         num_return_values = _check_return_values(out_data_objects)
         print(out_data_objects)
+        print("number of return values")
+        print(num_return_values)
 
         # Reconstruct potentially multiple subtrees from the dict of results
         # Fill in all nodes of all result trees
@@ -182,11 +184,21 @@ def map_over_subtree(func):
             out_tree_contents = {}
             for n in first_tree.subtree:
                 p = n.pathstr#.replace(first_tree.pathstr, "")
-                out_tree_contents[p] = out_data_objects[p] if p in out_data_objects.keys() else None
+                print("results to add")
+                print(i)
+                print(out_data_objects[p])
+                if p in out_data_objects.keys():
+                    if isinstance(out_data_objects[p], tuple):
+                        output_node_data = out_data_objects[p][i]
+                    else:
+                        output_node_data = out_data_objects[p]
+                else:
+                    output_node_data = None
+                out_tree_contents[p] = output_node_data
 
             # TODO: document how names are just taken from first dt passed
             # TODO: Possible bug - what happens if another tree argument does not have root named the same way?
-            print(out_tree_contents)
+            #print(out_tree_contents)
             new_tree = DataTree(name=first_tree.name, data_objects=out_tree_contents)
             #print(new_tree)
             result_trees.append(new_tree)
