@@ -87,7 +87,7 @@ def map_over_subtree(func):
     """
     Decorator which turns a function which acts on (and returns) Datasets into one which acts on and returns DataTrees.
 
-    Applies a function to every dataset in this subtree, returning one or more new trees which store the results.
+    Applies a function to every dataset in one or more subtrees, returning new trees which store the results.
 
     The function will be applied to any dataset stored in any of the nodes in the trees. The returned trees will have
     the same structure as the supplied trees.
@@ -95,6 +95,9 @@ def map_over_subtree(func):
     `func` needs to return one Datasets, DataArrays, or None in order to be able to rebuild the subtrees after
     mapping, as each result will be assigned to its respective node of a new tree via `DataTree.__setitem__`. Any
     returned value that is one of these types will be stacked into a separate tree before returning all of them.
+
+    The trees passed to the resulting function must all be isomorphic to one another. Their nodes need not be named
+    similarly, but all the output trees will have nodes named in the same way as the first tree passed.
 
     Parameters
     ----------
@@ -123,6 +126,8 @@ def map_over_subtree(func):
     DataTree.map_over_subtree_inplace
     DataTree.subtree
     """
+
+    # TODO examples in the docstring
 
     # TODO inspect function to work out immediately if the wrong number of arguments were passed for it?
 
@@ -202,7 +207,6 @@ def map_over_subtree(func):
                     output_node_data = None
                 out_tree_contents[p] = output_node_data
 
-            # TODO: document how names are just taken from first DataTree passed
             new_tree = DataTree(name=first_tree.name, data_objects=out_tree_contents)
             result_trees.append(new_tree)
 
