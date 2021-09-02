@@ -320,3 +320,13 @@ class TestIO:
 
         roundtrip_dt = open_datatree(filepath)
         assert_tree_equal(original_dt, roundtrip_dt)
+
+    def test_to_zarr(self, tmpdir):
+        filepath = str(
+            tmpdir / "test.zarr"
+        )  # casting to str avoids a pathlib bug in xarray
+        original_dt = create_test_datatree()
+        original_dt.to_zarr(filepath)
+
+        roundtrip_dt = open_datatree(filepath, engine="zarr")
+        assert_tree_equal(original_dt, roundtrip_dt)
