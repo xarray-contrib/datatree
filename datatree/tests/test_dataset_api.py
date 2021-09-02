@@ -5,6 +5,8 @@ from xarray.testing import assert_equal
 
 from datatree import DataNode
 
+from .test_datatree import assert_tree_equal, create_test_datatree
+
 
 class TestDSProperties:
     def test_properties(self):
@@ -88,7 +90,7 @@ class TestDSMethodInheritance:
 
 
 class TestOps:
-    def test_binary_op_on_other_class(self):
+    def test_binary_op_on_int(self):
         ds1 = xr.Dataset({"a": [5], "b": [3]})
         ds2 = xr.Dataset({"x": [0.1, 0.2], "y": [10, 20]})
         dt = DataNode("root", data=ds1)
@@ -101,7 +103,20 @@ class TestOps:
         assert_equal(result.ds, expected_root.ds)
         assert_equal(result["subnode"].ds, expected_descendant.ds)
 
-    @pytest.mark.xfail
+    def test_binary_op_on_dataset(self):
+        ds1 = xr.Dataset({"a": [5], "b": [3]})
+        ds2 = xr.Dataset({"x": [0.1, 0.2], "y": [10, 20]})
+        dt = DataNode("root", data=ds1)
+        DataNode("subnode", data=ds2, parent=dt)
+        other_ds = xr.Dataset({"z": ("z", [0.1, 0.2])})
+
+        expected_root = DataNode("root", data=ds1 * other_ds)
+        expected_descendant = DataNode("subnode", data=ds2 * other_ds, parent=expected_root)
+        result = dt * other_ds
+
+        assert_equal(result.ds, expected_root.ds)
+        assert_equal(result["subnode"].ds, expected_descendant.ds)
+
     def test_binary_op_on_datatree(self):
         ds1 = xr.Dataset({"a": [5], "b": [3]})
         ds2 = xr.Dataset({"x": [0.1, 0.2], "y": [10, 20]})
@@ -116,7 +131,6 @@ class TestOps:
         assert_equal(result["subnode"].ds, expected_descendant.ds)
 
 
-@pytest.mark.xfail
 class TestUFuncs:
     def test_root(self):
         da = xr.DataArray(name="a", data=[1, 2, 3])
@@ -132,3 +146,9 @@ class TestUFuncs:
         expected_ds = np.sin(da.to_dataset())
         result_ds = np.sin(dt)["results"].ds
         assert_equal(result_ds, expected_ds)
+
+    def test_tree(self):
+        dt = create_test_datatree()
+        expected = create_test_datatree(modify=lambda ds: np.sin(ds))
+        result_tree = np.sin(dt)
+        assert_tree_equal(result_tree, expected)
