@@ -103,6 +103,7 @@ def map_over_subtree(func):
     ----------
     func : callable
         Function to apply to datasets with signature:
+
         `func(*args, **kwargs) -> Union[Dataset, Iterable[Dataset]]`.
 
         (i.e. func must accept at least one Dataset and return at least one Dataset.)
