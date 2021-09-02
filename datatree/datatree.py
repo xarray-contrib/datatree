@@ -4,10 +4,8 @@ import textwrap
 from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Union
 
 import anytree
+from xarray import DataArray, Dataset, merge
 from xarray.core import dtypes, utils
-from xarray.core.combine import merge
-from xarray.core.dataarray import DataArray
-from xarray.core.dataset import Dataset
 from xarray.core.variable import Variable
 
 from .mapping import map_over_subtree
