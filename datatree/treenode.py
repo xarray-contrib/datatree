@@ -84,7 +84,7 @@ class TreeNode(anytree.NodeMixin):
         """
         if self.name in list(c.name for c in parent.children):
             raise KeyError(
-                f"parent {str(parent)} already has a child named {self.name}"
+                f"parent {parent.name} already has a child named {self.name}"
             )
 
     def add_child(self, child: TreeNode) -> None:
@@ -220,6 +220,6 @@ class TreeNode(anytree.NodeMixin):
         )
 
     @property
-    def subtree_nodes(self):
-        """An iterator over all nodes in this tree, including both self and descendants."""
+    def subtree(self):
+        """An iterator over all nodes in this tree, including both self and all descendants."""
         return anytree.iterators.PreOrderIter(self)

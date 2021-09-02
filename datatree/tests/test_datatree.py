@@ -4,9 +4,23 @@ from anytree.resolver import ChildResolverError
 from xarray.testing import assert_identical
 
 from datatree import DataNode, DataTree
+from datatree.io import open_datatree
+from datatree.tests import requires_netCDF4, requires_zarr
 
 
-def create_test_datatree():
+def assert_tree_equal(dt_a, dt_b):
+    assert dt_a.parent is dt_b.parent
+
+    for a, b in zip(dt_a.subtree, dt_b.subtree):
+        assert a.name == b.name
+        assert a.pathstr == b.pathstr
+        if a.has_data:
+            assert a.ds.equals(b.ds)
+        else:
+            assert a.ds is b.ds
+
+
+def create_test_datatree(modify=lambda ds: ds):
     """
     Create a test datatree with this structure:
 
@@ -31,17 +45,16 @@ def create_test_datatree():
     |   Dimensions:  (x: 2, y: 3)
     |   Data variables:
     |       a        (y) int64 6, 7, 8
-    |       set1     (x) int64 9, 10
+    |       set0     (x) int64 9, 10
 
     The structure has deliberately repeated names of tags, variables, and
     dimensions in order to better check for bugs caused by name conflicts.
     """
-    set1_data = xr.Dataset({"a": 0, "b": 1})
-    set2_data = xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])})
-    root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set1": ("x", [9, 10])})
+    set1_data = modify(xr.Dataset({"a": 0, "b": 1}))
+    set2_data = modify(xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])}))
+    root_data = modify(xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])}))
 
     # Avoid using __init__ so we can independently test it
-    # TODO change so it has a DataTree at the bottom
     root = DataNode(name="root", data=root_data)
     set1 = DataNode(name="set1", parent=root, data=set1_data)
     DataNode(name="set1", parent=set1)
@@ -223,7 +236,9 @@ class TestTreeCreation:
         dt = DataTree({"run1": dat1, "run2": dat2})
         assert dt.ds is None
         assert dt["run1"].ds is dat1
+        assert dt["run1"].children == ()
         assert dt["run2"].ds is dat2
+        assert dt["run2"].children == ()
 
     def test_two_layers(self):
         dat1, dat2 = xr.Dataset({"a": 1}), xr.Dataset({"a": [1, 2]})
@@ -235,7 +250,7 @@ class TestTreeCreation:
 
     def test_full(self):
         dt = create_test_datatree()
-        paths = list(node.pathstr for node in dt.subtree_nodes)
+        paths = list(node.pathstr for node in dt.subtree)
         assert paths == [
             "root",
             "root/set1",
@@ -297,4 +312,24 @@ class TestRepr:
 
 
 class TestIO:
-    ...
+    @requires_netCDF4
+    def test_to_netcdf(self, tmpdir):
+        filepath = str(
+            tmpdir / "test.nc"
+        )  # casting to str avoids a pathlib bug in xarray
+        original_dt = create_test_datatree()
+        original_dt.to_netcdf(filepath, engine="netcdf4")
+
+        roundtrip_dt = open_datatree(filepath)
+        assert_tree_equal(original_dt, roundtrip_dt)
+
+    @requires_zarr
+    def test_to_zarr(self, tmpdir):
+        filepath = str(
+            tmpdir / "test.zarr"
+        )  # casting to str avoids a pathlib bug in xarray
+        original_dt = create_test_datatree()
+        original_dt.to_zarr(filepath)
+
+        roundtrip_dt = open_datatree(filepath, engine="zarr")
+        assert_tree_equal(original_dt, roundtrip_dt)
