@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 import textwrap
 from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Union
 
@@ -14,6 +13,7 @@ from xarray.core.dataset import Dataset
 from xarray.core.ops import NAN_CUM_METHODS, NAN_REDUCE_METHODS, REDUCE_METHODS
 from xarray.core.variable import Variable
 
+from .mapping import map_over_subtree
 from .treenode import PathType, TreeNode, _init_single_treenode
 
 """
@@ -44,63 +44,10 @@ the entire API of `xarray.Dataset`, but with certain methods decorated to instea
 node in the tree. As this API is copied without directly subclassing `xarray.Dataset` we instead create various Mixin
 classes which each define part of `xarray.Dataset`'s extensive API.
 
+Some of these methods must be wrapped to map over all nodes in the subtree. Others are fine to inherit unaltered
+(normally because they (a) only call dataset properties and (b) don't return a dataset that should be nested into a new
+tree) and some will get overridden by the class definition of DataTree.
 """
-
-
-def map_over_subtree(func):
-    """
-    Decorator which turns a function which acts on (and returns) single Datasets into one which acts on DataTrees.
-
-    Applies a function to every dataset in this subtree, returning a new tree which stores the results.
-
-    The function will be applied to any dataset stored in this node, as well as any dataset stored in any of the
-    descendant nodes. The returned tree will have the same structure as the original subtree.
-
-    func needs to return a Dataset, DataArray, or None in order to be able to rebuild the subtree after mapping, as each
-    result will be assigned to its respective node of new tree via `DataTree.__setitem__`.
-
-    Parameters
-    ----------
-    func : callable
-        Function to apply to datasets with signature:
-        `func(node.ds, *args, **kwargs) -> Dataset`.
-
-        Function will not be applied to any nodes without datasets.
-    *args : tuple, optional
-        Positional arguments passed on to `func`.
-    **kwargs : Any
-        Keyword arguments passed on to `func`.
-
-    Returns
-    -------
-    mapped : callable
-        Wrapped function which returns tree created from results of applying ``func`` to the dataset at each node.
-
-    See also
-    --------
-    DataTree.map_over_subtree
-    DataTree.map_over_subtree_inplace
-    """
-
-    @functools.wraps(func)
-    def _map_over_subtree(tree, *args, **kwargs):
-        """Internal function which maps func over every node in tree, returning a tree of the results."""
-
-        # Recreate and act on root node
-        out_tree = DataNode(name=tree.name, data=tree.ds)
-        if out_tree.has_data:
-            out_tree.ds = func(out_tree.ds, *args, **kwargs)
-
-        # Act on every other node in the tree, and rebuild from results
-        for node in tree.descendants:
-            # TODO make a proper relative_path method
-            relative_path = node.pathstr.replace(tree.pathstr, "")
-            result = func(node.ds, *args, **kwargs) if node.has_data else None
-            out_tree[relative_path] = result
-
-        return out_tree
-
-    return _map_over_subtree
 
 
 class DatasetPropertiesMixin:
@@ -146,7 +93,7 @@ class DatasetPropertiesMixin:
 
     @property
     def nbytes(self) -> int:
-        return sum(node.ds.nbytes for node in self.subtree_nodes)
+        return sum(node.ds.nbytes for node in self.subtree)
 
     @property
     def indexes(self):
@@ -379,6 +326,8 @@ def _wrap_then_attach_to_cls(
         return self.method(*args, **kwargs)
     ```
 
+    Every method attached here needs to have a return value of Dataset or DataArray in order to construct a new tree.
+
     Parameters
     ----------
     target_cls_dict : MappingProxy
@@ -418,8 +367,6 @@ def _wrap_then_attach_to_cls(
 class MappedDatasetMethodsMixin:
     """
     Mixin to add Dataset methods like .mean(), but wrapped to map over all nodes in the subtree.
-
-    Every method wrapped here needs to have a return value of Dataset or DataArray in order to construct a new tree.
     """
 
     __slots__ = ()
@@ -441,11 +388,7 @@ class MappedDataWithCoords(DataWithCoords):
 
 class DataTreeArithmetic(DatasetArithmetic):
     """
-    Mixin to add Dataset methods like __add__ and .mean()
-
-    Some of these methods must be wrapped to map over all nodes in the subtree. Others are fine unaltered (normally
-    because they (a) only call dataset properties and (b) don't return a dataset that should be nested into a new
-    tree) and some will get overridden by the class definition of DataTree.
+    Mixin to add Dataset methods like __add__ and .mean().
     """
 
     _wrap_then_attach_to_cls(
@@ -510,7 +453,7 @@ class DataTree(
 
     def __init__(
         self,
-        data_objects: Dict[PathType, Union[Dataset, DataArray]] = None,
+        data_objects: Dict[PathType, Union[Dataset, DataArray, None]] = None,
         name: Hashable = "root",
     ):
         # First create the root node
@@ -531,16 +474,16 @@ class DataTree(
                 else:
                     node_path, node_name = "/", path
 
+                relative_path = node_path.replace(self.name, "")
+
                 # Create and set new node
                 new_node = DataNode(name=node_name, data=data)
                 self.set_node(
-                    node_path,
+                    relative_path,
                     new_node,
                     allow_overwrite=False,
                     new_nodes_along_path=True,
                 )
-                new_node = self.get_node(path)
-                new_node[path] = data
 
     @property
     def ds(self) -> Dataset:
@@ -854,7 +797,7 @@ class DataTree(
 
         # TODO if func fails on some node then the previous nodes will still have been updated...
 
-        for node in self.subtree_nodes:
+        for node in self.subtree:
             if node.has_data:
                 node.ds = func(node.ds, *args, **kwargs)
 
@@ -922,12 +865,77 @@ class DataTree(
     @property
     def groups(self):
         """Return all netCDF4 groups in the tree, given as a tuple of path-like strings."""
-        return tuple(node.pathstr for node in self.subtree_nodes)
+        return tuple(node.pathstr for node in self.subtree)
 
-    def to_netcdf(self, filename: str):
+    def to_netcdf(
+        self, filepath, mode: str = "w", encoding=None, unlimited_dims=None, **kwargs
+    ):
+        """
+        Write datatree contents to a netCDF file.
+
+        Paramters
+        ---------
+        filepath : str or Path
+            Path to which to save this datatree.
+        mode : {"w", "a"}, default: "w"
+            Write ('w') or append ('a') mode. If mode='w', any existing file at
+            this location will be overwritten. If mode='a', existing variables
+            will be overwritten. Only appies to the root group.
+        encoding : dict, optional
+            Nested dictionary with variable names as keys and dictionaries of
+            variable specific encodings as values, e.g.,
+            ``{"root/set1": {"my_variable": {"dtype": "int16", "scale_factor": 0.1,
+            "zlib": True}, ...}, ...}``. See ``xarray.Dataset.to_netcdf`` for available
+            options.
+        unlimited_dims : dict, optional
+            Mapping of unlimited dimensions per group that that should be serialized as unlimited dimensions.
+            By default, no dimensions are treated as unlimited dimensions.
+            Note that unlimited_dims may also be set via
+            ``dataset.encoding["unlimited_dims"]``.
+        kwargs :
+            Addional keyword arguments to be passed to ``xarray.Dataset.to_netcdf``
+        """
         from .io import _datatree_to_netcdf
 
-        _datatree_to_netcdf(self, filename)
+        _datatree_to_netcdf(
+            self,
+            filepath,
+            mode=mode,
+            encoding=encoding,
+            unlimited_dims=unlimited_dims,
+            **kwargs,
+        )
+
+    def to_zarr(self, store, mode: str = "w", encoding=None, **kwargs):
+        """
+        Write datatree contents to a netCDF file.
+
+        Parameters
+        ---------
+        store : MutableMapping, str or Path, optional
+            Store or path to directory in file system
+        mode : {{"w", "w-", "a", "r+", None}, default: "w"
+            Persistence mode: “w” means create (overwrite if exists); “w-” means create (fail if exists);
+            “a” means override existing variables (create if does not exist); “r+” means modify existing
+            array values only (raise an error if any metadata or shapes would change). The default mode
+            is “a” if append_dim is set. Otherwise, it is “r+” if region is set and w- otherwise.
+        encoding : dict, optional
+            Nested dictionary with variable names as keys and dictionaries of
+            variable specific encodings as values, e.g.,
+            ``{"root/set1": {"my_variable": {"dtype": "int16", "scale_factor": 0.1}, ...}, ...}``.
+            See ``xarray.Dataset.to_zarr`` for available options.
+        kwargs :
+            Addional keyword arguments to be passed to ``xarray.Dataset.to_zarr``
+        """
+        from .io import _datatree_to_zarr
+
+        _datatree_to_zarr(
+            self,
+            store,
+            mode=mode,
+            encoding=encoding,
+            **kwargs,
+        )
 
     def plot(self):
         raise NotImplementedError
