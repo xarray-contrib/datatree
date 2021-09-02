@@ -111,7 +111,9 @@ class TestOps:
         other_ds = xr.Dataset({"z": ("z", [0.1, 0.2])})
 
         expected_root = DataNode("root", data=ds1 * other_ds)
-        expected_descendant = DataNode("subnode", data=ds2 * other_ds, parent=expected_root)
+        expected_descendant = DataNode(
+            "subnode", data=ds2 * other_ds, parent=expected_root
+        )
         result = dt * other_ds
 
         assert_equal(result.ds, expected_root.ds)
