@@ -47,6 +47,10 @@ Dictionary interface
 
 Methods
 -------
+
+.. autosummary::
+   :toctree: generated/
+
    DataTree.load
    DataTree.compute
    DataTree.persist
