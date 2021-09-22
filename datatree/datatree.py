@@ -1,11 +1,25 @@
 from __future__ import annotations
 
 import textwrap
-from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Union,
+)
 
 import anytree
 from xarray import DataArray, Dataset, merge
 from xarray.core import dtypes, utils
+from xarray.core.indexes import Index
+from xarray.core.utils import Default, Frozen, _default
 from xarray.core.variable import Variable
 
 from .mapping import map_over_subtree
@@ -14,7 +28,7 @@ from .ops import (
     MappedDatasetMethodsMixin,
     MappedDataWithCoords,
 )
-from .treenode import PathType, TreeNode, _init_single_treenode
+from .treenode import PathType, TreeNode
 
 """
 DEVELOPERS' NOTE
@@ -28,6 +42,13 @@ Some of these methods must be wrapped to map over all nodes in the subtree. Othe
 (normally because they (a) only call dataset properties and (b) don't return a dataset that should be nested into a new
 tree) and some will get overridden by the class definition of DataTree.
 """
+
+
+def _check_for_name_collisions(children, variables):
+    for child in children:
+        for var in variables:
+            if var == child.name:
+                raise KeyError
 
 
 class DataTree(
@@ -59,8 +80,6 @@ class DataTree(
     DataNode : Shortcut to create a DataTree with only a single node.
     """
 
-    # TODO should this instead be a subclass of Dataset?
-
     # TODO attribute-like access for both vars and child nodes (by inheriting from xarray.core.common.AttrsAccessMixin?)
 
     # TODO ipython autocomplete for child nodes
@@ -71,90 +90,94 @@ class DataTree(
 
     # TODO do we need a watch out for if methods intended only for root nodes are called on non-root nodes?
 
-    # TODO currently allows self.ds = None, should we instead always store at least an empty Dataset?
-
     # TODO dataset methods which should not or cannot act over the whole tree, such as .to_array
 
     # TODO del and delitem methods
 
     # TODO .loc, __contains__, __iter__, __array__, __len__
 
+    _attrs: Optional[Dict[Hashable, Any]]
+    _cache: Dict[str, Any]
+    _coord_names: Set[Hashable]
+    _dims: Dict[Hashable, int]
+    _encoding: Optional[Dict[Hashable, Any]]
+    _close: Optional[Callable[[], None]]
+    _indexes: Optional[Dict[Hashable, Index]]
+    _variables: Dict[Hashable, Variable]
+
+    # TODO a lot of properties like .variables could be defined in a DataMapping class which both Dataset and DataTree inherit from
+
+    # TODO __slots__
+
+    # TODO all groupby classes
+
     def __init__(
         self,
+        name: Hashable,
+        parent: DataTree = None,
+        children: Iterable[DataTree] = None,
+        data_vars: Mapping[Any, Any] = None,
+        coords: Mapping[Any, Any] = None,
+        attrs: Mapping[Any, Any] = None,
+    ):
+        _check_for_name_collisions(children, data_vars)
+
+        super().__init__(name, parent, children=children)
+        Dataset.__init__(self, data_vars=data_vars, coords=coords, attrs=attrs)
+
+    @classmethod
+    def from_dict(
+        cls,
         data_objects: Dict[PathType, Union[Dataset, DataArray, None]] = None,
         name: Hashable = "root",
     ):
+
         # First create the root node
-        super().__init__(name=name, parent=None, children=None)
         if data_objects:
             root_data = data_objects.pop(name, None)
         else:
             root_data = None
-        self._ds = root_data
+        tree = cls.from_data(name, root_data)
 
         if data_objects:
             # Populate tree with children determined from data_objects mapping
             for path, data in data_objects.items():
                 # Determine name of new node
-                path = self._tuple_or_path_to_path(path)
-                if self.separator in path:
-                    node_path, node_name = path.rsplit(self.separator, maxsplit=1)
+                path = tree._tuple_or_path_to_path(path)
+                if tree.separator in path:
+                    node_path, node_name = path.rsplit(tree.separator, maxsplit=1)
                 else:
                     node_path, node_name = "/", path
 
-                relative_path = node_path.replace(self.name, "")
+                relative_path = node_path.replace(tree.name, "")
 
                 # Create and set new node
-                new_node = DataNode(name=node_name, data=data)
-                self.set_node(
+                new_node = cls.from_data(name=node_name, data=data)
+                tree.set_node(
                     relative_path,
                     new_node,
                     allow_overwrite=False,
                     new_nodes_along_path=True,
                 )
-
-    @property
-    def ds(self) -> Dataset:
-        return self._ds
-
-    @ds.setter
-    def ds(self, data: Union[Dataset, DataArray] = None):
-        if not isinstance(data, (Dataset, DataArray)) and data is not None:
-            raise TypeError(
-                f"{type(data)} object is not an xarray Dataset, DataArray, or None"
-            )
-        if isinstance(data, DataArray):
-            data = data.to_dataset()
-        if data is not None:
-            for var in list(data.variables):
-                if var in list(c.name for c in self.children):
-                    raise KeyError(
-                        f"Cannot add variable named {var}: node already has a child named {var}"
-                    )
-        self._ds = data
-
-    @property
-    def has_data(self):
-        return self.ds is not None
+        return tree
 
     @classmethod
-    def _init_single_datatree_node(
+    def from_data(
         cls,
         name: Hashable,
-        data: Union[Dataset, DataArray] = None,
+        data: Union[Dataset, DataArray],
         parent: TreeNode = None,
         children: List[TreeNode] = None,
     ):
         """
-        Create a single node of a DataTree, which optionally contains data in the form of an xarray.Dataset.
+        Create a single node of a DataTree from an xarray Dataset or DataArray.
 
         Parameters
         ----------
         name : Hashable
             Name for the root node of the tree. Default is "root"
-        data : Dataset, DataArray, Variable or None, optional
-            Data to store under the .ds attribute of this node. DataArrays and Variables will be promoted to Datasets.
-            Default is None.
+        data : Dataset or DataArray
+            xarray data object whose data to store in this node.
         parent : TreeNode, optional
             Parent node to this node. Default is None.
         children : Sequence[TreeNode], optional
@@ -164,12 +187,24 @@ class DataTree(
         -------
         node :  DataTree
         """
+        if isinstance(data, DataArray):
+            dataset = data.to_dataset()
+        elif isinstance(data, Dataset):
+            dataset = data
+        else:
+            raise TypeError
 
-        # This approach was inspired by xarray.Dataset._construct_direct()
+        _check_for_name_collisions(children, dataset.variables)
+
         obj = object.__new__(cls)
-        obj._ds = None
-        obj = _init_single_treenode(obj, name=name, parent=parent, children=children)
-        obj.ds = data
+        obj.__init__(
+            name=name,
+            parent=parent,
+            children=children,
+            data_vars=dataset.data_vars,
+            coords=dataset.coords,
+            attrs=dataset.attrs,
+        )
         return obj
 
     def _pre_attach(self, parent: TreeNode) -> None:
@@ -178,10 +213,8 @@ class DataTree(
         children with duplicate names (or a data variable with the same name as a child).
         """
         super()._pre_attach(parent)
-        if parent.has_data and self.name in list(parent.ds.variables):
-            raise KeyError(
-                f"parent {parent.name} already contains a data variable named {self.name}"
-            )
+        if parent.has_data:
+            _check_for_name_collisions([self.name], parent.variables)
 
     def add_child(self, child: TreeNode) -> None:
         """
@@ -191,10 +224,139 @@ class DataTree(
         """
         if child.name in list(c.name for c in self.children):
             raise KeyError(f"Node already has a child named {child.name}")
-        elif self.has_data and child.name in list(self.ds.variables):
+        elif self.has_data and child.name in list(self.variables):
             raise KeyError(f"Node already contains a data variable named {child.name}")
         else:
             child.parent = self
+
+    @property
+    def variables(self) -> Mapping[Hashable, Variable]:
+        """Low level interface to Dataset contents as dict of Variable objects.
+
+        This ordered dictionary is frozen to prevent mutation that could
+        violate Dataset invariants. It contains all variable objects
+        constituting the Dataset, including both data variables and
+        coordinates.
+        """
+        return Frozen(self._variables)
+
+    @property
+    def attrs(self) -> Dict[Hashable, Any]:
+        """Dictionary of global attributes on this dataset"""
+        if self._attrs is None:
+            self._attrs = {}
+        return self._attrs
+
+    @attrs.setter
+    def attrs(self, value: Mapping[Any, Any]) -> None:
+        self._attrs = dict(value)
+
+    @property
+    def encoding(self) -> Dict:
+        """Dictionary of global encoding attributes on this dataset"""
+        if self._encoding is None:
+            self._encoding = {}
+        return self._encoding
+
+    @encoding.setter
+    def encoding(self, value: Mapping) -> None:
+        self._encoding = dict(value)
+
+    @property
+    def dims(self) -> Mapping[Hashable, int]:
+        """Mapping from dimension names to lengths.
+
+        Cannot be modified directly, but is updated when adding new variables.
+
+        Note that type of this object differs from `DataArray.dims`.
+        See `Dataset.sizes` and `DataArray.sizes` for consistently named
+        properties.
+        """
+        return Frozen(self._dims)
+
+    @property
+    def sizes(self) -> Mapping[Hashable, int]:
+        """Mapping from dimension names to lengths.
+
+        Cannot be modified directly, but is updated when adding new variables.
+
+        This is an alias for `Dataset.dims` provided for the benefit of
+        consistency with `DataArray.sizes`.
+
+        See Also
+        --------
+        DataArray.sizes
+        """
+        return self.dims
+
+    @property
+    def has_data(self):
+        return len(self._variables) > 0
+
+    def __contains__(self, key: object) -> bool:
+        """The 'in' operator will return true or false depending on whether
+        'key' is either an array stored in the datatree or a child node, or neither.
+        """
+        return key in self._variables or key in self.children
+
+    def __len__(self) -> int:
+        return len(self.data_vars)
+
+    def __bool__(self) -> bool:
+        return bool(self.data_vars)
+
+    def __iter__(self) -> Iterator[Hashable]:
+        return iter(self.data_vars)
+
+    @classmethod
+    def _construct_direct(
+        cls,
+        variables,
+        coord_names,
+        dims=None,
+        attrs=None,
+        indexes=None,
+        encoding=None,
+        close=None,
+    ):
+        """Shortcut around __init__ for internal use when we want to skip
+        costly validation
+        """
+        return NotImplementedError
+
+    def _replace(
+        self,
+        variables: Dict[Hashable, Variable] = None,
+        coord_names: Set[Hashable] = None,
+        dims: Dict[Any, int] = None,
+        attrs: Union[Dict[Hashable, Any], None, Default] = _default,
+        indexes: Union[Dict[Any, Index], None, Default] = _default,
+        encoding: Union[dict, None, Default] = _default,
+        inplace: bool = False,
+    ) -> "Dataset":
+        """Fastpath constructor for internal use.
+
+        Returns an object with optionally with replaced attributes.
+
+        Explicitly passed arguments are *not* copied when placed on the new
+        dataset. It is up to the caller to ensure that they have the right type
+        and are not used elsewhere.
+        """
+        _check_for_name_collisions(self.children, variables)
+
+        # TODO I don't really know the best way to do this without inheritance
+
+        ds = Dataset._replace(
+            self,
+            variables=variables,
+            coord_names=coord_names,
+            dims=dims,
+            attrs=attrs,
+            indexes=indexes,
+            encoding=encoding,
+            inplace=inplace,
+        )
+        return self.from_data(name=self.name, data=ds)
 
     def __str__(self):
         """A printable representation of the structure of this entire subtree."""
@@ -387,7 +549,7 @@ class DataTree(
             else:
                 # if nothing there then make new node based on type of object
                 if isinstance(value, (Dataset, DataArray, Variable)) or value is None:
-                    new_node = DataNode(name=last_tag, data=value)
+                    new_node = self.from_data(name=last_tag, data=value)
                     self.set_node(path=path_tags, node=new_node)
                 elif isinstance(value, TreeNode):
                     self.set_node(path=path, node=value)
@@ -602,6 +764,3 @@ class DataTree(
 
     def plot(self):
         raise NotImplementedError
-
-
-DataNode = DataTree._init_single_datatree_node
