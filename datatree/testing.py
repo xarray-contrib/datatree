@@ -1,6 +1,5 @@
 from xarray.testing import ensure_warnings
 
-
 from .datatree import DataTree
 from .formatting import diff_tree_repr
 
@@ -78,6 +77,6 @@ def assert_identical(a: DataTree, b: DataTree):
     __tracebackhide__ = True
     assert type(a) == type(b)
     if isinstance(a, DataTree):
-        assert a.identical(b), diff_tree_repr(a, b, "identical")
+        assert a.equals(b), diff_tree_repr(a, b, "identical")
     else:
         raise TypeError(f"{type(a)} not of type DataTree")

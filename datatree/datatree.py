@@ -409,7 +409,7 @@ class DataTree(
     def nbytes(self) -> int:
         return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
 
-    def isomorphic(self, other: DataTree) -> bool:
+    def isomorphic(self, other: DataTree, strict_names: bool = False) -> bool:
         """
         Two DataTrees are isomorphic if every node has the same number of children.
 
@@ -417,6 +417,7 @@ class DataTree(
         ----------
         other : xarray.DataTree
             The tree object to compare to.
+        strict_names : bool, default is False
 
         See Also
         --------
@@ -424,7 +425,7 @@ class DataTree(
         DataTree.identical
         """
         try:
-            _check_isomorphic(self, other, require_names_equal=False)
+            _check_isomorphic(self, other, require_names_equal=strict_names)
         except (TypeError, TreeIsomorphismError):
             return False
 
@@ -446,8 +447,6 @@ class DataTree(
         if not self.isomorphic(other):
             return False
 
-        # TODO this will raise on the first non-equal node - would it be better to print all differences?
-        # TODO this might fail for .ds=None
         return all(
             node.ds.equals(other_node.ds)
             for node, other_node in zip(self.subtree, other.subtree)
@@ -468,11 +467,9 @@ class DataTree(
         Dataset.identical
         DataTree.equals
         """
-        if not self.isomorphic(other):
+        if not self.isomorphic(other, strict_names=True):
             return False
 
-        # TODO this will raise on the first non-equal node - would it be better to print all differences?
-        # TODO this might fail for .ds=None
         return all(
             node.ds.identical(other_node.ds)
             for node, other_node in zip(self.subtree, other.subtree)
