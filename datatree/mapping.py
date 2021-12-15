@@ -41,7 +41,6 @@ def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
         location the other does not. Also optionally raised if their structure is isomorphic, but the names of any two
         respective nodes are not equal.
     """
-    # TODO turn this into a public function called assert_isomorphic
 
     if not isinstance(subtree_a, TreeNode):
         raise TypeError(

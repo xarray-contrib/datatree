@@ -8,7 +8,7 @@ from xarray import DataArray, Dataset, merge
 from xarray.core import dtypes, utils
 from xarray.core.variable import Variable
 
-from .mapping import map_over_subtree
+from .mapping import TreeIsomorphismError, _check_isomorphic, map_over_subtree
 from .ops import (
     DataTreeArithmeticMixin,
     MappedDatasetMethodsMixin,
@@ -404,6 +404,75 @@ class DataTree(
     @property
     def nbytes(self) -> int:
         return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
+
+    def isomorphic(self, other: DataTree) -> bool:
+        """
+        Two DataTrees are isomorphic if every node has the same number of children.
+
+        Parameters
+        ----------
+        other : xarray.DataTree
+            The tree object to compare to.
+
+        See Also
+        --------
+        DataTree.equals
+        DataTree.identical
+        """
+        try:
+            _check_isomorphic(self, other, require_names_equal=False)
+        except (TypeError, TreeIsomorphismError):
+            return False
+
+    def equals(self, other: DataTree) -> bool:
+        """
+        Two DataTrees are equal if they have isomorphic node structures, and
+        all stored Datasets are equal.
+
+        Parameters
+        ----------
+        other : xarray.DataTree
+            The tree object to compare to.
+
+        See Also
+        --------
+        Dataset.equals
+        DataTree.identical
+        """
+        if not self.isomorphic(other):
+            return False
+
+        # TODO this will raise on the first non-equal node - would it be better to print all differences?
+        # TODO this might fail for .ds=None
+        return all(
+            node.ds.equals(other_node.ds)
+            for node, other_node in zip(self.subtree, other.subtree)
+        )
+
+    def identical(self, other: DataTree) -> bool:
+        """
+        Like equals, but also checks all corresponding nodes have the same names, as well as
+        all dataset attributes and the attributes on all variables and coordinates.
+
+        Parameters
+        ----------
+        other : xarray.DataTree
+            The tree object to compare to.
+
+        See Also
+        --------
+        Dataset.identical
+        DataTree.equals
+        """
+        if not self.isomorphic(other):
+            return False
+
+        # TODO this will raise on the first non-equal node - would it be better to print all differences?
+        # TODO this might fail for .ds=None
+        return all(
+            node.ds.identical(other_node.ds)
+            for node, other_node in zip(self.subtree, other.subtree)
+        )
 
     def map_over_subtree(
         self,
