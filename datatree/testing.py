@@ -77,6 +77,6 @@ def assert_identical(a: DataTree, b: DataTree):
     __tracebackhide__ = True
     assert type(a) == type(b)
     if isinstance(a, DataTree):
-        assert a.equals(b), diff_tree_repr(a, b, "identical")
+        assert a.identical(b), diff_tree_repr(a, b, "identical")
     else:
         raise TypeError(f"{type(a)} not of type DataTree")
