@@ -8,7 +8,7 @@ from xarray import DataArray, Dataset, merge
 from xarray.core import dtypes, utils
 from xarray.core.variable import Variable
 
-from .mapping import TreeIsomorphismError, _check_isomorphic, map_over_subtree
+from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
 from .ops import (
     DataTreeArithmeticMixin,
     MappedDatasetMethodsMixin,
@@ -425,7 +425,7 @@ class DataTree(
         DataTree.identical
         """
         try:
-            _check_isomorphic(self, other, require_names_equal=strict_names)
+            check_isomorphic(self, other, require_names_equal=strict_names)
         except (TypeError, TreeIsomorphismError):
             return False
 

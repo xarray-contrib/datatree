@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 import functools
 from itertools import repeat
+from textwrap import dedent
+from typing import TYPE_CHECKING, Callable, Tuple
 
 from anytree.iterators import LevelOrderIter
 from xarray import DataArray, Dataset
 
 from .treenode import TreeNode
+
+if TYPE_CHECKING:
+    from .datatree import DataTree
 
 
 class TreeIsomorphismError(ValueError):
@@ -13,7 +20,7 @@ class TreeIsomorphismError(ValueError):
     pass
 
 
-def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
+def check_isomorphic(a: DataTree, b: DataTree, require_names_equal: bool = False):
     """
     Check that two trees have the same structure, raising an error if not.
 
@@ -26,8 +33,8 @@ def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
 
     Parameters
     ----------
-    subtree_a : DataTree
-    subtree_b : DataTree
+    a : DataTree
+    b : DataTree
     require_names_equal : Bool, optional
         Whether or not to also check that each node has the same name as its counterpart. Default is False.
 
@@ -41,38 +48,50 @@ def _check_isomorphic(subtree_a, subtree_b, require_names_equal=False):
         respective nodes are not equal.
     """
 
-    if not isinstance(subtree_a, TreeNode):
-        raise TypeError(
-            f"Argument `subtree_a` is not a tree, it is of type {type(subtree_a)}"
-        )
-    if not isinstance(subtree_b, TreeNode):
-        raise TypeError(
-            f"Argument `subtree_b` is not a tree, it is of type {type(subtree_b)}"
-        )
+    if not isinstance(a, TreeNode):
+        raise TypeError(f"Argument `subtree_a` is not a tree, it is of type {type(a)}")
+    if not isinstance(b, TreeNode):
+        raise TypeError(f"Argument `subtree_b` is not a tree, it is of type {type(b)}")
+
+    diff = diff_treestructure(a, b, require_names_equal=require_names_equal)
+
+    if diff:
+        raise TreeIsomorphismError("DataTree objects are not isomorphic:\n" + diff)
+
+
+def diff_treestructure(a: DataTree, b: DataTree, require_names_equal: bool) -> str:
+    """
+    Return a summary of why two trees are not isomorphic.
+    If they are isomorphic return an empty string.
+    """
 
     # Walking nodes in "level-order" fashion means walking down from the root breadth-first.
-    # Checking by walking in this way implicitly assumes that the tree is an ordered tree (which it is so long as
-    # children are stored in a tuple or list rather than in a set).
-    for node_a, node_b in zip(LevelOrderIter(subtree_a), LevelOrderIter(subtree_b)):
+    # Checking for isomorphism by walking in this way implicitly assumes that the tree is an ordered tree
+    # (which it is so long as children are stored in a tuple or list rather than in a set).
+    for node_a, node_b in zip(LevelOrderIter(a), LevelOrderIter(b)):
         path_a, path_b = node_a.pathstr, node_b.pathstr
 
         if require_names_equal:
             if node_a.name != node_b.name:
-                raise TreeIsomorphismError(
-                    f"Trees are not isomorphic because node '{path_a}' in the first tree has "
-                    f"name '{node_a.name}', whereas its counterpart node '{path_b}' in the "
-                    f"second tree has name '{node_b.name}'."
+                diff = dedent(
+                    f"""\
+                Node '{path_a}' in the left object has name '{node_a.name}'
+                Node '{path_b}' in the right object has name '{node_b.name}'"""
                 )
+                return diff
 
         if len(node_a.children) != len(node_b.children):
-            raise TreeIsomorphismError(
-                f"Trees are not isomorphic because node '{path_a}' in the first tree has "
-                f"{len(node_a.children)} children, whereas its counterpart node '{path_b}' in "
-                f"the second tree has {len(node_b.children)} children."
+            diff = dedent(
+                f"""\
+                Number of children on node '{path_a}' of the left object: {len(node_a.children)}
+                Number of children on node '{path_b}' of the right object: {len(node_b.children)}"""
             )
+            return diff
+
+    return ""
 
 
-def map_over_subtree(func):
+def map_over_subtree(func: Callable) -> DataTree | Tuple[DataTree, ...]:
     """
     Decorator which turns a function which acts on (and returns) Datasets into one which acts on and returns DataTrees.
 
@@ -137,7 +156,7 @@ def map_over_subtree(func):
 
         for other_tree in other_trees:
             # isomorphism is transitive so this is enough to guarantee all trees are mutually isomorphic
-            _check_isomorphic(first_tree, other_tree, require_names_equal=False)
+            check_isomorphic(first_tree, other_tree, require_names_equal=False)
 
         # Walk all trees simultaneously, applying func to all nodes that lie in same position in different trees
         # We don't know which arguments are DataTrees so we zip all arguments together as iterables

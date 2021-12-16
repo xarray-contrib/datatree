@@ -1,18 +1,6 @@
 from xarray.core.formatting import _compat_to_str, diff_dataset_repr
 
-from .mapping import TreeIsomorphismError, _check_isomorphic
-
-
-def diff_treestructure_summary(a, b, compat):
-    try:
-        _check_isomorphic(
-            a, b, require_names_equal=True if compat == "identical" else False
-        )
-    except (TreeIsomorphismError, TypeError) as err:
-        diff = str(err)
-        return diff
-    else:
-        return ""
+from .mapping import diff_treestructure
 
 
 def diff_nodewise_summary(a, b, compat):
@@ -40,9 +28,12 @@ def diff_tree_repr(a, b, compat):
 
     # TODO check root parents?
 
-    treestructure_diff = diff_treestructure_summary(a, b, compat)
+    treestructure_diff = diff_treestructure(
+        a, b, True if compat == "identical" else False
+    )
 
     # If the trees structures are different there is no point comparing each node
+    # TODO we could show any differences in nodes up to the first place that structure differs?
     if treestructure_diff or compat == "isomorphic":
         summary.append(treestructure_diff)
     else:
