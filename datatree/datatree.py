@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Union
+from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Tuple, Union
 
 import anytree
 from xarray import DataArray, Dataset, merge
@@ -409,15 +409,30 @@ class DataTree(
     def nbytes(self) -> int:
         return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
 
-    def isomorphic(self, other: DataTree, strict_names: bool = False) -> bool:
+    def isomorphic(
+        self,
+        other: DataTree,
+        from_root=False,
+        strict_names=False,
+    ) -> bool:
         """
-        Two DataTrees are isomorphic if every node has the same number of children.
+        Two DataTrees are considered isomorphic if every node has the same number of children.
+
+        Nothing about the data in each node is checked.
+
+        Isomorphism is a necessary condition for two trees to be used in a nodewise binary operation,
+        such as tree1 + tree2.
+
+        By default this method does not check any part of the tree above the given node.
+        Therefore this method can be used as default to check that two subtrees are isomorphic.
 
         Parameters
         ----------
-        other : xarray.DataTree
+        other : DataTree
             The tree object to compare to.
-        strict_names : bool, default is False
+        from_root : bool, optional, default is False
+            Whether or not to first traverse to the root of the trees before checking for isomorphism.
+            If a & b have no parents then this has no effect.
 
         See Also
         --------
@@ -425,26 +440,37 @@ class DataTree(
         DataTree.identical
         """
         try:
-            check_isomorphic(self, other, require_names_equal=strict_names)
+            check_isomorphic(
+                self,
+                other,
+                require_names_equal=strict_names,
+                check_from_root=from_root,
+            )
         except (TypeError, TreeIsomorphismError):
             return False
 
-    def equals(self, other: DataTree) -> bool:
+    def equals(self, other: DataTree, from_root=True) -> bool:
         """
-        Two DataTrees are equal if they have isomorphic node structures, and
-        all stored Datasets are equal.
+        Two DataTrees are equal if they have isomorphic node structures, with matching node names,
+        and if they have matching variables and coordinates, all of which are equal.
+
+        By default this method will check the whole tree above the given node.
 
         Parameters
         ----------
-        other : xarray.DataTree
+        other : DataTree
             The tree object to compare to.
+        from_root : bool, optional, default is True
+            Whether or not to first traverse to the root of the trees before checking.
+            If a & b have no parents then this has no effect.
 
         See Also
         --------
         Dataset.equals
+        DataTree.isomorphic
         DataTree.identical
         """
-        if not self.isomorphic(other):
+        if not self.isomorphic(other, from_root=from_root, strict_names=True):
             return False
 
         return all(
@@ -452,22 +478,28 @@ class DataTree(
             for node, other_node in zip(self.subtree, other.subtree)
         )
 
-    def identical(self, other: DataTree) -> bool:
+    def identical(self, other: DataTree, from_root=True) -> bool:
         """
-        Like equals, but also checks all corresponding nodes have the same names, as well as
-        all dataset attributes and the attributes on all variables and coordinates.
+        Like equals, but will also check all dataset attributes and the attributes on
+        all variables and coordinates.
+
+        By default this method will check the whole tree above the given node.
 
         Parameters
         ----------
-        other : xarray.DataTree
+        other : DataTree
             The tree object to compare to.
+        from_root : bool, optional, default is True
+            Whether or not to first traverse to the root of the trees before checking.
+            If a & b have no parents then this has no effect.
 
         See Also
         --------
         Dataset.identical
+        DataTree.isomorphic
         DataTree.equals
         """
-        if not self.isomorphic(other, strict_names=True):
+        if not self.isomorphic(other, from_root=from_root, strict_names=True):
             return False
 
         return all(
@@ -480,7 +512,7 @@ class DataTree(
         func: Callable,
         *args: Iterable[Any],
         **kwargs: Any,
-    ) -> DataTree:
+    ) -> DataTree | Tuple[DataTree]:
         """
         Apply a function to every dataset in this subtree, returning a new tree which stores the results.
 
@@ -503,8 +535,8 @@ class DataTree(
 
         Returns
         -------
-        subtree : DataTree
-            Subtree containing results from applying ``func`` to the dataset at each node.
+        subtrees : DataTree, Tuple of DataTrees
+            One or more subtrees containing results from applying ``func`` to the data at each node.
         """
         # TODO this signature means that func has no way to know which node it is being called upon - change?
 

@@ -79,6 +79,13 @@ class TestCheckTreesIsomorphic:
         with pytest.raises(TreeIsomorphismError, match="root/set1/set2"):
             check_isomorphic(dt1, dt2)
 
+    def test_checking_from_root(self):
+        dt1 = create_test_datatree()
+        dt2 = create_test_datatree()
+        dt1.parent = DataTree(name="real_root")
+        with pytest.raises(TreeIsomorphismError):
+            check_isomorphic(dt1, dt2, check_from_root=True)
+
 
 class TestMapOverSubTree:
     def test_no_trees_passed(self):
