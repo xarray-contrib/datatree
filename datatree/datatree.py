@@ -577,7 +577,9 @@ class DataTree(
             **kwargs,
         )
 
-    def to_zarr(self, store, mode: str = "w", encoding=None, **kwargs):
+    def to_zarr(
+        self, store, mode: str = "w", encoding=None, consolidated: bool = True, **kwargs
+    ):
         """
         Write datatree contents to a Zarr store.
 
@@ -595,6 +597,9 @@ class DataTree(
             variable specific encodings as values, e.g.,
             ``{"root/set1": {"my_variable": {"dtype": "int16", "scale_factor": 0.1}, ...}, ...}``.
             See ``xarray.Dataset.to_zarr`` for available options.
+        consolidated : bool
+            If True, apply zarr's `consolidate_metadata` function to the store
+            after writing metadata for all groups.
         kwargs :
             Additional keyword arguments to be passed to ``xarray.Dataset.to_zarr``
         """
@@ -605,6 +610,7 @@ class DataTree(
             store,
             mode=mode,
             encoding=encoding,
+            consolidated=consolidated,
             **kwargs,
         )
 
