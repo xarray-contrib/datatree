@@ -1,6 +1,5 @@
 import numpy as np
 import xarray as xr
-import xarray.testing as xrt
 
 from datatree import DataTree
 from datatree.testing import assert_equal
@@ -10,7 +9,7 @@ from .test_datatree import create_test_datatree
 
 class TestDSMethodInheritance:
     def test_dataset_method(self):
-        ds = xr.Dataset({"a": ('x', [1, 2, 3])})
+        ds = xr.Dataset({"a": ("x", [1, 2, 3])})
         dt = DataTree("root", data=ds)
         DataTree("results", parent=dt, data=ds)
 
@@ -21,7 +20,7 @@ class TestDSMethodInheritance:
         assert_equal(result, expected)
 
     def test_reduce_method(self):
-        ds = xr.Dataset({"a": ('x', [False, True, False])})
+        ds = xr.Dataset({"a": ("x", [False, True, False])})
         dt = DataTree("root", data=ds)
         DataTree("results", parent=dt, data=ds)
 
@@ -32,7 +31,7 @@ class TestDSMethodInheritance:
         assert_equal(result, expected)
 
     def test_nan_reduce_method(self):
-        ds = xr.Dataset({"a": ('x', [1, 2, 3])})
+        ds = xr.Dataset({"a": ("x", [1, 2, 3])})
         dt = DataTree("root", data=ds)
         DataTree("results", parent=dt, data=ds)
 
@@ -43,7 +42,7 @@ class TestDSMethodInheritance:
         assert_equal(result, expected)
 
     def test_cum_method(self):
-        ds = xr.Dataset({"a": ('x', [1, 2, 3])})
+        ds = xr.Dataset({"a": ("x", [1, 2, 3])})
         dt = DataTree("root", data=ds)
         DataTree("results", parent=dt, data=ds)
 
