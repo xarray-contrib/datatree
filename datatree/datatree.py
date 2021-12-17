@@ -446,6 +446,7 @@ class DataTree(
                 require_names_equal=strict_names,
                 check_from_root=from_root,
             )
+            return True
         except (TypeError, TreeIsomorphismError):
             return False
 
@@ -474,8 +475,10 @@ class DataTree(
             return False
 
         return all(
-            node.ds.equals(other_node.ds)
-            for node, other_node in zip(self.subtree, other.subtree)
+            [
+                node.ds.equals(other_node.ds)
+                for node, other_node in zip(self.subtree, other.subtree)
+            ]
         )
 
     def identical(self, other: DataTree, from_root=True) -> bool:
