@@ -262,9 +262,7 @@ class TestMapOverSubTree:
 
         expected = create_test_datatree(modify=lambda ds: 10.0 * ds)["set1"]
         result_tree = times_ten(subtree)
-        print(result_tree)
-        print(expected)
-        assert_equal(result_tree, expected)
+        assert_equal(result_tree, expected, from_root=False)
 
 
 @pytest.mark.xfail
