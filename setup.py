@@ -27,6 +27,7 @@ setup(
         "License :: OSI Approved :: Apache License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     packages=find_packages(exclude=["docs", "tests", "tests.*", "docs.*"]),
     install_requires=install_requires,
