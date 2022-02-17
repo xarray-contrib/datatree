@@ -5,7 +5,7 @@ from itertools import repeat
 from textwrap import dedent
 from typing import TYPE_CHECKING, Callable, Tuple
 
-from anytree.iterators import LevelOrderIter
+from anytree.iterators import LevelOrderIter  # type: ignore
 from xarray import DataArray, Dataset
 
 from .treenode import TreeNode

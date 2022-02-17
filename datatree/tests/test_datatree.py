@@ -1,7 +1,7 @@
 import pytest
 import xarray as xr
 import xarray.testing as xrt
-from anytree.resolver import ChildResolverError
+from anytree.resolver import ChildResolverError  # type: ignore
 
 from datatree import DataTree
 from datatree.io import open_datatree

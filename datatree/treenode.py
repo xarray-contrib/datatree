@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Hashable, Iterable, Sequence, Tuple, Union
 
-import anytree
+import anytree  # type: ignore
 
 PathType = Union[Hashable, Sequence[Hashable]]
 

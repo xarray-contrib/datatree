@@ -3,7 +3,7 @@ from __future__ import annotations
 import textwrap
 from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Tuple, Union
 
-import anytree
+import anytree  # type: ignore
 from xarray import DataArray, Dataset, merge
 from xarray.core import dtypes, utils
 from xarray.core.variable import Variable

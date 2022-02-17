@@ -1,6 +1,6 @@
 import pytest
-from anytree.node.exceptions import TreeError
-from anytree.resolver import ChildResolverError
+from anytree.node.exceptions import TreeError  # type: ignore
+from anytree.resolver import ChildResolverError  # type: ignore
 
 from datatree.treenode import TreeNode
 
