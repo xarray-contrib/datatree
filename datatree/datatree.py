@@ -1,149 +1,37 @@
 from __future__ import annotations
 
 import textwrap
-from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Union
+from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Tuple, Union
 
 import anytree
 from xarray import DataArray, Dataset, merge
 from xarray.core import dtypes, utils
 from xarray.core.variable import Variable
 
-from .mapping import map_over_subtree
+from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
 from .ops import (
     DataTreeArithmeticMixin,
     MappedDatasetMethodsMixin,
     MappedDataWithCoords,
 )
-from .treenode import PathType, TreeNode, _init_single_treenode
+from .treenode import PathType, TreeNode
 
-"""
-DEVELOPERS' NOTE
-----------------
-The idea of this module is to create a `DataTree` class which inherits the tree structure from TreeNode, and also copies
-the entire API of `xarray.Dataset`, but with certain methods decorated to instead map the dataset function over every
-node in the tree. As this API is copied without directly subclassing `xarray.Dataset` we instead create various Mixin
-classes (in ops.py) which each define part of `xarray.Dataset`'s extensive API.
+# """
+# DEVELOPERS' NOTE
+# ----------------
+# The idea of this module is to create a `DataTree` class which inherits the tree structure from TreeNode, and also copies
+# the entire API of `xarray.Dataset`, but with certain methods decorated to instead map the dataset function over every
+# node in the tree. As this API is copied without directly subclassing `xarray.Dataset` we instead create various Mixin
+# classes (in ops.py) which each define part of `xarray.Dataset`'s extensive API.
 
-Some of these methods must be wrapped to map over all nodes in the subtree. Others are fine to inherit unaltered
-(normally because they (a) only call dataset properties and (b) don't return a dataset that should be nested into a new
-tree) and some will get overridden by the class definition of DataTree.
-"""
-
-
-class DatasetPropertiesMixin:
-    """Expose properties of wrapped Dataset"""
-
-    # TODO a neater way of setting all of these?
-    # We wouldn't need this at all if we inherited directly from Dataset...
-
-    # TODO we could also just not define these at all, and require users to call e.g. dt.ds.dims ...
-
-    @property
-    def dims(self):
-        if self.has_data:
-            return self.ds.dims
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def variables(self):
-        if self.has_data:
-            return self.ds.variables
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def encoding(self):
-        if self.has_data:
-            return self.ds.encoding
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def sizes(self):
-        if self.has_data:
-            return self.ds.sizes
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def attrs(self):
-        if self.has_data:
-            return self.ds.attrs
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def nbytes(self) -> int:
-        return sum(node.ds.nbytes for node in self.subtree)
-
-    @property
-    def indexes(self):
-        if self.has_data:
-            return self.ds.indexes
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def xindexes(self):
-        if self.has_data:
-            return self.ds.xindexes
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def coords(self):
-        if self.has_data:
-            return self.ds.coords
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def data_vars(self):
-        if self.has_data:
-            return self.ds.data_vars
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    # TODO should this instead somehow give info about the chunking of every node?
-    @property
-    def chunks(self):
-        if self.has_data:
-            return self.ds.chunks
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def real(self):
-        if self.has_data:
-            return self.ds.real
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    @property
-    def imag(self):
-        if self.has_data:
-            return self.ds.imag
-        else:
-            raise AttributeError("property is not defined for a node with no data")
-
-    # TODO .loc, __contains__, __iter__, __array__, '__len__',
-
-    dims.__doc__ = Dataset.dims.__doc__
-    variables.__doc__ = Dataset.variables.__doc__
-    encoding.__doc__ = Dataset.encoding.__doc__
-    sizes.__doc__ = Dataset.sizes.__doc__
-    attrs.__doc__ = Dataset.attrs.__doc__
-    indexes.__doc__ = Dataset.indexes.__doc__
-    xindexes.__doc__ = Dataset.xindexes.__doc__
-    coords.__doc__ = Dataset.coords.__doc__
-    data_vars.__doc__ = Dataset.data_vars.__doc__
-    chunks.__doc__ = Dataset.chunks.__doc__
+# Some of these methods must be wrapped to map over all nodes in the subtree. Others are fine to inherit unaltered
+# (normally because they (a) only call dataset properties and (b) don't return a dataset that should be nested into a new
+# tree) and some will get overridden by the class definition of DataTree.
+# """
 
 
 class DataTree(
     TreeNode,
-    DatasetPropertiesMixin,
     MappedDatasetMethodsMixin,
     MappedDataWithCoords,
     DataTreeArithmeticMixin,
@@ -151,29 +39,10 @@ class DataTree(
     """
     A tree-like hierarchical collection of xarray objects.
 
-    Attempts to present the API of xarray.Dataset, but methods are wrapped to also update all the tree's child nodes.
-
-    Parameters
-    ----------
-    data_objects : dict-like, optional
-        A mapping from path names to xarray.Dataset, xarray.DataArray, or xtree.DataTree objects.
-
-        Path names can be given as unix-like paths, or as tuples of strings (where each string
-        is known as a single "tag"). If path names containing more than one tag are given, new
-        tree nodes will be constructed as necessary.
-
-        To assign data to the root node of the tree {name} as the path.
-    name : Hashable, optional
-        Name for the root node of the tree. Default is "root"
-
-    See also
-    --------
-    DataNode : Shortcut to create a DataTree with only a single node.
+    Attempts to present an API like that of xarray.Dataset, but methods are wrapped to also update all the tree's child nodes.
     """
 
     # TODO should this instead be a subclass of Dataset?
-
-    # TODO Add attrs dict
 
     # TODO attribute-like access for both vars and child nodes (by inheriting from xarray.core.common.AttrsAccessMixin?)
 
@@ -185,70 +54,17 @@ class DataTree(
 
     # TODO do we need a watch out for if methods intended only for root nodes are called on non-root nodes?
 
-    # TODO add any other properties (maybe dask ones?)
-
     # TODO currently allows self.ds = None, should we instead always store at least an empty Dataset?
 
     # TODO dataset methods which should not or cannot act over the whole tree, such as .to_array
 
     # TODO del and delitem methods
 
+    # TODO .loc, __contains__, __iter__, __array__, __len__
+
     def __init__(
         self,
-        data_objects: Dict[PathType, Union[Dataset, DataArray, None]] = None,
         name: Hashable = "root",
-    ):
-        # First create the root node
-        super().__init__(name=name, parent=None, children=None)
-        if data_objects:
-            root_data = data_objects.pop(name, None)
-        else:
-            root_data = None
-        self.ds = root_data
-
-        if data_objects:
-            # Populate tree with children determined from data_objects mapping
-            for path, data in data_objects.items():
-                # Determine name of new node
-                path = self._tuple_or_path_to_path(path)
-                if self.separator in path:
-                    node_path, node_name = path.rsplit(self.separator, maxsplit=1)
-                else:
-                    node_path, node_name = "/", path
-
-                relative_path = node_path.replace(self.name, "")
-
-                # Create and set new node
-                new_node = DataNode(name=node_name, data=data)
-                self.set_node(
-                    relative_path,
-                    new_node,
-                    allow_overwrite=False,
-                    new_nodes_along_path=True,
-                )
-
-    @property
-    def ds(self) -> Dataset:
-        return self._ds
-
-    @ds.setter
-    def ds(self, data: Union[Dataset, DataArray] = None):
-        if not isinstance(data, (Dataset, DataArray)) and data is not None:
-            raise TypeError(
-                f"{type(data)} object is not an xarray Dataset, DataArray, or None"
-            )
-        if isinstance(data, DataArray):
-            data = data.to_dataset()
-        self._ds = data
-
-    @property
-    def has_data(self):
-        return self.ds is not None
-
-    @classmethod
-    def _init_single_datatree_node(
-        cls,
-        name: Hashable,
         data: Union[Dataset, DataArray] = None,
         parent: TreeNode = None,
         children: List[TreeNode] = None,
@@ -271,13 +87,122 @@ class DataTree(
         Returns
         -------
         node :  DataTree
+
+        See Also
+        --------
+        DataTree.from_dict
         """
 
-        # This approach was inspired by xarray.Dataset._construct_direct()
-        obj = object.__new__(cls)
-        obj = _init_single_treenode(obj, name=name, parent=parent, children=children)
-        obj.ds = data
+        super().__init__(name, parent=parent, children=children)
+        self.ds = data
+
+    @property
+    def ds(self) -> Dataset:
+        return self._ds
+
+    @ds.setter
+    def ds(self, data: Union[Dataset, DataArray] = None):
+        if not isinstance(data, (Dataset, DataArray)) and data is not None:
+            raise TypeError(
+                f"{type(data)} object is not an xarray Dataset, DataArray, or None"
+            )
+
+        if isinstance(data, DataArray):
+            data = data.to_dataset()
+        elif data is None:
+            data = Dataset()
+
+        for var in list(data.variables):
+            if var in list(c.name for c in self.children):
+                raise KeyError(
+                    f"Cannot add variable named {var}: node already has a child named {var}"
+                )
+
+        self._ds = data
+
+    @property
+    def has_data(self) -> bool:
+        return len(self.ds.variables) > 0
+
+    @classmethod
+    def from_dict(
+        cls,
+        data_objects: Dict[PathType, Union[Dataset, DataArray, None]] = None,
+        name: Hashable = "root",
+    ):
+        """
+        Create a datatree from a dictionary of data objects, labelled by paths into the tree.
+
+        Parameters
+        ----------
+        data_objects : dict-like, optional
+            A mapping from path names to xarray.Dataset, xarray.DataArray, or DataTree objects.
+
+            Path names can be given as unix-like paths, or as tuples of strings (where each string
+            is known as a single "tag"). If path names containing more than one tag are given, new
+            tree nodes will be constructed as necessary.
+
+            To assign data to the root node of the tree use {name} as the path.
+        name : Hashable, optional
+            Name for the root node of the tree. Default is "root"
+
+        Returns
+        -------
+        DataTree
+        """
+
+        # First create the root node
+        if data_objects:
+            root_data = data_objects.pop(name, None)
+        else:
+            root_data = None
+        obj = cls(name=name, data=root_data, parent=None, children=None)
+
+        if data_objects:
+            # Populate tree with children determined from data_objects mapping
+            for path, data in data_objects.items():
+                # Determine name of new node
+                path = obj._tuple_or_path_to_path(path)
+                if obj.separator in path:
+                    node_path, node_name = path.rsplit(obj.separator, maxsplit=1)
+                else:
+                    node_path, node_name = "/", path
+
+                relative_path = node_path.replace(obj.name, "")
+
+                # Create and set new node
+                new_node = cls(name=node_name, data=data)
+                obj.set_node(
+                    relative_path,
+                    new_node,
+                    allow_overwrite=False,
+                    new_nodes_along_path=True,
+                )
         return obj
+
+    def _pre_attach(self, parent: TreeNode) -> None:
+        """
+        Method which superclass calls before setting parent, here used to prevent having two
+        children with duplicate names (or a data variable with the same name as a child).
+        """
+        super()._pre_attach(parent)
+        if parent.has_data and self.name in list(parent.ds.variables):
+            raise KeyError(
+                f"parent {parent.name} already contains a data variable named {self.name}"
+            )
+
+    def add_child(self, child: TreeNode) -> None:
+        """
+        Add a single child node below this node, without replacement.
+
+        Will raise a KeyError if either a child or data variable already exists with this name.
+        """
+        if child.name in list(c.name for c in self.children):
+            raise KeyError(f"Node already has a child named {child.name}")
+        elif self.has_data and child.name in list(self.ds.variables):
+            raise KeyError(f"Node already contains a data variable named {child.name}")
+        else:
+            child.parent = self
 
     def __str__(self):
         """A printable representation of the structure of this entire subtree."""
@@ -298,11 +223,17 @@ class DataTree(
                     else:
                         lines.append(f"{fill}{line}")
 
+        # Tack on info about whether or not root node has a parent at the start
+        first_line = lines[0]
+        parent = f'"{self.parent.name}"' if self.parent is not None else "None"
+        first_line_with_parent = first_line[:-1] + f", parent={parent})"
+        lines[0] = first_line_with_parent
+
         return "\n".join(lines)
 
     def _single_node_repr(self):
         """Information about this node, not including its relationships to other nodes."""
-        node_info = f"DataNode('{self.name}')"
+        node_info = f"DataTree('{self.name}')"
 
         if self.has_data:
             ds_info = "\n" + repr(self.ds)
@@ -314,7 +245,7 @@ class DataTree(
         """Information about this node, including its relationships to other nodes."""
         # TODO redo this to look like the Dataset repr, but just with child and parent info
         parent = self.parent.name if self.parent is not None else "None"
-        node_str = f"DataNode(name='{self.name}', parent='{parent}', children={[c.name for c in self.children]},"
+        node_str = f"DataTree(name='{self.name}', parent='{parent}', children={[c.name for c in self.children]},"
 
         if self.has_data:
             ds_repr_lines = self.ds.__repr__().splitlines()
@@ -470,7 +401,7 @@ class DataTree(
             else:
                 # if nothing there then make new node based on type of object
                 if isinstance(value, (Dataset, DataArray, Variable)) or value is None:
-                    new_node = DataNode(name=last_tag, data=value)
+                    new_node = DataTree(name=last_tag, data=value)
                     self.set_node(path=path_tags, node=new_node)
                 elif isinstance(value, TreeNode):
                     self.set_node(path=path, node=value)
@@ -480,12 +411,119 @@ class DataTree(
                         f"not {type(value)}"
                     )
 
+    @property
+    def nbytes(self) -> int:
+        return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
+
+    def isomorphic(
+        self,
+        other: DataTree,
+        from_root=False,
+        strict_names=False,
+    ) -> bool:
+        """
+        Two DataTrees are considered isomorphic if every node has the same number of children.
+
+        Nothing about the data in each node is checked.
+
+        Isomorphism is a necessary condition for two trees to be used in a nodewise binary operation,
+        such as tree1 + tree2.
+
+        By default this method does not check any part of the tree above the given node.
+        Therefore this method can be used as default to check that two subtrees are isomorphic.
+
+        Parameters
+        ----------
+        other : DataTree
+            The tree object to compare to.
+        from_root : bool, optional, default is False
+            Whether or not to first traverse to the root of the trees before checking for isomorphism.
+            If a & b have no parents then this has no effect.
+        strict_names : bool, optional, default is False
+            Whether or not to also check that each node has the same name as its counterpart.
+
+        See Also
+        --------
+        DataTree.equals
+        DataTree.identical
+        """
+        try:
+            check_isomorphic(
+                self,
+                other,
+                require_names_equal=strict_names,
+                check_from_root=from_root,
+            )
+            return True
+        except (TypeError, TreeIsomorphismError):
+            return False
+
+    def equals(self, other: DataTree, from_root=True) -> bool:
+        """
+        Two DataTrees are equal if they have isomorphic node structures, with matching node names,
+        and if they have matching variables and coordinates, all of which are equal.
+
+        By default this method will check the whole tree above the given node.
+
+        Parameters
+        ----------
+        other : DataTree
+            The tree object to compare to.
+        from_root : bool, optional, default is True
+            Whether or not to first traverse to the root of the trees before checking.
+            If a & b have no parents then this has no effect.
+
+        See Also
+        --------
+        Dataset.equals
+        DataTree.isomorphic
+        DataTree.identical
+        """
+        if not self.isomorphic(other, from_root=from_root, strict_names=True):
+            return False
+
+        return all(
+            [
+                node.ds.equals(other_node.ds)
+                for node, other_node in zip(self.subtree, other.subtree)
+            ]
+        )
+
+    def identical(self, other: DataTree, from_root=True) -> bool:
+        """
+        Like equals, but will also check all dataset attributes and the attributes on
+        all variables and coordinates.
+
+        By default this method will check the whole tree above the given node.
+
+        Parameters
+        ----------
+        other : DataTree
+            The tree object to compare to.
+        from_root : bool, optional, default is True
+            Whether or not to first traverse to the root of the trees before checking.
+            If a & b have no parents then this has no effect.
+
+        See Also
+        --------
+        Dataset.identical
+        DataTree.isomorphic
+        DataTree.equals
+        """
+        if not self.isomorphic(other, from_root=from_root, strict_names=True):
+            return False
+
+        return all(
+            node.ds.identical(other_node.ds)
+            for node, other_node in zip(self.subtree, other.subtree)
+        )
+
     def map_over_subtree(
         self,
         func: Callable,
         *args: Iterable[Any],
         **kwargs: Any,
-    ) -> DataTree:
+    ) -> DataTree | Tuple[DataTree]:
         """
         Apply a function to every dataset in this subtree, returning a new tree which stores the results.
 
@@ -508,8 +546,8 @@ class DataTree(
 
         Returns
         -------
-        subtree : DataTree
-            Subtree containing results from applying ``func`` to the dataset at each node.
+        subtrees : DataTree, Tuple of DataTrees
+            One or more subtrees containing results from applying ``func`` to the data at each node.
         """
         # TODO this signature means that func has no way to know which node it is being called upon - change?
 
@@ -546,7 +584,7 @@ class DataTree(
     def render(self):
         """Print tree structure, including any data stored at each node."""
         for pre, fill, node in anytree.RenderTree(self):
-            print(f"{pre}DataNode('{self.name}')")
+            print(f"{pre}DataTree('{self.name}')")
             for ds_line in repr(node.ds)[1:]:
                 print(f"{fill}{ds_line}")
 
@@ -615,8 +653,8 @@ class DataTree(
         """
         Write datatree contents to a netCDF file.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         filepath : str or Path
             Path to which to save this datatree.
         mode : {"w", "a"}, default: "w"
@@ -648,12 +686,14 @@ class DataTree(
             **kwargs,
         )
 
-    def to_zarr(self, store, mode: str = "w", encoding=None, **kwargs):
+    def to_zarr(
+        self, store, mode: str = "w", encoding=None, consolidated: bool = True, **kwargs
+    ):
         """
         Write datatree contents to a Zarr store.
 
         Parameters
-        ---------
+        ----------
         store : MutableMapping, str or Path, optional
             Store or path to directory in file system
         mode : {{"w", "w-", "a", "r+", None}, default: "w"
@@ -666,6 +706,9 @@ class DataTree(
             variable specific encodings as values, e.g.,
             ``{"root/set1": {"my_variable": {"dtype": "int16", "scale_factor": 0.1}, ...}, ...}``.
             See ``xarray.Dataset.to_zarr`` for available options.
+        consolidated : bool
+            If True, apply zarr's `consolidate_metadata` function to the store
+            after writing metadata for all groups.
         kwargs :
             Additional keyword arguments to be passed to ``xarray.Dataset.to_zarr``
         """
@@ -676,11 +719,9 @@ class DataTree(
             store,
             mode=mode,
             encoding=encoding,
+            consolidated=consolidated,
             **kwargs,
         )
 
     def plot(self):
         raise NotImplementedError
-
-
-DataNode = DataTree._init_single_datatree_node

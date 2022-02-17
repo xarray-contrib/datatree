@@ -2,10 +2,11 @@ import pytest
 import xarray as xr
 
 from datatree.datatree import DataTree
-from datatree.mapping import TreeIsomorphismError, _check_isomorphic, map_over_subtree
+from datatree.mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
+from datatree.testing import assert_equal
 from datatree.treenode import TreeNode
 
-from .test_datatree import assert_tree_equal, create_test_datatree
+from .test_datatree import create_test_datatree
 
 empty = xr.Dataset()
 
@@ -13,81 +14,78 @@ empty = xr.Dataset()
 class TestCheckTreesIsomorphic:
     def test_not_a_tree(self):
         with pytest.raises(TypeError, match="not a tree"):
-            _check_isomorphic("s", 1)
+            check_isomorphic("s", 1)
 
     def test_different_widths(self):
-        dt1 = DataTree(data_objects={"a": empty})
-        dt2 = DataTree(data_objects={"a": empty, "b": empty})
+        dt1 = DataTree.from_dict(data_objects={"a": empty})
+        dt2 = DataTree.from_dict(data_objects={"b": empty, "c": empty})
         expected_err_str = (
-            "'root' in the first tree has 1 children, whereas its counterpart node 'root' in the "
-            "second tree has 2 children"
+            "Number of children on node 'root' of the left object: 1\n"
+            "Number of children on node 'root' of the right object: 2"
         )
         with pytest.raises(TreeIsomorphismError, match=expected_err_str):
-            _check_isomorphic(dt1, dt2)
+            check_isomorphic(dt1, dt2)
 
     def test_different_heights(self):
-        dt1 = DataTree(data_objects={"a": empty})
-        dt2 = DataTree(data_objects={"a": empty, "a/b": empty})
+        dt1 = DataTree.from_dict(data_objects={"a": empty})
+        dt2 = DataTree.from_dict(data_objects={"b": empty, "b/c": empty})
         expected_err_str = (
-            "'root/a' in the first tree has 0 children, whereas its counterpart node 'root/a' in the "
-            "second tree has 1 children"
+            "Number of children on node 'root/a' of the left object: 0\n"
+            "Number of children on node 'root/b' of the right object: 1"
         )
         with pytest.raises(TreeIsomorphismError, match=expected_err_str):
-            _check_isomorphic(dt1, dt2)
-
-    def test_only_one_has_data(self):
-        dt1 = DataTree(data_objects={"a": xr.Dataset({"a": 0})})
-        dt2 = DataTree(data_objects={"a": None})
-        expected_err_str = (
-            "'root/a' in the first tree has data, whereas its counterpart node 'root/a' in the "
-            "second tree has no data"
-        )
-        with pytest.raises(TreeIsomorphismError, match=expected_err_str):
-            _check_isomorphic(dt1, dt2)
+            check_isomorphic(dt1, dt2)
 
     def test_names_different(self):
-        dt1 = DataTree(data_objects={"a": xr.Dataset()})
-        dt2 = DataTree(data_objects={"b": empty})
+        dt1 = DataTree.from_dict(data_objects={"a": xr.Dataset()})
+        dt2 = DataTree.from_dict(data_objects={"b": empty})
         expected_err_str = (
-            "'root/a' in the first tree has name 'a', whereas its counterpart node 'root/b' in the "
-            "second tree has name 'b'"
+            "Node 'root/a' in the left object has name 'a'\n"
+            "Node 'root/b' in the right object has name 'b'"
         )
         with pytest.raises(TreeIsomorphismError, match=expected_err_str):
-            _check_isomorphic(dt1, dt2, require_names_equal=True)
+            check_isomorphic(dt1, dt2, require_names_equal=True)
 
     def test_isomorphic_names_equal(self):
-        dt1 = DataTree(
+        dt1 = DataTree.from_dict(
             data_objects={"a": empty, "b": empty, "b/c": empty, "b/d": empty}
         )
-        dt2 = DataTree(
+        dt2 = DataTree.from_dict(
             data_objects={"a": empty, "b": empty, "b/c": empty, "b/d": empty}
         )
-        _check_isomorphic(dt1, dt2, require_names_equal=True)
+        check_isomorphic(dt1, dt2, require_names_equal=True)
 
     def test_isomorphic_ordering(self):
-        dt1 = DataTree(
+        dt1 = DataTree.from_dict(
             data_objects={"a": empty, "b": empty, "b/d": empty, "b/c": empty}
         )
-        dt2 = DataTree(
+        dt2 = DataTree.from_dict(
             data_objects={"a": empty, "b": empty, "b/c": empty, "b/d": empty}
         )
-        _check_isomorphic(dt1, dt2, require_names_equal=False)
+        check_isomorphic(dt1, dt2, require_names_equal=False)
 
     def test_isomorphic_names_not_equal(self):
-        dt1 = DataTree(
+        dt1 = DataTree.from_dict(
             data_objects={"a": empty, "b": empty, "b/c": empty, "b/d": empty}
         )
-        dt2 = DataTree(
+        dt2 = DataTree.from_dict(
             data_objects={"A": empty, "B": empty, "B/C": empty, "B/D": empty}
         )
-        _check_isomorphic(dt1, dt2)
+        check_isomorphic(dt1, dt2)
 
     def test_not_isomorphic_complex_tree(self):
         dt1 = create_test_datatree()
         dt2 = create_test_datatree()
         dt2.set_node("set1/set2", TreeNode("set3"))
         with pytest.raises(TreeIsomorphismError, match="root/set1/set2"):
-            _check_isomorphic(dt1, dt2)
+            check_isomorphic(dt1, dt2)
+
+    def test_checking_from_root(self):
+        dt1 = create_test_datatree()
+        dt2 = create_test_datatree()
+        dt1.parent = DataTree(name="real_root")
+        with pytest.raises(TreeIsomorphismError):
+            check_isomorphic(dt1, dt2, check_from_root=True)
 
 
 class TestMapOverSubTree:
@@ -131,7 +129,7 @@ class TestMapOverSubTree:
 
         expected = create_test_datatree(modify=lambda ds: 10.0 * ds)
         result_tree = times_ten(dt)
-        assert_tree_equal(result_tree, expected)
+        assert_equal(result_tree, expected)
 
     def test_single_dt_arg_plus_args_and_kwargs(self):
         dt = create_test_datatree()
@@ -142,7 +140,7 @@ class TestMapOverSubTree:
 
         expected = create_test_datatree(modify=lambda ds: (10.0 * ds) + 2.0)
         result_tree = multiply_then_add(dt, 10.0, add=2.0)
-        assert_tree_equal(result_tree, expected)
+        assert_equal(result_tree, expected)
 
     def test_multiple_dt_args(self):
         dt1 = create_test_datatree()
@@ -154,7 +152,7 @@ class TestMapOverSubTree:
 
         expected = create_test_datatree(modify=lambda ds: 2.0 * ds)
         result = add(dt1, dt2)
-        assert_tree_equal(result, expected)
+        assert_equal(result, expected)
 
     def test_dt_as_kwarg(self):
         dt1 = create_test_datatree()
@@ -166,7 +164,7 @@ class TestMapOverSubTree:
 
         expected = create_test_datatree(modify=lambda ds: 2.0 * ds)
         result = add(dt1, value=dt2)
-        assert_tree_equal(result, expected)
+        assert_equal(result, expected)
 
     def test_return_multiple_dts(self):
         dt = create_test_datatree()
@@ -177,9 +175,9 @@ class TestMapOverSubTree:
 
         dt_min, dt_max = minmax(dt)
         expected_min = create_test_datatree(modify=lambda ds: ds.min())
-        assert_tree_equal(dt_min, expected_min)
+        assert_equal(dt_min, expected_min)
         expected_max = create_test_datatree(modify=lambda ds: ds.max())
-        assert_tree_equal(dt_max, expected_max)
+        assert_equal(dt_max, expected_max)
 
     def test_return_wrong_type(self):
         dt1 = create_test_datatree()
@@ -236,7 +234,7 @@ class TestMapOverSubTree:
         other_ds = xr.Dataset({"z": ("z", [0])})
         expected = create_test_datatree(modify=lambda ds: xr.merge([ds, other_ds]))
         result_tree = nodewise_merge(dt, other_ds)
-        assert_tree_equal(result_tree, expected)
+        assert_equal(result_tree, expected)
 
     @pytest.mark.xfail
     def test_trees_with_different_node_names(self):
@@ -251,7 +249,20 @@ class TestMapOverSubTree:
 
         expected = create_test_datatree(modify=lambda ds: (10.0 * ds) + 2.0)
         result_tree = dt.map_over_subtree(multiply_then_add, 10.0, add=2.0)
-        assert_tree_equal(result_tree, expected)
+        assert_equal(result_tree, expected)
+
+    def test_discard_ancestry(self):
+        # Check for datatree GH issue #48
+        dt = create_test_datatree()
+        subtree = dt["set1"]
+
+        @map_over_subtree
+        def times_ten(ds):
+            return 10.0 * ds
+
+        expected = create_test_datatree(modify=lambda ds: 10.0 * ds)["set1"]
+        result_tree = times_ten(subtree)
+        assert_equal(result_tree, expected, from_root=False)
 
 
 @pytest.mark.xfail

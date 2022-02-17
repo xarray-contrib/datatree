@@ -33,12 +33,12 @@ def _get_nc_dataset_class(engine):
     if engine == "netcdf4":
         from netCDF4 import Dataset
     elif engine == "h5netcdf":
-        from h5netcdf import Dataset
+        from h5netcdf.legacyapi import Dataset
     elif engine is None:
         try:
             from netCDF4 import Dataset
         except ImportError:
-            from h5netcdf import Dataset
+            from h5netcdf.legacyapi import Dataset
     else:
         raise ValueError(f"unsupported engine: {engine}")
     return Dataset
@@ -73,7 +73,7 @@ def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
 
     with ncDataset(filename, mode="r") as ncds:
         ds = open_dataset(filename, **kwargs).pipe(_ds_or_none)
-        tree_root = DataTree(data_objects={"root": ds})
+        tree_root = DataTree.from_dict(data_objects={"root": ds})
         for key in _iter_nc_groups(ncds):
             tree_root[key] = open_dataset(filename, group=key, **kwargs).pipe(
                 _ds_or_none
@@ -86,7 +86,7 @@ def _open_datatree_zarr(store, **kwargs) -> DataTree:
 
     with zarr.open_group(store, mode="r") as zds:
         ds = open_dataset(store, engine="zarr", **kwargs).pipe(_ds_or_none)
-        tree_root = DataTree(data_objects={"root": ds})
+        tree_root = DataTree.from_dict(data_objects={"root": ds})
         for key in _iter_zarr_groups(zds):
             try:
                 tree_root[key] = open_dataset(
@@ -191,7 +191,16 @@ def _create_empty_zarr_group(store, group, mode):
     root.create_group(group, overwrite=True)
 
 
-def _datatree_to_zarr(dt: DataTree, store, mode: str = "w", encoding=None, **kwargs):
+def _datatree_to_zarr(
+    dt: DataTree,
+    store,
+    mode: str = "w",
+    encoding=None,
+    consolidated: bool = True,
+    **kwargs,
+):
+
+    from zarr.convenience import consolidate_metadata
 
     if kwargs.get("group", None) is not None:
         raise NotImplementedError(
@@ -215,7 +224,11 @@ def _datatree_to_zarr(dt: DataTree, store, mode: str = "w", encoding=None, **kwa
                 group=group_path,
                 mode=mode,
                 encoding=_maybe_extract_group_kwargs(encoding, dt.pathstr),
+                consolidated=False,
                 **kwargs,
             )
         if "w" in mode:
             mode = "a"
+
+    if consolidated:
+        consolidate_metadata(store)
