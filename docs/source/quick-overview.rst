@@ -20,10 +20,13 @@ Let's first make some example xarray datasets (following on from xarray's
     ds = xr.Dataset(dict(foo=data, bar=("x", [1, 2]), baz=np.pi))
     ds
 
-    ds2 = ds.interp(coords={'x': [10, 12, 14, 16, 18, 20]})
+    ds2 = ds.interp(coords={"x": [10, 12, 14, 16, 18, 20]})
     ds2
 
-    ds3 = xr.Dataset(dict(people=["alice", "bob"], heights=("people", [1.57, 1.82])), coords={"species": "human"})
+    ds3 = xr.Dataset(
+        dict(people=["alice", "bob"], heights=("people", [1.57, 1.82])),
+        coords={"species": "human"},
+    )
     ds3
 
 Now we'll put this data into a multi-group tree:
@@ -32,7 +35,9 @@ Now we'll put this data into a multi-group tree:
 
     from datatree import DataTree
 
-    dt = DataTree.from_dict({'root/simulation/coarse': ds, 'root/simulation/fine': ds2, 'root': ds3})
+    dt = DataTree.from_dict(
+        {"root/simulation/coarse": ds, "root/simulation/fine": ds2, "root": ds3}
+    )
     print(dt)
 
 This creates a datatree with various groups. We have one root group (named ``root``), containing information about individual people.
@@ -50,19 +55,19 @@ We can access individual dataarrays in a similar fashion
 
 .. ipython:: python
 
-    dt['simulation/coarse/foo']
+    dt["simulation/coarse/foo"]
 
 and we can also pull out the data in a particular group as a ``Dataset`` object using ``.ds``:
 
 .. ipython:: python
 
-    dt['simulation/coarse'].ds
+    dt["simulation/coarse"].ds
 
 Operations map over subtrees, so we can take a mean over the ``x`` dimension of both the ``fine`` and ``coarse`` groups just by
 
 .. ipython:: python
 
-    avg = dt['simulation'].mean(dim="x")
+    avg = dt["simulation"].mean(dim="x")
     print(avg)
 
 Here the ``"x"`` dimension used is always the one local to that sub-group.
