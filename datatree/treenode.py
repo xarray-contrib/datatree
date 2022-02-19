@@ -1,10 +1,26 @@
 from __future__ import annotations
 
-from typing import Hashable, Iterable, Sequence, Tuple, Union
+from typing import Hashable, Iterable, Sequence, Tuple, Union, Optional, Mapping, Iterator, List
+from pathlib import PurePosixPath
 
 import anytree
 
 PathType = Union[Hashable, Sequence[Hashable]]
+
+
+class NodePath(PurePosixPath):
+    """Represents a path from one node to another within a tree."""
+
+    def __new__(cls, *args: str | "NodePath") -> "NodePath":
+        obj = super().__new__(cls, *args)
+
+        if obj.drive:
+            raise ValueError("NodePaths cannot have drives")
+
+        if obj.root not in ["/", ""]:
+            raise ValueError("Root of NodePath can only be either \"/\" or \"\"")
+
+        return obj
 
 
 class TreeNode(anytree.NodeMixin):
