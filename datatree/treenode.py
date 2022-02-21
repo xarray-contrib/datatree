@@ -1,17 +1,29 @@
 from __future__ import annotations
 
-from abc import ABC
-from typing import Hashable, Iterable, Sequence, Tuple, Union, Mapping, Iterator,
+
 from collections import OrderedDict
-
-import anytree
-
-PathType = Union[Hashable, Sequence[Hashable]]
+from typing import Tuple, Mapping, Iterator
+from pathlib import PurePosixPath
 
 
 class TreeError(Exception):
     """Exception type raised when user attempts to create an invalid tree in some way."""
     ...
+
+
+class NodePath(PurePosixPath):
+    """Represents a path from one node to another within a tree."""
+
+    def __new__(cls, *args: str | "NodePath") -> "NodePath":
+        obj = super().__new__(cls, *args)
+
+        if obj.drive:
+            raise ValueError("NodePaths cannot have drives")
+
+        if obj.root not in ["/", ""]:
+            raise ValueError("Root of NodePath can only be either \"/\" or \"\"")
+
+        return obj
 
 
 class FamilyTreeNode:
