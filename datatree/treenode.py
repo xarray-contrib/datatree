@@ -199,16 +199,33 @@ class PathLikeAccessMixin:
         Raises a KeyError if there is no node at the given path.
         """
         path = NodePath(path)
-        self._get_node(path)
+        return self._get_node(path)
 
-    def _get_node(self, path: NodePath):
-        ...
+    def _get_node(self, path: NodePath) -> TreeNode:
+        root, parts = path.root, path.parts
+
+        if root:
+            current_node = self.root
+        else:
+            current_node = self
+
+        for part in parts:
+            if part == "..":
+                parent = current_node.parent
+                if parent is None:
+                    raise KeyError(f"Could not find node at {path}")
+                current_node = parent
+            elif part in ("", "."):
+                pass
+            else:
+                current_node = self.children[part]
+        return current_node
 
     def set_node(self, path: str, node: TreeNode):
-        ...
+        raise NotImplementedError
 
     def del_node(self, path: str):
-        ...
+        raise NotImplementedError
 
 
 class TreeNode(FamilyTreeNode, PathLikeAccessMixin):
