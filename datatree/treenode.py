@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from typing import Hashable, Iterable, Sequence, Tuple, Union, Mapping, Iterator,
 from collections import OrderedDict
 
@@ -13,7 +14,7 @@ class TreeError(Exception):
     ...
 
 
-class TreeNode:
+class FamilyTreeNode:
     """
     Base class representing a node of a tree, with methods for traversing and altering the tree.
 
@@ -21,8 +22,6 @@ class TreeNode:
 
     Stores child nodes in an Ordered Dictionary, which is necessary to ensure that equality checks between two trees
     also check that the order of child nodes is the same. Nodes themselves are unnamed.
-
-    Allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
     """
 
     # TODO replace all type annotations that use "TreeNode" with "Self", so it's still correct when subclassed (requires python 3.11)
@@ -187,7 +186,13 @@ class TreeNode:
         """Method call after attaching to `parent`."""
         pass
 
-    def __getitem__(self, path: str) -> TreeNode:
+
+class PathLikeAccessMixin:
+    """
+    Allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
+    """
+
+    def get_node(self, path: str) -> TreeNode:
         """
         Returns the node lying at the given path.
 
@@ -199,9 +204,12 @@ class TreeNode:
     def _get_node(self, path: NodePath):
         ...
 
-    def __setitem__(self, path: str, node: TreeNode):
+    def set_node(self, path: str, node: TreeNode):
         ...
 
-    def __delitem__(self, path: str):
+    def del_node(self, path: str):
         ...
 
+
+class TreeNode(FamilyTreeNode, PathLikeAccessMixin):
+    ...
