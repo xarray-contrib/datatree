@@ -33,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["docs", "tests", "tests.*", "docs.*"]),
     install_requires=install_requires,
-    python_requires=">=3.9",
+    python_requires=">=3.7",
     setup_requires="setuptools_scm",
     use_scm_version={
         "write_to": "datatree/_version.py",
