@@ -37,7 +37,7 @@ class FamilyTreeNode:
     """
 
     # TODO replace all type annotations that use "TreeNode" with "Self", so it's still correct when subclassed (requires python 3.11)
-    _parent: TreeNode | None
+    _parent: FamilyTreeNode | None
     _children: OrderedDict[str, FamilyTreeNode]
 
     @property
@@ -59,6 +59,7 @@ class FamilyTreeNode:
             self._attach(new_parent)
 
     def _check_loop(self, new_parent: FamilyTreeNode | None):
+        """Checks that assignment of this new parent will not create a cycle."""
         if new_parent is not None:
             if new_parent is self:
                 raise TreeError(
@@ -85,7 +86,14 @@ class FamilyTreeNode:
             self._post_detach(parent)
 
     def _attach(self, parent: FamilyTreeNode | None):
-        raise NotImplementedError
+        if parent is not None:
+            self._pre_attach(parent)
+            parentchildren = parent.children
+            assert not any(child is self for child in parentchildren), "Tree is corrupt."
+            # TODO what should the name be????
+            parentchildren[name] = self
+            self._parent = parent
+            self._post_attach(parent)
 
     @property
     def children(self) -> OrderedDict[str, FamilyTreeNode]:
