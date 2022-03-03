@@ -9,7 +9,7 @@ def removesuffix(base: str, suffix: str) -> str:
         return base
 
 def removeprefix(base: str, prefix: str) -> str:
-    if sys.version_info < (3, 9):
+    if sys.version_info >= (3, 9):
         return base.removeprefix(prefix)
     else:
         if base.startswith(prefix):
