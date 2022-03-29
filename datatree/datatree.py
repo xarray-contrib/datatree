@@ -123,7 +123,7 @@ class DataTree(
     @property
     def has_data(self) -> bool:
         return len(self.ds.variables) > 0
-    
+
     @property
     def has_attrs(self) -> bool:
         return len(self.ds.attrs.keys()) > 0

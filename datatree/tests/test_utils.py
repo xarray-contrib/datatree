@@ -1,16 +1,17 @@
-import pytest
+from datatree.utils import removeprefix, removesuffix
 
-from datatree.utils import removesuffix, removeprefix
 
 def checkequal(expected_result, obj, method, *args, **kwargs):
     result = method(obj, *args, **kwargs)
     assert result == expected_result
 
+
 def checkraises(exc, obj, method, *args):
     try:
-        result = method(obj, *args)
+        method(obj, *args)
     except Exception as e:
         assert isinstance(e, exc) is True
+
 
 def test_removeprefix():
     checkequal('am', 'spam', removeprefix, 'sp')
@@ -28,6 +29,7 @@ def test_removeprefix():
     checkraises(TypeError, 'hello', removeprefix, 42, 'h')
     checkraises(TypeError, 'hello', removeprefix, 'h', 42)
     checkraises(TypeError, 'hello', removeprefix, ("he", "l"))
+
 
 def test_removesuffix():
     checkequal('sp', 'spam', removesuffix, 'am')
