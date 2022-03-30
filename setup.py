@@ -28,14 +28,13 @@ setup(
         "License :: OSI Approved :: Apache License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.7"
         "Programming Language :: Python :: 3.8"
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
     packages=find_packages(exclude=["docs", "tests", "tests.*", "docs.*"]),
     install_requires=install_requires,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     setup_requires="setuptools_scm",
     use_scm_version={
         "write_to": "datatree/_version.py",
