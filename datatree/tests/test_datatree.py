@@ -296,16 +296,18 @@ class TestRepr:
         assert printout == "DataTree('root', parent=None)"
 
     def test_print_empty_node_with_attrs(self):
-        dat = xr.Dataset(attrs={'note': 'has attrs'})
+        dat = xr.Dataset(attrs={"note": "has attrs"})
         dt = DataTree("root", data=dat)
         printout = dt.__str__()
-        assert printout == textwrap.dedent("""\
+        assert printout == textwrap.dedent(
+            """\
             DataTree('root', parent=None)
             Dimensions:  ()
             Data variables:
                 *empty*
             Attributes:
-                note:     has attrs""")
+                note:     has attrs"""
+        )
 
     def test_print_node_with_data(self):
         dat = xr.Dataset({"a": [0, 2]})

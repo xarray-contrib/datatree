@@ -6,7 +6,7 @@ def removesuffix(base: str, suffix: str) -> str:
         return base.removesuffix(suffix)
     else:
         if base.endswith(suffix):
-            return base[:len(base) - len(suffix)]
+            return base[: len(base) - len(suffix)]
         return base
 
 
@@ -15,5 +15,5 @@ def removeprefix(base: str, prefix: str) -> str:
         return base.removeprefix(prefix)
     else:
         if base.startswith(prefix):
-            return base[len(prefix):]
+            return base[len(prefix) :]
         return base
