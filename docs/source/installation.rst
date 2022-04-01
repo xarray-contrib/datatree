@@ -23,7 +23,7 @@ To install a development version from source:
 
     $ git clone https://github.com/xarray-contrib/datatree
     $ cd datatree
-    $ python -m pip install -e . 
+    $ python -m pip install -e .
 
 
 You will need xarray and `anytree <https://github.com/c0fec0de/anytree>`_
