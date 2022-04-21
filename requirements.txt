@@ -1,3 +1,2 @@
-xarray>=0.19.0
-anytree
-future
+xarray>=0.20.2
+anytree>=2.8.0
