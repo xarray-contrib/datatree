@@ -26,7 +26,7 @@ class NodePath(PurePosixPath):
         return obj
 
 
-class FamilyTreeNode:
+class TreeNode:
     """
     Base class representing a node of a tree, with methods for traversing and altering the tree.
 
@@ -34,19 +34,23 @@ class FamilyTreeNode:
 
     Stores child nodes in an Ordered Dictionary, which is necessary to ensure that equality checks between two trees
     also check that the order of child nodes is the same. Nodes themselves are unnamed.
+    
+    Also allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
+
+    (This class is heavily inspired by the anytree library's NodeMixin class.)
     """
 
     # TODO replace all type annotations that use "TreeNode" with "Self", so it's still correct when subclassed (requires python 3.11)
-    _parent: FamilyTreeNode | None
-    _children: OrderedDict[str, FamilyTreeNode]
+    _parent: TreeNode | None
+    _children: OrderedDict[str, TreeNode]
 
     @property
-    def parent(self) -> FamilyTreeNode | None:
+    def parent(self) -> TreeNode | None:
         return self._parent
 
     @parent.setter
-    def parent(self, new_parent: FamilyTreeNode | None):
-        if new_parent is not None and not isinstance(new_parent, FamilyTreeNode):
+    def parent(self, new_parent: TreeNode | None):
+        if new_parent is not None and not isinstance(new_parent, TreeNode):
             raise TypeError(
                 "Parent nodes must be of type DataTree or None, "
                 f"not type {type(new_parent)}"
@@ -58,7 +62,7 @@ class FamilyTreeNode:
             self._detach(old_parent)
             self._attach(new_parent)
 
-    def _check_loop(self, new_parent: FamilyTreeNode | None):
+    def _check_loop(self, new_parent: TreeNode | None):
         """Checks that assignment of this new parent will not create a cycle."""
         if new_parent is not None:
             if new_parent is self:
@@ -71,7 +75,7 @@ class FamilyTreeNode:
                     f"Cannot set parent, as node {self} is already a descendant of node {new_parent}."
                 )
 
-    def _detach(self, parent: FamilyTreeNode | None):
+    def _detach(self, parent: TreeNode | None):
         if parent is not None:
             self._pre_detach(parent)
             parents_children = parent.children
@@ -85,7 +89,7 @@ class FamilyTreeNode:
             self._parent = None
             self._post_detach(parent)
 
-    def _attach(self, parent: FamilyTreeNode | None):
+    def _attach(self, parent: TreeNode | None):
         if parent is not None:
             self._pre_attach(parent)
             parentchildren = parent.children
@@ -96,11 +100,11 @@ class FamilyTreeNode:
             self._post_attach(parent)
 
     @property
-    def children(self) -> OrderedDict[str, FamilyTreeNode]:
+    def children(self) -> OrderedDict[str, TreeNode]:
         return self._children
 
     @children.setter
-    def children(self, children: Mapping[str, FamilyTreeNode]):
+    def children(self, children: Mapping[str, TreeNode]):
         children = OrderedDict(children)
         self._check_children(children)
         old_children = self.children
@@ -127,7 +131,7 @@ class FamilyTreeNode:
         self._post_detach_children(children)
 
     @staticmethod
-    def _check_children(children: Mapping[str, FamilyTreeNode]):
+    def _check_children(children: Mapping[str, TreeNode]):
         """Check children for correct types and for any duplicates."""
         seen = set()
         for name, child in children.items():
@@ -142,32 +146,32 @@ class FamilyTreeNode:
             else:
                 raise TreeError(f"Cannot add node {name} multiple times as child.")
 
-    def _pre_detach_children(self, children: Mapping[str, FamilyTreeNode]):
+    def _pre_detach_children(self, children: Mapping[str, TreeNode]):
         """Method call before detaching `children`."""
         pass
 
-    def _post_detach_children(self, children: Mapping[str, FamilyTreeNode]):
+    def _post_detach_children(self, children: Mapping[str, TreeNode]):
         """Method call after detaching `children`."""
         pass
 
-    def _pre_attach_children(self, children: Mapping[str, FamilyTreeNode]):
+    def _pre_attach_children(self, children: Mapping[str, TreeNode]):
         """Method call before attaching `children`."""
         pass
 
-    def _post_attach_children(self, children: Mapping[str, FamilyTreeNode]):
+    def _post_attach_children(self, children: Mapping[str, TreeNode]):
         """Method call after attaching `children`."""
         pass
 
-    def iter_lineage_reverse(self) -> Iterator[FamilyTreeNode]:
+    def iter_lineage_reverse(self) -> Iterator[TreeNode]:
         # TODO should this instead return an OrderedDict, so as to include node names?
         """Iterate up the tree from the current node."""
-        node: FamilyTreeNode | None = self
+        node: TreeNode | None = self
         while node is not None:
             yield node
             node = node.parent
 
     @property
-    def ancestors(self) -> Tuple[FamilyTreeNode, ...]:
+    def ancestors(self) -> Tuple[TreeNode, ...]:
         """All parent nodes and their parent nodes, starting with the most distant."""
         if self.parent is None:
             return tuple()
@@ -176,7 +180,7 @@ class FamilyTreeNode:
             return ancestors
 
     @property
-    def root(self) -> FamilyTreeNode:
+    def root(self) -> TreeNode:
         """Root node of the tree"""
         node = self
         while node.parent is not None:
@@ -189,7 +193,7 @@ class FamilyTreeNode:
         return self.parent is None
 
     @property
-    def siblings(self) -> OrderedDict[str, FamilyTreeNode]:
+    def siblings(self) -> OrderedDict[str, TreeNode]:
         """
         Dict of nodes with the same parent.
         """
@@ -206,35 +210,28 @@ class FamilyTreeNode:
             )
 
     @property
-    def subtree(self) -> Iterator[FamilyTreeNode]:
+    def subtree(self) -> Iterator[TreeNode]:
         """An iterator over all nodes in this tree, including both self and all descendants."""
         # return anytree.iterators.PreOrderIter(self)
         raise NotImplementedError
 
-    def _pre_detach(self, parent: FamilyTreeNode):
+    def _pre_detach(self, parent: TreeNode):
         """Method call before detaching from `parent`."""
         pass
 
-    def _post_detach(self, parent: FamilyTreeNode):
+    def _post_detach(self, parent: TreeNode):
         """Method call after detaching from `parent`."""
         pass
 
-    def _pre_attach(self, parent: FamilyTreeNode):
+    def _pre_attach(self, parent: TreeNode):
         """Method call before attaching to `parent`."""
         pass
 
-    def _post_attach(self, parent: FamilyTreeNode):
+    def _post_attach(self, parent: TreeNode):
         """Method call after attaching to `parent`."""
         pass
 
-
-class TreeNode(FamilyTreeNode):
-    """
-    Like FamilyTreeNode, but also allows access to any other node in the tree via unix-like paths,
-    including upwards referencing via '../'.
-    """
-
-    def get_node(self, path: str) -> FamilyTreeNode:
+    def get_node(self, path: str) -> TreeNode:
         """
         Returns the node lying at the given path.
 
@@ -243,7 +240,7 @@ class TreeNode(FamilyTreeNode):
         p = NodePath(path)
         return self._get_node(p)
 
-    def _get_node(self, path: NodePath) -> FamilyTreeNode:
+    def _get_node(self, path: NodePath) -> TreeNode:
         root, parts = path.root, path.parts
 
         if root:
@@ -263,7 +260,7 @@ class TreeNode(FamilyTreeNode):
                 current_node = self.children[part]
         return current_node
 
-    def set_node(self, path: str, node: FamilyTreeNode):
+    def set_node(self, path: str, node: TreeNode):
         raise NotImplementedError
 
     def del_node(self, path: str):

@@ -14,7 +14,7 @@ from .ops import (
     MappedDatasetMethodsMixin,
     MappedDataWithCoords,
 )
-from .treenode import PathType, TreeNode
+from .treenode import NodePath, TreeNode
 
 # """
 # DEVELOPERS' NOTE
@@ -28,6 +28,9 @@ from .treenode import PathType, TreeNode
 # (normally because they (a) only call dataset properties and (b) don't return a dataset that should be nested into a new
 # tree) and some will get overridden by the class definition of DataTree.
 # """
+
+
+T_Path = Union[str, Tuple[str], NodePath]
 
 
 class DataTree(
