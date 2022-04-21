@@ -34,7 +34,7 @@ class TreeNode:
 
     Stores child nodes in an Ordered Dictionary, which is necessary to ensure that equality checks between two trees
     also check that the order of child nodes is the same. Nodes themselves are unnamed.
-    
+
     Also allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
 
     (This class is heavily inspired by the anytree library's NodeMixin class.)
@@ -93,7 +93,9 @@ class TreeNode:
         if parent is not None:
             self._pre_attach(parent)
             parentchildren = parent.children
-            assert not any(child is self for child in parentchildren), "Tree is corrupt."
+            assert not any(
+                child is self for child in parentchildren
+            ), "Tree is corrupt."
             # TODO what should the name be????
             parentchildren[name] = self
             self._parent = parent
