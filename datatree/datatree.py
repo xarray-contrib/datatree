@@ -6,8 +6,8 @@ from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Tuple
 import anytree
 from xarray import DataArray, Dataset, merge
 from xarray.core import dtypes, utils
-from xarray.core.variable import Variable
 from xarray.core.options import OPTIONS as XR_OPTS
+from xarray.core.variable import Variable
 
 from . import formatting, formatting_html
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
