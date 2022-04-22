@@ -47,7 +47,7 @@ def diff_tree_repr(a, b, compat):
     return "\n".join(summary)
 
 
-def tree_repr(dt):
+def datatree_repr(dt):
     """A printable representation of the structure of this entire tree."""
     renderer = anytree.RenderTree(dt)
 

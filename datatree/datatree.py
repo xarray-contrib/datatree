@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from html import escape
 from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Tuple, Union
 
 import anytree
 from xarray import DataArray, Dataset, merge
 from xarray.core import dtypes, utils
 from xarray.core.variable import Variable
+from xarray.core.options import OPTIONS as XR_OPTS
 
-from .formatting import tree_repr
+from . import formatting, formatting_html
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
 from .ops import (
     DataTreeArithmeticMixin,
@@ -208,11 +210,17 @@ class DataTree(
         else:
             child.parent = self
 
-    def __repr__(self):
-        return tree_repr(self)
+    def __repr__(self) -> str:
+        return formatting.datatree_repr(self)
 
-    def __str__(self):
-        return tree_repr(self)
+    def __str__(self) -> str:
+        return formatting.datatree_repr(self)
+
+    def _repr_html_(self):
+        """Make html representation of datatree object"""
+        if XR_OPTS["display_style"] == "text":
+            return f"<pre>{escape(repr(self))}</pre>"
+        return formatting_html.datatree_repr(self)
 
     def __getitem__(
         self, key: Union[PathType, Hashable, Mapping, Any]
