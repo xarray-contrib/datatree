@@ -22,14 +22,18 @@ def summarize_child(child: "DataTree") -> str:
 
 def summarize_children(children: Mapping[str, "DataTree"]) -> str:
     children_li_elements = [
-        f"<li class='xr-var-item'>{summarize_child(c)}</li>"
+        f"<ul class='xr-sections'>{summarize_child(c)}</ul>"
         for n, c in children.items()
     ]
 
     children_li = "".join(
         children_li_elements
     )
-    return f"<ul class='xr-var-list'>{children_li}</ul>"
+    return (
+        f"<ul class='xr-sections'>"
+        f"<div style='padding-left:2rem;'>{children_li}<br></div>"
+        f"</ul>"
+    )
 
 
 children_section = partial(
