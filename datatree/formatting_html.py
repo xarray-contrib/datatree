@@ -1,6 +1,6 @@
 from functools import partial
 from html import escape
-from typing import TYPE_CHECKING, Mapping
+from typing import Any, Mapping
 
 from xarray.core.formatting_html import (
     _mapping_section,
@@ -12,13 +12,11 @@ from xarray.core.formatting_html import (
 )
 from xarray.core.options import OPTIONS
 
-if TYPE_CHECKING:
-    from .datatree import DataTree
 
 OPTIONS["display_expand_groups"] = "default"
 
 
-def summarize_children(children: Mapping[str, DataTree]) -> str:
+def summarize_children(children: Mapping[str, Any]) -> str:
     children_li = "".join(
         f"<ul class='xr-sections'>{node_repr(n, c)}</ul>" for n, c in children.items()
     )
@@ -39,7 +37,7 @@ children_section = partial(
 )
 
 
-def node_repr(group_title: str, dt: DataTree) -> str:
+def node_repr(group_title: str, dt: Any) -> str:
     header_components = [f"<div class='xr-obj-type'>{escape(group_title)}</div>"]
 
     ds = dt.ds
@@ -56,6 +54,6 @@ def node_repr(group_title: str, dt: DataTree) -> str:
     return _obj_repr(ds, header_components, sections)
 
 
-def datatree_repr(dt: DataTree) -> str:
+def datatree_repr(dt: Any) -> str:
     obj_type = f"datatree.{type(dt).__name__}"
     return node_repr(obj_type, dt)
