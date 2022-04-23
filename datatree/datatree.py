@@ -240,11 +240,12 @@ class DataTree(
             Paths to nodes or to data variables in nodes can be given as unix-like paths, or as tuples of strings
             (where each string is known as a single "tag").
         """
+
         # Either:
         if utils.is_dict_like(key):
             # dict-like selection on dataset variables
             return self.ds[key]
-        elif utils.hashable(key):
+        elif isinstance(key, str):
             # path-like: a path to a node possibly with a variable name at the end
             return self._get_item_from_path(key)
         elif utils.is_list_like(key) and all(k in self.ds for k in key):
@@ -254,7 +255,7 @@ class DataTree(
             # iterable of child tags
             return self._get_item_from_path(key)
         else:
-            raise ValueError("Invalid format for key")
+            raise ValueError(f"Invalid format for key: {key}")
 
     def _get_item_from_path(
         self, path: PathType
@@ -376,6 +377,13 @@ class DataTree(
     @property
     def nbytes(self) -> int:
         return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
+
+    def __len__(self) -> int:
+        if self.children:
+            n_children = len(self.children)
+        else:
+            n_children = 0
+        return n_children + len(self.ds)
 
     def isomorphic(
         self,
