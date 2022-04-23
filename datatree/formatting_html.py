@@ -12,7 +12,6 @@ from xarray.core.formatting_html import (
 )
 from xarray.core.options import OPTIONS
 
-
 OPTIONS["display_expand_groups"] = "default"
 
 
