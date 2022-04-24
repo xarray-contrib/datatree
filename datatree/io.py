@@ -3,7 +3,7 @@ from typing import Sequence
 
 from xarray import open_dataset
 
-from .datatree import DataTree, PathType
+from .datatree import DataTree, T_Path
 
 
 def _ds_or_none(ds):
@@ -98,7 +98,7 @@ def _open_datatree_zarr(store, **kwargs) -> DataTree:
 
 
 def open_mfdatatree(
-    filepaths, rootnames: Sequence[PathType] = None, chunks=None, **kwargs
+    filepaths, rootnames: Sequence[T_Path] = None, chunks=None, **kwargs
 ) -> DataTree:
     """
     Open multiple files as a single DataTree.

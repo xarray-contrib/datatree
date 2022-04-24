@@ -134,7 +134,7 @@ class DataTree(
     @classmethod
     def from_dict(
         cls,
-        data_objects: Dict[PathType, Union[Dataset, DataArray, None]] = None,
+        data_objects: Dict[T_Path, Union[Dataset, DataArray, None]] = None,
         name: Hashable = "root",
     ):
         """
@@ -218,7 +218,7 @@ class DataTree(
         return tree_repr(self)
 
     def __getitem__(
-        self, key: Union[PathType, Hashable, Mapping, Any]
+        self, key: Union[T_Path, Hashable, Mapping, Any]
     ) -> Union[TreeNode, Dataset, DataArray]:
         """
         Access either child nodes, variables, or coordinates stored in this tree.
@@ -251,9 +251,7 @@ class DataTree(
         else:
             raise ValueError("Invalid format for key")
 
-    def _get_item_from_path(
-        self, path: PathType
-    ) -> Union[TreeNode, Dataset, DataArray]:
+    def _get_item_from_path(self, path: T_Path) -> Union[TreeNode, Dataset, DataArray]:
         """Get item given a path. Two valid cases: either all parts of path are nodes or last part is a variable."""
 
         # TODO this currently raises a ChildResolverError if it can't find a data variable in the ds - that's inconsistent with xarray.Dataset.__getitem__
@@ -276,7 +274,7 @@ class DataTree(
 
     def __setitem__(
         self,
-        key: Union[Hashable, List[Hashable], Mapping, PathType],
+        key: Union[Hashable, List[Hashable], Mapping, T_Path],
         value: Union[TreeNode, Dataset, DataArray, Variable, None],
     ) -> None:
         """
@@ -574,13 +572,13 @@ class DataTree(
         """Merge all the leaves of a second DataTree into this one."""
         raise NotImplementedError
 
-    def merge_child_nodes(self, *paths, new_path: PathType) -> DataTree:
+    def merge_child_nodes(self, *paths, new_path: T_Path) -> DataTree:
         """Merge a set of child nodes into a single new node."""
         raise NotImplementedError
 
     def merge_child_datasets(
         self,
-        *paths: PathType,
+        *paths: T_Path,
         compat: str = "no_conflicts",
         join: str = "outer",
         fill_value: Any = dtypes.NA,

@@ -1,62 +1,69 @@
 import pytest
-from anytree.node.exceptions import TreeError
 from anytree.resolver import ChildResolverError
 
-from datatree.treenode import TreeNode
+from datatree.treenode import TreeError, TreeNode
 
 
 class TestFamilyTree:
     def test_lonely(self):
-        root = TreeNode("root")
-        assert root.name == "root"
+        root = TreeNode()
         assert root.parent is None
-        assert root.children == ()
+        assert root.children == {}
 
     def test_parenting(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
+        john = TreeNode()
+        mary = TreeNode()
+        mary._set_parent(john, "Mary")
 
         assert mary.parent == john
-        assert mary in john.children
-
-        with pytest.raises(KeyError, match="already has a child named"):
-            TreeNode("mary", parent=john)
-
-        with pytest.raises(TreeError, match="not of type 'NodeMixin'"):
-            mary.parent = "apple"
+        assert john.children["Mary"] is mary
 
     def test_parent_swap(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
+        john = TreeNode()
+        mary = TreeNode()
+        mary._set_parent(john, "Mary")
 
-        steve = TreeNode("steve")
-        mary.parent = steve
-        assert mary in steve.children
-        assert mary not in john.children
+        steve = TreeNode()
+        mary._set_parent(steve, "Mary")
+
+        assert mary.parent == steve
+        assert steve.children["Mary"] is mary
+        assert "Mary" not in john.children
 
     def test_multi_child_family(self):
-        mary = TreeNode("mary")
-        kate = TreeNode("kate")
-        john = TreeNode("john", children=[mary, kate])
-        assert mary in john.children
-        assert kate in john.children
+        mary = TreeNode()
+        kate = TreeNode()
+        john = TreeNode(children={"Mary": mary, "Kate": kate})
+        assert john.children["Mary"] is mary
+        assert john.children["Kate"] is kate
         assert mary.parent is john
         assert kate.parent is john
 
     def test_disown_child(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
-        mary.parent = None
-        assert mary not in john.children
+        mary = TreeNode()
+        john = TreeNode(children={"Mary": mary})
+        mary.orphan()
+        assert mary.parent is None
+        assert "Mary" not in john.children
 
-    def test_add_child(self):
-        john = TreeNode("john")
-        kate = TreeNode("kate")
-        john.add_child(kate)
-        assert kate in john.children
-        assert kate.parent is john
+    def test_doppelganger_child(self):
+        kate = TreeNode()
+        john = TreeNode()
+
+        with pytest.raises(TypeError):
+            john.children = {"Kate": 666}
+
+        with pytest.raises(TreeError, match="Cannot add same node"):
+            john.children = {"Kate": kate, "Evil_Kate": kate}
+
+        john = TreeNode(children={"Kate": kate})
         with pytest.raises(KeyError, match="already has a child named"):
-            john.add_child(TreeNode("kate"))
+            john.children = {"Kate": kate}
+
+    # TODO test setting children via __setitem__ syntax
+    # IDEA: Make .children return a Frozen(Ordered)Dict, so new children must be added via .__setitem__ or via
+    # .children property setter
+    # Or Make .children return a Children class similar to xr.dataset.DataVariables
 
     def test_assign_children(self):
         john = TreeNode("john")
