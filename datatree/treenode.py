@@ -235,17 +235,13 @@ class TreeNode:
         """
         Nodes with the same parent as this node.
         """
-        parent = self.parent
-        if parent is None:
-            return OrderedDict()
-        else:
-            return OrderedDict(
-                {
-                    name: child
-                    for name, child in parent.children.items()
-                    if child is not self
-                }
-            )
+        return OrderedDict(
+            {
+                name: child
+                for name, child in self.parent.children.items()
+                if child is not self
+            }
+        )
 
     @property
     def subtree(self) -> Iterator[TreeNode]:

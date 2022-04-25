@@ -64,27 +64,21 @@ class TestFamilyTree:
     # TODO test setting children via __setitem__ syntax
 
     def test_sibling_relationships(self):
-        mary = TreeNode("mary")
-        kate = TreeNode("kate")
-        ashley = TreeNode("ashley")
-        john = TreeNode("john", children=[mary, kate, ashley])
-        assert mary in kate.siblings
-        assert ashley in kate.siblings
-        assert kate not in kate.siblings
-        with pytest.raises(AttributeError):
-            kate.siblings = john
+        mary = TreeNode()
+        kate = TreeNode()
+        ashley = TreeNode()
+        TreeNode(children={"Mary": mary, "Kate": kate, "Ashley": ashley})
+        assert kate.siblings["Mary"] is mary
+        assert kate.siblings["Ashley"] is ashley
+        assert "Kate" not in kate.siblings
 
-    @pytest.mark.xfail
-    def test_adoption(self):
-        raise NotImplementedError
-
-    @pytest.mark.xfail
-    def test_root(self):
-        raise NotImplementedError
-
-    @pytest.mark.xfail
     def test_ancestors(self):
-        raise NotImplementedError
+        tony = TreeNode()
+        michael = TreeNode(children={"Tony": tony})
+        vito = TreeNode(children={"Michael": michael})
+        assert tony.root is vito
+        assert tony.lineage == (tony, michael, vito)
+        assert tony.ancestors == (vito, michael, tony)
 
     @pytest.mark.xfail
     def test_descendants(self):
