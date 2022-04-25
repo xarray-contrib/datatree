@@ -37,13 +37,10 @@ class TreeNode:
     Stores child nodes in an Ordered Dictionary, which is necessary to ensure that equality checks between two trees
     also check that the order of child nodes is the same. Nodes themselves are unnamed.
 
-<<<<<<< HEAD
     The parent attribute is read-only: to replace the parent you must set this node as the child of a new parent using
     `new_parent.children[name] = child_node`, or to instead detach from the current parent use `child_node.orphan()`.
     This is because the TreeNode does not have a name attribute.
 
-=======
->>>>>>> c29be689d14fe9b008a895644a0ae8bb6c9051a4
     Also allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
 
     (This class is heavily inspired by the anytree library's NodeMixin class.)
@@ -268,23 +265,21 @@ class TreeNode:
         """Method call after attaching to `parent`."""
         pass
 
-    def get_node(self, path: str) -> TreeNode:
+    def _get_node(self, path: str | NodePath) -> TreeNode:
         """
         Returns the node lying at the given path.
 
         Raises a KeyError if there is no node at the given path.
         """
-        raise NotImplementedError
-        p = NodePath(path)
-        return self._get_node(p)
+        if isinstance(path, str):
+            path = NodePath(path)
 
-    def _get_node(self, path: NodePath) -> TreeNode:
-        root, parts = path.root, path.parts
-
-        if root:
+        if path.root:
             current_node = self.root
+            root, *parts = path.parts
         else:
             current_node = self
+            parts = path.parts
 
         for part in parts:
             if part == "..":
@@ -295,7 +290,7 @@ class TreeNode:
             elif part in ("", "."):
                 pass
             else:
-                current_node = self.children[part]
+                current_node = current_node.children[part]
         return current_node
 
     def set_node(self, path: str, node: TreeNode):

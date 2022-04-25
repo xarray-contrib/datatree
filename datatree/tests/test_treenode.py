@@ -61,8 +61,6 @@ class TestFamilyTree:
         evil_kate._set_parent(john, "Kate")
         assert john.children["Kate"] is evil_kate
 
-    # TODO test setting children via __setitem__ syntax
-
     def test_sibling_relationships(self):
         mary = TreeNode()
         kate = TreeNode()
@@ -87,39 +85,49 @@ class TestFamilyTree:
 
 class TestGetNodes:
     def test_get_child(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
-        assert john.get_node("mary") is mary
-        assert john.get_node(("mary",)) is mary
+        steven = TreeNode()
+        sue = TreeNode(children={"Steven": steven})
+        mary = TreeNode(children={"Sue": sue})
+        john = TreeNode(children={"Mary": mary})
 
-    def test_get_nonexistent_child(self):
-        john = TreeNode("john")
-        TreeNode("jill", parent=john)
-        with pytest.raises(ChildResolverError):
-            john.get_node("mary")
+        # get child
+        assert john._get_node("Mary") is mary
+        assert mary._get_node("Sue") is sue
 
-    def test_get_grandchild(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
-        sue = TreeNode("sue", parent=mary)
-        assert john.get_node("mary/sue") is sue
-        assert john.get_node(("mary", "sue")) is sue
+        # no child exists
+        with pytest.raises(KeyError):
+            john._get_node("Kate")
 
-    def test_get_great_grandchild(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
-        sue = TreeNode("sue", parent=mary)
-        steven = TreeNode("steven", parent=sue)
-        assert john.get_node("mary/sue/steven") is steven
-        assert john.get_node(("mary", "sue", "steven")) is steven
+        # get grandchild
+        assert john._get_node("Mary/Sue") is sue
 
-    def test_get_from_middle_of_tree(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
-        sue = TreeNode("sue", parent=mary)
-        steven = TreeNode("steven", parent=sue)
-        assert mary.get_node("sue/steven") is steven
-        assert mary.get_node(("sue", "steven")) is steven
+        # get great-grandchild
+        assert john._get_node("Mary/Sue/Steven") is steven
+
+        # get from middle of tree
+        assert mary._get_node("Sue/Steven") is steven
+
+    def test_get_upwards(self):
+        sue = TreeNode()
+        kate = TreeNode()
+        mary = TreeNode(children={"Sue": sue, "Kate": kate})
+        john = TreeNode(children={"Mary": mary})
+
+        assert sue._get_node("../") is mary
+        assert sue._get_node("../../") is john
+
+        # relative path
+        assert sue._get_node("../Kate") is kate
+
+    def test_get_from_root(self):
+        sue = TreeNode()
+        mary = TreeNode(children={"Sue": sue})
+        TreeNode(children={"Mary": mary})
+
+        assert sue._get_node("/Mary") is mary
+
+
+# TODO test setting children via __setitem__ syntax
 
 
 class TestSetNodes:
