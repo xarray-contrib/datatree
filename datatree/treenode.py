@@ -30,23 +30,23 @@ class NodePath(PurePosixPath):
 
 class TreeNode:
     """
-    Base class representing a node of a tree, with methods for traversing and altering the tree.
+        Base class representing a node of a tree, with methods for traversing and altering the tree.
 
-    This class stores no data, it has only parents and children attributes, and various methods.
+        This class stores no data, it has only parents and children attributes, and various methods.
 
-    Stores child nodes in an Ordered Dictionary, which is necessary to ensure that equality checks between two trees
-    also check that the order of child nodes is the same. Nodes themselves are unnamed.
+        Stores child nodes in an Ordered Dictionary, which is necessary to ensure that equality checks between two trees
+        also check that the order of child nodes is the same. Nodes themselves are unnamed.
 
-<<<<<<< HEAD
-    The parent attribute is read-only: to replace the parent you must set this node as the child of a new parent using
-    `new_parent.children[name] = child_node`, or to instead detach from the current parent use `child_node.orphan()`.
-    This is because the TreeNode does not have a name attribute.
+    <<<<<<< HEAD
+        The parent attribute is read-only: to replace the parent you must set this node as the child of a new parent using
+        `new_parent.children[name] = child_node`, or to instead detach from the current parent use `child_node.orphan()`.
+        This is because the TreeNode does not have a name attribute.
 
-=======
->>>>>>> c29be689d14fe9b008a895644a0ae8bb6c9051a4
-    Also allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
+    =======
+    >>>>>>> c29be689d14fe9b008a895644a0ae8bb6c9051a4
+        Also allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
 
-    (This class is heavily inspired by the anytree library's NodeMixin class.)
+        (This class is heavily inspired by the anytree library's NodeMixin class.)
     """
 
     # TODO replace all type annotations that use "TreeNode" with "Self", so it's still correct when subclassed (requires python 3.11)
