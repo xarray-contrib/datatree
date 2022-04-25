@@ -379,4 +379,3 @@ class TreeNode:
         generation_gap = list(self.lineage).index(ancestor)
         path_upwards = "../" * generation_gap if generation_gap > 0 else "/"
         return NodePath(path_upwards)
-    
