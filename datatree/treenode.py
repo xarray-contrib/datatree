@@ -108,7 +108,7 @@ class TreeNode:
     def _attach(self, parent: TreeNode | None, child_name: str = None):
         if parent is not None:
             self._pre_attach(parent)
-            parentchildren = parent.children
+            parentchildren = parent._children
             assert not any(
                 child is self for child in parentchildren
             ), "Tree is corrupt."
@@ -123,9 +123,9 @@ class TreeNode:
         self._set_parent(new_parent=None)
 
     @property
-    def children(self) -> OrderedDict[str, TreeNode]:
+    def children(self) -> Mapping[str, TreeNode]:
         """Child nodes of this node, stored under a mapping via their names."""
-        return self._children
+        return Frozen(self._children)
 
     @children.setter
     def children(self, children: Mapping[str, TreeNode]):

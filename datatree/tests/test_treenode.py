@@ -57,28 +57,11 @@ class TestFamilyTree:
             john.children = {"Kate": kate, "Evil_Kate": kate}
 
         john = TreeNode(children={"Kate": kate})
-        with pytest.raises(KeyError, match="already has a child named"):
-            john.children = {"Kate": kate}
+        evil_kate = TreeNode()
+        evil_kate._set_parent(john, "Kate")
+        assert john.children["Kate"] is evil_kate
 
     # TODO test setting children via __setitem__ syntax
-    # IDEA: Make .children return a Frozen(Ordered)Dict, so new children must be added via .__setitem__ or via
-    # .children property setter
-    # Or Make .children return a Children class similar to xr.dataset.DataVariables
-
-    def test_assign_children(self):
-        john = TreeNode("john")
-        jack = TreeNode("jack")
-        jill = TreeNode("jill")
-
-        john.children = (jack, jill)
-        assert jack in john.children
-        assert jack.parent is john
-        assert jill in john.children
-        assert jill.parent is john
-
-        evil_twin_jill = TreeNode("jill")
-        with pytest.raises(KeyError, match="already has a child named"):
-            john.children = (jack, jill, evil_twin_jill)
 
     def test_sibling_relationships(self):
         mary = TreeNode("mary")
