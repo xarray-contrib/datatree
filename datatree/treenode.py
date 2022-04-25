@@ -37,10 +37,13 @@ class TreeNode:
     Stores child nodes in an Ordered Dictionary, which is necessary to ensure that equality checks between two trees
     also check that the order of child nodes is the same. Nodes themselves are unnamed.
 
+<<<<<<< HEAD
     The parent attribute is read-only: to replace the parent you must set this node as the child of a new parent using
     `new_parent.children[name] = child_node`, or to instead detach from the current parent use `child_node.orphan()`.
     This is because the TreeNode does not have a name attribute.
 
+=======
+>>>>>>> c29be689d14fe9b008a895644a0ae8bb6c9051a4
     Also allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
 
     (This class is heavily inspired by the anytree library's NodeMixin class.)
