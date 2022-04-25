@@ -39,16 +39,17 @@ class TreeNode:
     Stores child nodes in an Ordered Dictionary, which is necessary to ensure that equality checks between two trees
     also check that the order of child nodes is the same.
 
-    Nodes themselves are intrisically unnamed (do not possess a _name attribute), but if the node has a parent you can
-    find the key it is stored under via the name property.
+    Nodes themselves are intrinsically unnamed (do not possess a ._name attribute), but if the node has a parent you can
+    find the key it is stored under via the .name property.
 
-    The parent attribute is read-only: to replace the parent you must set this node as the child of a new parent using
-    `new_parent.children[name] = child_node`, or to instead detach from the current parent use `child_node.orphan()`.
-    This is because the TreeNode does not have a name attribute.
+    The .parent attribute is read-only: to replace the parent using public API you must set this node as the child of a
+    new parent using `new_parent.children[name] = child_node`, or to instead detach from the current parent use
+    `child_node.orphan()`.
 
     This class is intended to be subclassed by DataTree, which will overwrite some of the inherited behaviour,
-    in particular to make names an inherent attribute, and allow setting parents. The intention is to mirror the unnamed
-    Variable / named DataArray class structure.
+    in particular to make names an inherent attribute, and allow setting parents directly. The intention is to mirror
+    the class structure of xarray.Variable & xarray.DataArray, where Variable is unnamed but DataArray is (optionally)
+    named.
 
     Also allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
 
@@ -355,11 +356,6 @@ class TreeNode:
         """True if other node is in the same tree as this node."""
         return self.root is other.root
 
-    def _path_to_ancestor(self, ancestor: TreeNode) -> NodePath:
-        generation_gap = list(self.lineage).index(ancestor)
-        path_upwards = "../" * generation_gap if generation_gap > 0 else "/"
-        return NodePath(path_upwards)
-
     def find_common_ancestor(self, other: TreeNode) -> TreeNode:
         """
         Find the first common ancestor of two nodes in the same tree.
@@ -378,3 +374,9 @@ class TreeNode:
             )
 
         return common_ancestor
+
+    def _path_to_ancestor(self, ancestor: TreeNode) -> NodePath:
+        generation_gap = list(self.lineage).index(ancestor)
+        path_upwards = "../" * generation_gap if generation_gap > 0 else "/"
+        return NodePath(path_upwards)
+    
