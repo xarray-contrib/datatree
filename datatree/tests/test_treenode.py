@@ -1,5 +1,4 @@
 import pytest
-from anytree.resolver import ChildResolverError
 
 from datatree.treenode import TreeError, TreeNode
 
@@ -82,6 +81,12 @@ class TestFamilyTree:
     def test_descendants(self):
         raise NotImplementedError
 
+    def test_same_tree(self):
+        mary = TreeNode()
+        kate = TreeNode()
+        john = TreeNode(children={"Mary": mary, "Kate": kate})  # noqa
+        assert mary.same_tree(kate)
+
 
 class TestGetNodes:
     def test_get_child(self):
@@ -122,9 +127,40 @@ class TestGetNodes:
     def test_get_from_root(self):
         sue = TreeNode()
         mary = TreeNode(children={"Sue": sue})
-        TreeNode(children={"Mary": mary})
+        john = TreeNode(children={"Mary": mary})  # noqa
 
         assert sue._get_node("/Mary") is mary
+
+
+class TestPaths:
+    def test_path_property(self):
+        sue = TreeNode()
+        mary = TreeNode(children={"Sue": sue})
+        john = TreeNode(children={"Mary": mary})  # noqa
+        assert sue.path == "/Mary/Sue"
+        assert john.path == "/"
+
+    def test_path_roundtrip(self):
+        sue = TreeNode()
+        mary = TreeNode(children={"Sue": sue})
+        john = TreeNode(children={"Mary": mary})  # noqa
+        assert john._get_node(sue.path) == sue
+
+    def test_find_relative_path(self):
+        sue = TreeNode()
+        mary = TreeNode(children={"Sue": sue})
+        annie = TreeNode()
+        john = TreeNode(children={"Mary": mary, "Annie": annie})
+
+        assert sue.relative_to(john) == "Mary/Sue"
+        assert john.relative_to(sue) == "../.."
+        assert annie.relative_to(sue) == "../../Annie"
+        assert sue.relative_to(annie) == "../Mary/Sue"
+        assert sue.relative_to(sue) == "."
+
+        evil_kate = TreeNode()
+        with pytest.raises(ValueError, match="nodes do not lie within the same tree"):
+            sue.relative_to(evil_kate)
 
 
 # TODO test setting children via __setitem__ syntax
@@ -225,18 +261,6 @@ class TestSetNodes:
 
 class TestPruning:
     ...
-
-
-class TestPaths:
-    def test_pathstr(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
-        rose = TreeNode("rose", parent=mary)
-        sue = TreeNode("sue", parent=rose)
-        assert sue.pathstr == "john/mary/rose/sue"
-
-    def test_relative_path(self):
-        ...
 
 
 class TestTags:

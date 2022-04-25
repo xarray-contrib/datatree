@@ -23,7 +23,9 @@ class NodePath(PurePosixPath):
             raise ValueError("NodePaths cannot have drives")
 
         if obj.root not in ["/", ""]:
-            raise ValueError('Root of NodePath can only be either "/" or ""')
+            raise ValueError(
+                'Root of NodePath can only be either "/" or "", with "" meaning the path is relative.'
+            )
 
         return obj
 
@@ -35,11 +37,18 @@ class TreeNode:
     This class stores no data, it has only parents and children attributes, and various methods.
 
     Stores child nodes in an Ordered Dictionary, which is necessary to ensure that equality checks between two trees
-    also check that the order of child nodes is the same. Nodes themselves are unnamed.
+    also check that the order of child nodes is the same.
+
+    Nodes themselves are intrisically unnamed (do not possess a _name attribute), but if the node has a parent you can
+    find the key it is stored under via the name property.
 
     The parent attribute is read-only: to replace the parent you must set this node as the child of a new parent using
     `new_parent.children[name] = child_node`, or to instead detach from the current parent use `child_node.orphan()`.
     This is because the TreeNode does not have a name attribute.
+
+    This class is intended to be subclassed by DataTree, which will overwrite some of the inherited behaviour,
+    in particular to make names an inherent attribute, and allow setting parents. The intention is to mirror the unnamed
+    Variable / named DataArray class structure.
 
     Also allows access to any other node in the tree via unix-like paths, including upwards referencing via '../'.
 
@@ -179,6 +188,9 @@ class TreeNode:
                     f"Cannot add same node {name} multiple times as different children."
                 )
 
+    def __repr__(self):
+        return f"TreeNode(children={dict(self._children)})"
+
     def _pre_detach_children(self, children: Mapping[str, TreeNode]):
         """Method call before detaching `children`."""
         pass
@@ -212,7 +224,7 @@ class TreeNode:
     def ancestors(self) -> Tuple[TreeNode, ...]:
         """All parent nodes and their parent nodes, starting with the most distant."""
         if self.parent is None:
-            return tuple()
+            return (self,)
         else:
             ancestors = tuple(reversed(list(self.lineage)))
             return ancestors
@@ -298,3 +310,71 @@ class TreeNode:
 
     def del_node(self, path: str):
         raise NotImplementedError
+
+    @property
+    def name(self) -> str | None:
+        """If node has a parent, this is the key under which it is stored in `parent.children`."""
+        if self.parent:
+            return next(
+                name for name, child in self.parent.children.items() if child is self
+            )
+        else:
+            return None
+
+    @property
+    def path(self) -> str:
+        """Return the file-like path from the root to this node."""
+        if self.is_root:
+            return "/"
+        else:
+            this_node, *ancestors = self.ancestors
+            return "/" + "/".join(node.name for node in ancestors)
+
+    def relative_to(self, other: TreeNode) -> str:
+        """
+        Compute the relative path from this node to node `other`.
+
+        If other is not in this tree, or it's otherwise impossible, raise a ValueError.
+        """
+        if not self.same_tree(other):
+            raise ValueError(
+                "Cannot find relative path because nodes do not lie within the same tree"
+            )
+
+        this_path = NodePath(self.path)
+        if other in self.lineage:
+            return str(this_path.relative_to(other.path))
+        else:
+            common_ancestor = self.find_common_ancestor(other)
+            path_to_common_ancestor = other._path_to_ancestor(common_ancestor)
+            return str(
+                path_to_common_ancestor / this_path.relative_to(common_ancestor.path)
+            )
+
+    def same_tree(self, other: TreeNode) -> bool:
+        """True if other node is in the same tree as this node."""
+        return self.root is other.root
+
+    def _path_to_ancestor(self, ancestor: TreeNode) -> NodePath:
+        generation_gap = list(self.lineage).index(ancestor)
+        path_upwards = "../" * generation_gap if generation_gap > 0 else "/"
+        return NodePath(path_upwards)
+
+    def find_common_ancestor(self, other: TreeNode) -> TreeNode:
+        """
+        Find the first common ancestor of two nodes in the same tree.
+
+        Raise ValueError if they are not in the same tree.
+        """
+        common_ancestor = None
+        for node in other.iter_lineage():
+            if node in self.ancestors:
+                common_ancestor = node
+                break
+
+        if not common_ancestor:
+            raise ValueError(
+                "Cannot find relative path because nodes do not lie within the same tree"
+            )
+
+        return common_ancestor
