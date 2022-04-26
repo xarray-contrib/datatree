@@ -6,6 +6,8 @@ from typing import Iterator, Mapping, Tuple
 
 from xarray.core.utils import Frozen, is_dict_like
 
+from . import iterators
+
 
 class TreeError(Exception):
     """Exception type raised when user attempts to create an invalid tree in some way."""
@@ -249,6 +251,11 @@ class TreeNode:
         return self.parent is None
 
     @property
+    def is_leaf(self) -> bool:
+        """Whether or not this node is a leaf node."""
+        return self.children == {}
+
+    @property
     def siblings(self) -> OrderedDict[str, TreeNode]:
         """
         Nodes with the same parent as this node.
@@ -263,9 +270,12 @@ class TreeNode:
 
     @property
     def subtree(self) -> Iterator[TreeNode]:
-        """An iterator over all nodes in this tree, including both self and all descendants."""
-        # return anytree.iterators.PreOrderIter(self)
-        raise NotImplementedError
+        """
+        An iterator over all nodes in this tree, including both self and all descendants.
+
+        Iterates all the way down to one leaf node first, then
+        """
+        return iterators.PreOrderIter(self)
 
     def _pre_detach(self, parent: TreeNode):
         """Method call before detaching from `parent`."""

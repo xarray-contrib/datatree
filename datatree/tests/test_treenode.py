@@ -1,6 +1,7 @@
 import pytest
 
 from datatree.treenode import TreeError, TreeNode
+from datatree.iterators import PreOrderIter, LevelOrderIter
 
 
 class TestFamilyTree:
@@ -77,9 +78,33 @@ class TestFamilyTree:
         assert tony.lineage == (tony, michael, vito)
         assert tony.ancestors == (vito, michael, tony)
 
-    @pytest.mark.xfail
-    def test_descendants(self):
-        raise NotImplementedError
+
+def create_test_tree():
+    f = TreeNode()
+    b = TreeNode()
+    a = TreeNode()
+    d = TreeNode()
+    c = TreeNode()
+    e = TreeNode()
+    g = TreeNode()
+    i = TreeNode()
+    h = TreeNode()
+
+    f.children = {"b": b, "g": g}
+    b.children = {"a": a, "d": d}
+    d.children = {"c": c, "e": e}
+    g.children = {"i": i}
+    i.children = {"h": h}
+
+    return f
+
+
+class TestIterators:
+    def test_preorderiter(self):
+        tree = create_test_tree()
+        result = list(PreOrderIter(tree))
+        expected = [f, b, g, a, d, i, c, e, h]
+        assert result == expected
 
     def test_same_tree(self):
         mary = TreeNode()
