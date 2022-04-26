@@ -1,7 +1,7 @@
 import pytest
 
+from datatree.iterators import LevelOrderIter, PreOrderIter
 from datatree.treenode import TreeError, TreeNode
-from datatree.iterators import PreOrderIter, LevelOrderIter
 
 
 class TestFamilyTree:
@@ -79,40 +79,6 @@ class TestFamilyTree:
         assert tony.ancestors == (vito, michael, tony)
 
 
-def create_test_tree():
-    f = TreeNode()
-    b = TreeNode()
-    a = TreeNode()
-    d = TreeNode()
-    c = TreeNode()
-    e = TreeNode()
-    g = TreeNode()
-    i = TreeNode()
-    h = TreeNode()
-
-    f.children = {"b": b, "g": g}
-    b.children = {"a": a, "d": d}
-    d.children = {"c": c, "e": e}
-    g.children = {"i": i}
-    i.children = {"h": h}
-
-    return f
-
-
-class TestIterators:
-    def test_preorderiter(self):
-        tree = create_test_tree()
-        result = list(PreOrderIter(tree))
-        expected = [f, b, g, a, d, i, c, e, h]
-        assert result == expected
-
-    def test_same_tree(self):
-        mary = TreeNode()
-        kate = TreeNode()
-        john = TreeNode(children={"Mary": mary, "Kate": kate})  # noqa
-        assert mary.same_tree(kate)
-
-
 class TestGetNodes:
     def test_get_child(self):
         steven = TreeNode()
@@ -170,6 +136,12 @@ class TestPaths:
         mary = TreeNode(children={"Sue": sue})
         john = TreeNode(children={"Mary": mary})  # noqa
         assert john._get_node(sue.path) == sue
+
+    def test_same_tree(self):
+        mary = TreeNode()
+        kate = TreeNode()
+        john = TreeNode(children={"Mary": mary, "Kate": kate})  # noqa
+        assert mary.same_tree(kate)
 
     def test_relative_paths(self):
         sue = TreeNode()
@@ -257,6 +229,60 @@ class TestSetNodes:
 # TODO write and test all the del methods
 class TestPruning:
     ...
+
+
+def create_test_tree():
+    f = TreeNode()
+    b = TreeNode()
+    a = TreeNode()
+    d = TreeNode()
+    c = TreeNode()
+    e = TreeNode()
+    g = TreeNode()
+    i = TreeNode()
+    h = TreeNode()
+
+    f.children = {"b": b, "g": g}
+    b.children = {"a": a, "d": d}
+    d.children = {"c": c, "e": e}
+    g.children = {"i": i}
+    i.children = {"h": h}
+
+    return f
+
+
+class TestIterators:
+    def test_preorderiter(self):
+        tree = create_test_tree()
+        result = [node.name for node in PreOrderIter(tree)]
+        expected = [
+            None,
+            "b",
+            "a",
+            "d",
+            "c",
+            "e",
+            "g",
+            "i",
+            "h",
+        ]  # root TreeNode is unnamed
+        assert result == expected
+
+    def test_levelorderiter(self):
+        tree = create_test_tree()
+        result = [node.name for node in LevelOrderIter(tree)]
+        expected = [
+            None,
+            "b",
+            "g",
+            "a",
+            "d",
+            "i",
+            "c",
+            "e",
+            "h",
+        ]  # root TreeNode is unnamed
+        assert result == expected
 
 
 @pytest.mark.xfail(reason="Iterators not yet re-implemented without anytree")
