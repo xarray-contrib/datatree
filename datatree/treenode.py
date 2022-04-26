@@ -331,7 +331,7 @@ class TreeNode:
                 pass
             else:
                 current_node = current_node.get(part)
-                if not current_node:
+                if current_node is None:
                     raise KeyError(f"Could not find node at {path}")
         return current_node
 
