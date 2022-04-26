@@ -87,21 +87,21 @@ class TestGetNodes:
         john = TreeNode(children={"Mary": mary})
 
         # get child
-        assert john._get_node("Mary") is mary
-        assert mary._get_node("Sue") is sue
+        assert john._get_item("Mary") is mary
+        assert mary._get_item("Sue") is sue
 
         # no child exists
         with pytest.raises(KeyError):
-            john._get_node("Kate")
+            john._get_item("Kate")
 
         # get grandchild
-        assert john._get_node("Mary/Sue") is sue
+        assert john._get_item("Mary/Sue") is sue
 
         # get great-grandchild
-        assert john._get_node("Mary/Sue/Steven") is steven
+        assert john._get_item("Mary/Sue/Steven") is steven
 
         # get from middle of tree
-        assert mary._get_node("Sue/Steven") is steven
+        assert mary._get_item("Sue/Steven") is steven
 
     def test_get_upwards(self):
         sue = TreeNode()
@@ -109,18 +109,18 @@ class TestGetNodes:
         mary = TreeNode(children={"Sue": sue, "Kate": kate})
         john = TreeNode(children={"Mary": mary})
 
-        assert sue._get_node("../") is mary
-        assert sue._get_node("../../") is john
+        assert sue._get_item("../") is mary
+        assert sue._get_item("../../") is john
 
         # relative path
-        assert sue._get_node("../Kate") is kate
+        assert sue._get_item("../Kate") is kate
 
     def test_get_from_root(self):
         sue = TreeNode()
         mary = TreeNode(children={"Sue": sue})
         john = TreeNode(children={"Mary": mary})  # noqa
 
-        assert sue._get_node("/Mary") is mary
+        assert sue._get_item("/Mary") is mary
 
 
 class TestPaths:
@@ -135,7 +135,7 @@ class TestPaths:
         sue = TreeNode()
         mary = TreeNode(children={"Sue": sue})
         john = TreeNode(children={"Mary": mary})  # noqa
-        assert john._get_node(sue.path) == sue
+        assert john._get_item(sue.path) == sue
 
     def test_same_tree(self):
         mary = TreeNode()

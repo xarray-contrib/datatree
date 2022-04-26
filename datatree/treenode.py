@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from pathlib import PurePosixPath
-from typing import Iterator, Mapping, Tuple
+from typing import Any, Iterator, Mapping, Tuple
 
 from xarray.core.utils import Frozen, is_dict_like
 
@@ -293,11 +293,23 @@ class TreeNode:
         """Method call after attaching to `parent`."""
         pass
 
-    def _get_node(self, path: str | NodePath) -> TreeNode:
+    def get(self, key: str, default: TreeNode = None) -> TreeNode | None:
         """
-        Returns the node lying at the given path.
+        Return the child node with the specified key.
 
-        Raises a KeyError if there is no node at the given path.
+        Only looks for the node within the immediate children of this node,
+        not in other nodes of the tree.
+        """
+        if key in self.children:
+            return self.children[key]
+        else:
+            return default
+
+    def _get_item(self, path: str | NodePath) -> Any:
+        """
+        Returns the object lying at the given path.
+
+        Raises a KeyError if there is no object at the given path.
         """
         if isinstance(path, str):
             path = NodePath(path)
@@ -318,7 +330,9 @@ class TreeNode:
             elif part in ("", "."):
                 pass
             else:
-                current_node = current_node.children[part]
+                current_node = current_node.get(part)
+                if not current_node:
+                    raise KeyError(f"Could not find node at {path}")
         return current_node
 
     def _set_node(
