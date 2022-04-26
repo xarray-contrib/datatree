@@ -146,7 +146,7 @@ class TestPaths:
         john = TreeNode(children={"Mary": mary})  # noqa
         assert john._get_node(sue.path) == sue
 
-    def test_find_relative_path(self):
+    def test_relative_paths(self):
         sue = TreeNode()
         mary = TreeNode(children={"Sue": sue})
         annie = TreeNode()
@@ -163,110 +163,78 @@ class TestPaths:
             sue.relative_to(evil_kate)
 
 
-# TODO test setting children via __setitem__ syntax
-
-
 class TestSetNodes:
     def test_set_child_node(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary")
-        john.set_node("/", mary)
+        john = TreeNode()
+        mary = TreeNode()
+        john._set_node("Mary", mary)
 
-        mary = john.children[0]
-        assert mary.name == "mary"
+        assert john.children["Mary"] is mary
         assert isinstance(mary, TreeNode)
-        assert mary.children == ()
+        assert mary.children == {}
+        assert mary.parent is john
 
     def test_child_already_exists(self):
-        john = TreeNode("john")
-        TreeNode("mary", parent=john)
-        marys_replacement = TreeNode("mary")
-
+        mary = TreeNode()
+        john = TreeNode(children={"Mary": mary})
+        mary_2 = TreeNode()
         with pytest.raises(KeyError):
-            john.set_node("/", marys_replacement, allow_overwrite=False)
+            john._set_node("Mary", mary_2, allow_overwrite=False)
 
     def test_set_grandchild(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary")
-        rose = TreeNode("rose")
-        john.set_node("/", mary)
-        john.set_node("/mary/", rose)
+        rose = TreeNode()
+        mary = TreeNode()
+        john = TreeNode()
 
-        mary = john.children[0]
-        assert mary.name == "mary"
+        john._set_node("Mary", mary)
+        john._set_node("Mary/Rose", rose)
+
+        assert john.children["Mary"] is mary
         assert isinstance(mary, TreeNode)
-        assert rose in mary.children
+        assert "Rose" in mary.children
+        assert rose.parent is mary
 
-        rose = mary.children[0]
-        assert rose.name == "rose"
-        assert isinstance(rose, TreeNode)
-        assert rose.children == ()
+    def test_create_intermediate_child(self):
+        john = TreeNode()
+        rose = TreeNode()
 
-    def test_set_grandchild_and_create_intermediate_child(self):
-        john = TreeNode("john")
-        rose = TreeNode("rose")
-        john.set_node("/mary/", rose)
+        # test intermediate children not allowed
+        with pytest.raises(KeyError, match="Could not reach"):
+            john._set_node(path="Mary/Rose", node=rose, new_nodes_along_path=False)
 
-        mary = john.children[0]
-        assert mary.name == "mary"
+        # test intermediate children allowed
+        john._set_node("Mary/Rose", rose, new_nodes_along_path=True)
+        assert "Mary" in john.children
+        mary = john.children["Mary"]
         assert isinstance(mary, TreeNode)
-        assert mary.children[0] is rose
-
-        rose = mary.children[0]
-        assert rose.name == "rose"
-        assert isinstance(rose, TreeNode)
-        assert rose.children == ()
-
-    def test_no_intermediate_children_allowed(self):
-        john = TreeNode("john")
-        rose = TreeNode("rose")
-        with pytest.raises(KeyError, match="Cannot reach"):
-            john.set_node(
-                path="mary", node=rose, new_nodes_along_path=False, allow_overwrite=True
-            )
-
-    def test_set_great_grandchild(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary", parent=john)
-        rose = TreeNode("rose", parent=mary)
-        sue = TreeNode("sue")
-        john.set_node("mary/rose", sue)
-        assert sue.parent is rose
+        assert mary.children == {"Rose": rose}
+        assert rose.parent == mary
 
     def test_overwrite_child(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary")
-        john.set_node("/", mary)
-        assert mary in john.children
+        john = TreeNode()
+        mary = TreeNode()
+        john._set_node("Mary", mary)
 
-        marys_evil_twin = TreeNode("mary")
-        john.set_node("/", marys_evil_twin)
-        assert marys_evil_twin in john.children
-        assert mary not in john.children
+        # test overwriting not allowed
+        marys_evil_twin = TreeNode()
+        with pytest.raises(KeyError, match="Already a node object"):
+            john._set_node("Mary", marys_evil_twin, allow_overwrite=False)
+        assert john.children["Mary"] is mary
+        assert marys_evil_twin.parent is None
 
-    def test_dont_overwrite_child(self):
-        john = TreeNode("john")
-        mary = TreeNode("mary")
-        john.set_node("/", mary)
-        assert mary in john.children
-
-        marys_evil_twin = TreeNode("mary")
-        with pytest.raises(KeyError, match="path already points"):
-            john.set_node(
-                "", marys_evil_twin, new_nodes_along_path=True, allow_overwrite=False
-            )
-        assert mary in john.children
-        assert marys_evil_twin not in john.children
+        # test overwriting allowed
+        marys_evil_twin = TreeNode()
+        john._set_node("Mary", marys_evil_twin, allow_overwrite=True)
+        assert john.children["Mary"] is marys_evil_twin
+        assert marys_evil_twin.parent is john
 
 
+# TODO write and test all the del methods
 class TestPruning:
     ...
 
 
-class TestTags:
-    ...
-
-
+@pytest.mark.xfail(reason="Iterators not yet re-implemented without anytree")
 class TestRenderTree:
     def test_render_nodetree(self):
         mary = TreeNode("mary")
