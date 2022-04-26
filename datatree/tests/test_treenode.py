@@ -256,7 +256,7 @@ class TestIterators:
         tree = create_test_tree()
         result = [node.name for node in PreOrderIter(tree)]
         expected = [
-            None,
+            None,  # root TreeNode is unnamed
             "b",
             "a",
             "d",
@@ -265,14 +265,14 @@ class TestIterators:
             "g",
             "i",
             "h",
-        ]  # root TreeNode is unnamed
+        ]
         assert result == expected
 
     def test_levelorderiter(self):
         tree = create_test_tree()
         result = [node.name for node in LevelOrderIter(tree)]
         expected = [
-            None,
+            None,  # root TreeNode is unnamed
             "b",
             "g",
             "a",
@@ -281,26 +281,25 @@ class TestIterators:
             "c",
             "e",
             "h",
-        ]  # root TreeNode is unnamed
+        ]
         assert result == expected
 
 
-@pytest.mark.xfail(reason="Iterators not yet re-implemented without anytree")
 class TestRenderTree:
     def test_render_nodetree(self):
-        mary = TreeNode("mary")
-        kate = TreeNode("kate")
-        john = TreeNode("john", children=[mary, kate])
-        TreeNode("Sam", parent=mary)
-        TreeNode("Ben", parent=mary)
+        sam = TreeNode()
+        ben = TreeNode()
+        mary = TreeNode(children={"Sam": sam, "Ben": ben})
+        kate = TreeNode()
+        john = TreeNode(children={"Mary": mary, "Kate": kate})
 
         printout = john.__str__()
         expected_nodes = [
-            "TreeNode('john')",
-            "TreeNode('mary')",
+            "TreeNode()",
+            "TreeNode('Mary')",
             "TreeNode('Sam')",
             "TreeNode('Ben')",
-            "TreeNode('kate')",
+            "TreeNode('Kate')",
         ]
         for expected_node, printed_node in zip(expected_nodes, printout.splitlines()):
             assert expected_node in printed_node

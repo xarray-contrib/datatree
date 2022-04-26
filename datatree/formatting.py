@@ -1,7 +1,7 @@
-import anytree
 from xarray.core.formatting import _compat_to_str, diff_dataset_repr
 
 from .mapping import diff_treestructure
+from .render import RenderTree
 
 
 def diff_nodewise_summary(a, b, compat):
@@ -49,7 +49,7 @@ def diff_tree_repr(a, b, compat):
 
 def tree_repr(dt):
     """A printable representation of the structure of this entire tree."""
-    renderer = anytree.RenderTree(dt)
+    renderer = RenderTree(dt)
 
     lines = []
     for pre, fill, node in renderer:

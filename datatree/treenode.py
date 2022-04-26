@@ -406,6 +406,9 @@ class TreeNode:
         else:
             return None
 
+    def __str__(self):
+        return f"TreeNode({self.name})" if self.name else "TreeNode()"
+
     @property
     def path(self) -> str:
         """Return the file-like path from the root to this node."""

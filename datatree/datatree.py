@@ -14,6 +14,7 @@ from .ops import (
     MappedDatasetMethodsMixin,
     MappedDataWithCoords,
 )
+from .render import RenderTree
 from .treenode import NodePath, TreeNode
 
 # """
@@ -538,7 +539,7 @@ class DataTree(
 
     def render(self):
         """Print tree structure, including any data stored at each node."""
-        for pre, fill, node in anytree.RenderTree(self):
+        for pre, fill, node in RenderTree(self):
             print(f"{pre}DataTree('{self.name}')")
             for ds_line in repr(node.ds)[1:]:
                 print(f"{fill}{ds_line}")
