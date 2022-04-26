@@ -164,7 +164,7 @@ class TestSetNodes:
     def test_set_child_node(self):
         john = TreeNode()
         mary = TreeNode()
-        john._set_node("Mary", mary)
+        john._set_item("Mary", mary)
 
         assert john.children["Mary"] is mary
         assert isinstance(mary, TreeNode)
@@ -176,15 +176,15 @@ class TestSetNodes:
         john = TreeNode(children={"Mary": mary})
         mary_2 = TreeNode()
         with pytest.raises(KeyError):
-            john._set_node("Mary", mary_2, allow_overwrite=False)
+            john._set_item("Mary", mary_2, allow_overwrite=False)
 
     def test_set_grandchild(self):
         rose = TreeNode()
         mary = TreeNode()
         john = TreeNode()
 
-        john._set_node("Mary", mary)
-        john._set_node("Mary/Rose", rose)
+        john._set_item("Mary", mary)
+        john._set_item("Mary/Rose", rose)
 
         assert john.children["Mary"] is mary
         assert isinstance(mary, TreeNode)
@@ -197,31 +197,32 @@ class TestSetNodes:
 
         # test intermediate children not allowed
         with pytest.raises(KeyError, match="Could not reach"):
-            john._set_node(path="Mary/Rose", node=rose, new_nodes_along_path=False)
+            john._set_item(path="Mary/Rose", item=rose, new_nodes_along_path=False)
 
         # test intermediate children allowed
-        john._set_node("Mary/Rose", rose, new_nodes_along_path=True)
+        john._set_item("Mary/Rose", rose, new_nodes_along_path=True)
         assert "Mary" in john.children
         mary = john.children["Mary"]
         assert isinstance(mary, TreeNode)
         assert mary.children == {"Rose": rose}
         assert rose.parent == mary
+        assert rose.parent == mary
 
     def test_overwrite_child(self):
         john = TreeNode()
         mary = TreeNode()
-        john._set_node("Mary", mary)
+        john._set_item("Mary", mary)
 
         # test overwriting not allowed
         marys_evil_twin = TreeNode()
         with pytest.raises(KeyError, match="Already a node object"):
-            john._set_node("Mary", marys_evil_twin, allow_overwrite=False)
+            john._set_item("Mary", marys_evil_twin, allow_overwrite=False)
         assert john.children["Mary"] is mary
         assert marys_evil_twin.parent is None
 
         # test overwriting allowed
         marys_evil_twin = TreeNode()
-        john._set_node("Mary", marys_evil_twin, allow_overwrite=True)
+        john._set_item("Mary", marys_evil_twin, allow_overwrite=True)
         assert john.children["Mary"] is marys_evil_twin
         assert marys_evil_twin.parent is john
 

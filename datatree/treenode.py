@@ -335,22 +335,31 @@ class TreeNode:
                     raise KeyError(f"Could not find node at {path}")
         return current_node
 
-    def _set_node(
+    def update(self, other: Mapping[str, TreeNode]) -> None:
+        """
+        Update this node's children.
+
+        Just like `dict.update` this is an in-place operation.
+        """
+        new_children = {**self.children, **other}
+        self.children = new_children
+
+    def _set_item(
         self,
         path: str | NodePath,
-        node: TreeNode,
+        item: Any,
         new_nodes_along_path: bool = False,
         allow_overwrite: bool = True,
     ):
         """
-        Set a node on the tree, overwriting anything already present at that path.
+        Set a new item in the tree, overwriting anything already present at that path.
 
-        The given value either forms a new node of the tree or overwrites an existing node at that location.
+        The given value either forms a new node of the tree or overwrites an existing item at that location.
 
         Parameters
         ----------
         path
-        node
+        item
         new_nodes_along_path : bool
             If true, then if necessary new nodes will be created along the given path, until the tree can reach the
             specified location.
@@ -366,46 +375,49 @@ class TreeNode:
         if isinstance(path, str):
             path = NodePath(path)
 
-        if not isinstance(node, TreeNode):
-            raise TypeError(f"Cannot set a node of type {type(node)}")
+        if not path.name:
+            raise ValueError("Can't set an item under a path which has no name")
 
         if path.root:
+            # absolute path
             current_node = self.root
             root, *parts, name = path.parts
         else:
+            # relative path
             current_node = self
             *parts, name = path.parts
 
-        # Walk to location of new node, creating intermediate node objects as we go if necessary
-        for part in parts:
-            if part == "..":
-                parent = current_node.parent
-                if parent is None:
-                    # We can't create a parent if `new_nodes_along_path=True` because we wouldn't know what to name it
-                    raise KeyError(f"Could not reach node at path {path}")
-                current_node = parent
-            elif part in ("", "."):
-                pass
-            else:
-                if part in current_node.children:
-                    current_node = current_node.children[part]
-                elif new_nodes_along_path:
-                    # Want child classes to populate tree with their own types
-                    # TODO this seems like a code smell though...
-                    new_node = type(self)()
-                    current_node._add_child(part, new_node)
-                    current_node = current_node.children[part]
+        if parts:
+            # Walk to location of new node, creating intermediate node objects as we go if necessary
+            for part in parts:
+                if part == "..":
+                    parent = current_node.parent
+                    if parent is None:
+                        # We can't create a parent if `new_nodes_along_path=True` as we wouldn't know what to name it
+                        raise KeyError(f"Could not reach node at path {path}")
+                    current_node = parent
+                elif part in ("", "."):
+                    pass
                 else:
-                    raise KeyError(f"Could not reach node at path {path}")
+                    if part in current_node.children:
+                        current_node = current_node.children[part]
+                    elif new_nodes_along_path:
+                        new_node = type(
+                            self
+                        )()  # Want child classes to populate tree with their own types
+                        current_node.update({**current_node.children, part: new_node})
+                        current_node = current_node.children[part]
+                    else:
+                        raise KeyError(f"Could not reach node at path {path}")
 
         if name in current_node.children:
             # Deal with anything already existing at this location
             if allow_overwrite:
-                current_node._add_child(name, node)
+                current_node.update({**current_node.children, name: item})
             else:
                 raise KeyError(f"Already a node object at path {path}")
         else:
-            current_node._add_child(name, node)
+            current_node.update({**current_node.children, name: item})
 
     def del_node(self, path: str):
         raise NotImplementedError

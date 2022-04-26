@@ -1,8 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Hashable, Iterable, List, Mapping, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    Iterable,
+    Mapping,
+    Tuple,
+    Union,
+)
 
-import anytree
 from xarray import DataArray, Dataset, merge
 from xarray.core import dtypes, utils
 from xarray.core.variable import Variable
@@ -16,6 +25,9 @@ from .ops import (
 )
 from .render import RenderTree
 from .treenode import NodePath, TreeNode
+
+if TYPE_CHECKING:
+    from xarray.core.merge import CoercibleValue
 
 # """
 # DEVELOPERS' NOTE
@@ -105,6 +117,8 @@ class DataTree(
     def name(self) -> str | None:
         """The name of this node."""
         return self._name
+
+    # TODO name setter
 
     @TreeNode.parent.setter
     def parent(self, new_parent: DataTree) -> None:
@@ -214,13 +228,6 @@ class DataTree(
                 f"parent {parent.name} already contains a data variable named {self.name}"
             )
 
-    def assign(self, new: Mapping[str, DataTree | DataArray | Variable]) -> DataTree:
-        """
-        Assign new child nodes or data variables, returning a new object with all the original objects in addition to
-        the new ones.
-        """
-        raise NotImplementedError
-
     def __repr__(self):
         return tree_repr(self)
 
@@ -277,10 +284,31 @@ class DataTree(
         else:
             raise ValueError("Invalid format for key")
 
+    def update(self, other: Dataset | Mapping[str, DataTree | CoercibleValue]) -> None:
+        """
+        Update this node's children and / or variables.
+
+        Just like `dict.update` this is an in-place operation.
+        """
+        # TODO separate by type
+        new_children = {}
+        new_variables = {}
+        for k, v in other.items():
+            if isinstance(v, DataTree):
+                new_children[k] = v
+            elif isinstance(v, (DataArray, Variable)):
+                # TODO this should also accomodate other types that can be coerced into Variables
+                new_variables[k] = v
+            elif isinstance(v, Dataset):
+                new_variables = v.variables
+            else:
+                raise TypeError(f"Type {type(v)} cannot be assigned to a DataTree")
+
+        super().update(new_children)
+        self.ds.update(new_variables)
+
     def __setitem__(
-        self,
-        key: Union[Hashable, List[Hashable], Mapping, T_Path],
-        value: Union[TreeNode, Dataset, DataArray, Variable, None],
+        self, key: str, value: DataTree | Dataset | DataArray | Variable
     ) -> None:
         """
         Add either a child node or an array to the tree, at any position.
@@ -289,87 +317,17 @@ class DataTree(
 
         If there is already a node at the given location, then if value is a Node class or Dataset it will overwrite the
         data already present at that node, and if value is a single array, it will be merged with it.
-
-        If value is None a new node will be created but containing no data. If a node already exists at that path it
-        will have its .ds attribute set to None. (To remove node from the tree completely instead use `del tree[path]`.)
-
-        Parameters
-        ----------
-        key
-            A path-like address for either a new node, or the address and name of a new variable, or the name of a new
-            variable.
-        value
-            Can be a node class or a data object (i.e. Dataset, DataArray, Variable).
         """
-
         # TODO xarray.Dataset accepts other possibilities, how do we exactly replicate all the behaviour?
         if utils.is_dict_like(key):
             raise NotImplementedError
-
-        path = self._tuple_or_path_to_path(key)
-        tags = [
-            tag for tag in path.split(self.separator) if tag not in [self.separator, ""]
-        ]
-
-        # TODO a .path_as_tags method?
-        if not tags:
-            # only dealing with this node, no need for paths
-            if isinstance(value, (Dataset, DataArray, Variable)):
-                # single arrays will replace whole Datasets, as no name for new variable was supplied
-                self.ds = value
-            elif isinstance(value, TreeNode):
-                self.add_child(value)
-            elif value is None:
-                self.ds = None
-            else:
-                raise TypeError(
-                    "Can only assign values of type TreeNode, Dataset, DataArray, or Variable, "
-                    f"not {type(value)}"
-                )
+        elif isinstance(key, str):
+            # TODO should possibly deal with hashables in general?
+            # path-like: a name of a node/variable, or path to a node/variable
+            path = NodePath(key)
+            return self._set_item(path, value, new_nodes_along_path=True)
         else:
-            *path_tags, last_tag = tags
-            if not path_tags:
-                path_tags = "/"
-
-            # get anything that already exists at that location
-            try:
-                existing_node = self.get_node(path)
-            except anytree.resolver.ResolverError:
-                existing_node = None
-
-            if existing_node is not None:
-                if isinstance(value, Dataset):
-                    # replace whole dataset
-                    existing_node.ds = Dataset
-                elif isinstance(value, (DataArray, Variable)):
-                    if not existing_node.has_data:
-                        # promotes da to ds
-                        existing_node.ds = value
-                    else:
-                        # update with new da
-                        existing_node.ds[last_tag] = value
-                elif isinstance(value, TreeNode):
-                    # overwrite with new node at same path
-                    self.set_node(path=path, node=value)
-                elif value is None:
-                    existing_node.ds = None
-                else:
-                    raise TypeError(
-                        "Can only assign values of type TreeNode, Dataset, DataArray, or Variable, "
-                        f"not {type(value)}"
-                    )
-            else:
-                # if nothing there then make new node based on type of object
-                if isinstance(value, (Dataset, DataArray, Variable)) or value is None:
-                    new_node = DataTree(name=last_tag, data=value)
-                    self.set_node(path=path_tags, node=new_node)
-                elif isinstance(value, TreeNode):
-                    self.set_node(path=path, node=value)
-                else:
-                    raise TypeError(
-                        "Can only assign values of type TreeNode, Dataset, DataArray, or Variable, "
-                        f"not {type(value)}"
-                    )
+            raise ValueError("Invalid format for key")
 
     @property
     def nbytes(self) -> int:

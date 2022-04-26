@@ -116,129 +116,141 @@ class TestVariablesChildrenNameCollisions:
             dt.ds["a"] = xr.DataArray(0)
 
 
-class TestGetItems:
-    def test_get_node(self):
+class TestGet:
+    ...
+
+
+class TestGetItem:
+    def test_getitem_node(self):
         folder1 = DataTree(name="folder1")
         results = DataTree(name="results", parent=folder1)
         highres = DataTree(name="highres", parent=results)
         assert folder1["results"] is results
         assert folder1["results/highres"] is highres
 
-    def test_get_self(self):
+    def test_getitem_self(self):
         dt = DataTree()
         assert dt["."] is dt
 
-    def test_get_single_data_variable(self):
+    def test_getitem_single_data_variable(self):
         data = xr.Dataset({"temp": [0, 50]})
         results = DataTree(name="results", data=data)
         xrt.assert_identical(results["temp"], data["temp"])
 
-    def test_get_single_data_variable_from_node(self):
+    def test_getitem_single_data_variable_from_node(self):
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataTree(name="folder1")
         results = DataTree(name="results", parent=folder1)
         DataTree(name="highres", parent=results, data=data)
         xrt.assert_identical(folder1["results/highres/temp"], data["temp"])
 
-    def test_get_nonexistent_node(self):
+    def test_getitem_nonexistent_node(self):
         folder1 = DataTree(name="folder1")
         DataTree(name="results", parent=folder1)
         with pytest.raises(KeyError):
             folder1["results/highres"]
 
-    def test_get_nonexistent_variable(self):
+    def test_getitem_nonexistent_variable(self):
         data = xr.Dataset({"temp": [0, 50]})
         results = DataTree(name="results", data=data)
         with pytest.raises(KeyError):
             results["pressure"]
 
     @pytest.mark.xfail(reason="Should be deprecated in favour of .subset")
-    def test_get_multiple_data_variables(self):
+    def test_getitem_multiple_data_variables(self):
         data = xr.Dataset({"temp": [0, 50], "p": [5, 8, 7]})
         results = DataTree(name="results", data=data)
         xrt.assert_identical(results[["temp", "p"]], data[["temp", "p"]])
 
     @pytest.mark.xfail(reason="Indexing needs to return whole tree (GH #77)")
-    def test_dict_like_selection_access_to_dataset(self):
+    def test_getitem_dict_like_selection_access_to_dataset(self):
         data = xr.Dataset({"temp": [0, 50]})
         results = DataTree(name="results", data=data)
         xrt.assert_identical(results[{"temp": 1}], data[{"temp": 1}])
 
 
-class TestSetItems:
-    def test_set_new_child_node(self):
+class TestUpdate:
+    ...
+
+
+class TestSetItem:
+    def test_setitem_new_child_node(self):
         john = DataTree(name="john")
         mary = DataTree(name="mary")
         john["Mary"] = mary
         assert john["Mary"] is mary
 
-    def test_set_unnamed_child_node(self):
+    def test_setitem_unnamed_child_node(self):
         john = DataTree(name="john")
         with pytest.raises(ValueError, match="unnamed"):
             DataTree(parent=john)
 
-    def test_overwrite_child_name(self):
+    def test_setitem_overwrite_child_name(self):
         john = DataTree(name="john")
         r2d2 = DataTree(name="R2D2")
         john["Mary"] = r2d2
         assert john["Mary"] is r2d2
         assert r2d2.name == "R2D2"
 
-    def test_set_new_grandchild_node(self):
+    def test_setitem_new_grandchild_node(self):
         john = DataTree(name="john")
         DataTree(name="mary", parent=john)
         rose = DataTree(name="rose")
         john["Mary/Rose"] = rose
         assert john["Mary/Rose"] is rose
 
-    def test_set_new_empty_node(self):
+    def test_setitem_new_empty_node(self):
         john = DataTree(name="john")
-        john["mary"] = None
+        john["mary"] = DataTree()
         mary = john["mary"]
         assert isinstance(mary, DataTree)
         xrt.assert_identical(mary.ds, xr.Dataset())
 
-    def test_overwrite_data_in_node_with_none(self):
+    def test_setitem_overwrite_data_in_node_with_none(self):
         john = DataTree(name="john")
         mary = DataTree(name="mary", parent=john, data=xr.Dataset())
-        john["mary"] = None
+        john["mary"] = DataTree()
         xrt.assert_identical(mary.ds, xr.Dataset())
 
         john.ds = xr.Dataset()
-        john["."] = None
-        xrt.assert_identical(john.ds, xr.Dataset())
+        with pytest.raises(ValueError, match="has no name"):
+            john["."] = DataTree()
 
-    def test_set_dataset_on_this_node(self):
+    @pytest.mark.xfail(reason="assigning Datasets doesn't yet create new nodes")
+    def test_setitem_dataset_on_this_node(self):
         data = xr.Dataset({"temp": [0, 50]})
         results = DataTree(name="results")
         results["."] = data
         assert results.ds is data
 
-    def test_set_dataset_as_new_node(self):
+    @pytest.mark.xfail(reason="assigning Datasets doesn't yet create new nodes")
+    def test_setitem_dataset_as_new_node(self):
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataTree(name="folder1")
         folder1["results"] = data
         assert folder1["results"].ds is data
 
-    def test_set_dataset_as_new_node_requiring_intermediate_nodes(self):
+    @pytest.mark.xfail(reason="assigning Datasets doesn't yet create new nodes")
+    def test_setitem_dataset_as_new_node_requiring_intermediate_nodes(self):
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataTree(name="folder1")
         folder1["results/highres"] = data
         assert folder1["results/highres"].ds is data
 
-    def test_set_named_dataarray_as_new_node(self):
+    def test_setitem_named_dataarray(self):
         data = xr.DataArray(name="temp", data=[0, 50])
         folder1 = DataTree(name="folder1")
         folder1["results"] = data
-        xrt.assert_identical(folder1["results"].ds, data.to_dataset())
+        expected = data.rename("results")
+        xrt.assert_equal(folder1["results"], expected)
 
-    def test_set_unnamed_dataarray(self):
+    def test_setitem_unnamed_dataarray(self):
         data = xr.DataArray([0, 50])
         folder1 = DataTree(name="folder1")
-        with pytest.raises(ValueError, match="unable to convert"):
-            folder1["results"] = data
+        folder1["results"] = data
+        xrt.assert_equal(folder1["results"], data)
 
-    def test_add_new_variable_to_empty_node(self):
+    def test_setitem_add_new_variable_to_empty_node(self):
         results = DataTree(name="results")
         results["pressure"] = xr.DataArray(data=[2, 3])
         assert "pressure" in results.ds
@@ -252,12 +264,13 @@ class TestSetItems:
         results["highres/temp"] = xr.Variable(data=[10, 11], dims=["x"])
         assert "temp" in results["highres"].ds
 
-    def test_dataarray_replace_existing_node(self):
+    def test_setitem_dataarray_replace_existing_node(self):
         t = xr.Dataset({"temp": [0, 50]})
         results = DataTree(name="results", data=t)
         p = xr.DataArray(data=[2, 3])
         results["pressure"] = p
-        xrt.assert_identical(results.ds, p.to_dataset())
+        expected = t.assign(pressure=p)
+        xrt.assert_identical(results.ds, expected)
 
 
 class TestDictionaryInterface:
