@@ -66,6 +66,13 @@ class TestTreeCreation:
         assert dt.name is None
 
 
+class TestFamilyTree:
+    def test_setparent_unnamed_child_node_fails(self):
+        john = DataTree(name="john")
+        with pytest.raises(ValueError, match="unnamed"):
+            DataTree(parent=john)
+
+
 class TestStoreDatasets:
     def test_create_with_data(self):
         dat = xr.Dataset({"a": 0})
@@ -180,10 +187,11 @@ class TestSetItem:
         john["Mary"] = mary
         assert john["Mary"] is mary
 
-    def test_setitem_unnamed_child_node(self):
-        john = DataTree(name="john")
-        with pytest.raises(ValueError, match="unnamed"):
-            DataTree(parent=john)
+    @pytest.mark.xfail(reason="bug with name overwriting")
+    def test_setitem_unnamed_child_node_becomes_named(self):
+        john2 = DataTree(name="john2")
+        john2["sonny"] = DataTree()
+        assert john2["sonny"].name == "sonny"
 
     def test_setitem_overwrite_child_name(self):
         john = DataTree(name="john")

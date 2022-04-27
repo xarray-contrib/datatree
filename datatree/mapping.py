@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class TreeIsomorphismError(ValueError):
-    """Error raised if two tree objects are not isomorphic to one another when they need to be."""
+    """Error raised if two tree objects do not share the same node structure."""
 
     pass
 
@@ -24,8 +24,8 @@ class TreeIsomorphismError(ValueError):
 def check_isomorphic(
     a: DataTree,
     b: DataTree,
-    require_names_equal=False,
-    check_from_root=True,
+    require_names_equal: bool = False,
+    check_from_root: bool = True,
 ):
     """
     Check that two trees have the same structure, raising an error if not.
