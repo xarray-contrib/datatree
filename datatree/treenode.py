@@ -191,11 +191,6 @@ class TreeNode:
                     f"Cannot add same node {name} multiple times as different children."
                 )
 
-    def _add_child(self, key: str, node: TreeNode):
-        """Add a single child node to this node."""
-        new_children = {**self.children, key: node}
-        self.children = new_children
-
     def __repr__(self):
         return f"TreeNode(children={dict(self._children)})"
 
