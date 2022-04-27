@@ -280,8 +280,8 @@ class TestDictionaryInterface:
 class TestTreeFromDict:
     def test_data_in_root(self):
         dat = xr.Dataset()
-        dt = DataTree.from_dict({".": dat})
-        assert dt.name is None  # TODO check against some other placeholder?
+        dt = DataTree.from_dict({"/": dat})
+        assert dt.name is None
         assert dt.parent is None
         assert dt.children == {}
         assert dt.ds is dat
@@ -290,11 +290,11 @@ class TestTreeFromDict:
         dat1, dat2 = xr.Dataset({"a": 1}), xr.Dataset({"b": 2})
         dt = DataTree.from_dict({"run1": dat1, "run2": dat2})
         xrt.assert_identical(dt.ds, xr.Dataset())
-        assert dt.name is None  # TODO check against some other placeholder?
+        assert dt.name is None
         assert dt["run1"].ds is dat1
-        assert dt["run1"].children == ()
+        assert dt["run1"].children == {}
         assert dt["run2"].ds is dat2
-        assert dt["run2"].children == ()
+        assert dt["run2"].children == {}
 
     def test_two_layers(self):
         dat1, dat2 = xr.Dataset({"a": 1}), xr.Dataset({"a": [1, 2]})
@@ -309,12 +309,12 @@ class TestTreeFromDict:
         paths = list(node.path for node in dt.subtree)
         assert paths == [
             "/",
-            "set1",
-            "set1/set1",
-            "set1/set2",
-            "set2",
-            "set2/set1",
-            "set3",
+            "/set1",
+            "/set1/set1",
+            "/set1/set2",
+            "/set2",
+            "/set2/set1",
+            "/set3",
         ]
 
 

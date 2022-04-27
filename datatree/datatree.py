@@ -4,10 +4,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Hashable,
     Iterable,
     Mapping,
+    MutableMapping,
     Tuple,
     Union,
 )
@@ -118,7 +118,9 @@ class DataTree(
         """The name of this node."""
         return self._name
 
-    # TODO name setter
+    @name.setter
+    def name(self, name: str | None) -> None:
+        self._name = name
 
     @TreeNode.parent.setter
     def parent(self, new_parent: DataTree) -> None:
@@ -160,62 +162,6 @@ class DataTree(
     def has_attrs(self) -> bool:
         """Whether or not there are any metadata attributes in this node."""
         return len(self.ds.attrs.keys()) > 0
-
-    @classmethod
-    def from_dict(
-        cls,
-        data_objects: Dict[T_Path, Union[Dataset, DataArray, None]] = None,
-        name: Hashable = "root",
-    ):
-        """
-        Create a datatree from a dictionary of data objects, labelled by paths into the tree.
-
-        Parameters
-        ----------
-        data_objects : dict-like, optional
-            A mapping from path names to xarray.Dataset, xarray.DataArray, or DataTree objects.
-
-            Path names can be given as unix-like paths, or as tuples of strings (where each string
-            is known as a single "tag"). If path names containing more than one tag are given, new
-            tree nodes will be constructed as necessary.
-
-            To assign data to the root node of the tree use {name} as the path.
-        name : Hashable, optional
-            Name for the root node of the tree. Default is "root"
-
-        Returns
-        -------
-        DataTree
-        """
-
-        # First create the root node
-        if data_objects:
-            root_data = data_objects.pop(name, None)
-        else:
-            root_data = None
-        obj = cls(name=name, data=root_data, parent=None, children=None)
-
-        if data_objects:
-            # Populate tree with children determined from data_objects mapping
-            for path, data in data_objects.items():
-                # Determine name of new node
-                path = obj._tuple_or_path_to_path(path)
-                if obj.separator in path:
-                    node_path, node_name = path.rsplit(obj.separator, maxsplit=1)
-                else:
-                    node_path, node_name = "/", path
-
-                relative_path = node_path.replace(obj.name, "")
-
-                # Create and set new node
-                new_node = cls(name=node_name, data=data)
-                obj.set_node(
-                    relative_path,
-                    new_node,
-                    allow_overwrite=False,
-                    new_nodes_along_path=True,
-                )
-        return obj
 
     def _pre_attach(self, parent: TreeNode) -> None:
         """
@@ -328,6 +274,49 @@ class DataTree(
             return self._set_item(path, value, new_nodes_along_path=True)
         else:
             raise ValueError("Invalid format for key")
+
+    @classmethod
+    def from_dict(
+        cls,
+        d: MutableMapping[str, Any],
+        name: str = None,
+    ) -> DataTree:
+        """
+        Create a datatree from a dictionary of data objects, labelled by paths into the tree.
+
+        Parameters
+        ----------
+        d : dict-like
+            A mapping from path names to xarray.Dataset, xarray.DataArray, or DataTree objects.
+
+            Path names are to be given as unix-like path. If path names containing more than one part are given, new
+            tree nodes will be constructed as necessary.
+
+            To assign data to the root node of the tree use "/" as the path.
+        name : Hashable, optional
+            Name for the root node of the tree. Default is None.
+
+        Returns
+        -------
+        DataTree
+        """
+
+        # First create the root node
+        root_data = d.pop("/", None)
+        obj = cls(name=name, data=root_data, parent=None, children=None)
+
+        if d:
+            # Populate tree with children determined from data_objects mapping
+            for path, data in d.items():
+                # Create and set new node
+                new_node = cls(data=data)
+                obj._set_item(
+                    path,
+                    new_node,
+                    allow_overwrite=False,
+                    new_nodes_along_path=True,
+                )
+        return obj
 
     @property
     def nbytes(self) -> int:
