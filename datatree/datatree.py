@@ -163,6 +163,11 @@ class DataTree(
         """Whether or not there are any metadata attributes in this node."""
         return len(self.ds.attrs.keys()) > 0
 
+    @property
+    def is_empty(self) -> bool:
+        """False if node contains any data or attrs. Does not look at children."""
+        return not (self.has_data or self.has_attrs)
+
     def _pre_attach(self, parent: TreeNode) -> None:
         """
         Method which superclass calls before setting parent, here used to prevent having two

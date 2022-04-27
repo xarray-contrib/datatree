@@ -88,7 +88,7 @@ class TestMapOverSubTree:
     def test_not_isomorphic(self):
         dt1 = create_test_datatree()
         dt2 = create_test_datatree()
-        dt2["set4"] = None
+        dt2["set1/set2/extra"] = DataTree(name="extra")
 
         @map_over_subtree
         def times_ten(ds1, ds2):

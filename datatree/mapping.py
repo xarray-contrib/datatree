@@ -8,8 +8,7 @@ from typing import TYPE_CHECKING, Callable, Tuple
 from xarray import DataArray, Dataset
 
 from .iterators import LevelOrderIter
-from .treenode import TreeNode
-from .utils import removeprefix, removesuffix
+from .treenode import NodePath, TreeNode
 
 if TYPE_CHECKING:
     from .datatree import DataTree
@@ -206,24 +205,23 @@ def map_over_subtree(func: Callable) -> DataTree | Tuple[DataTree, ...]:
             # Now we can call func on the data in this particular set of corresponding nodes
             results = (
                 func(*node_args_as_datasets, **node_kwargs_as_datasets)
-                if node_of_first_tree.has_data
+                if not node_of_first_tree.is_empty
                 else None
             )
 
             # TODO implement mapping over multiple trees in-place using if conditions from here on?
-            out_data_objects[node_of_first_tree.pathstr] = results
+            out_data_objects[node_of_first_tree.path] = results
 
         # Find out how many return values we received
         num_return_values = _check_all_return_values(out_data_objects)
 
-        ancestors_of_new_root = removesuffix(first_tree.pathstr, first_tree.name)
-
         # Reconstruct 1+ subtrees from the dict of results, by filling in all nodes of all result trees
+        original_root_path = first_tree.path
         result_trees = []
         for i in range(num_return_values):
             out_tree_contents = {}
             for n in first_tree.subtree:
-                p = n.pathstr
+                p = n.path
                 if p in out_data_objects.keys():
                     if isinstance(out_data_objects[p], tuple):
                         output_node_data = out_data_objects[p][i]
@@ -233,12 +231,13 @@ def map_over_subtree(func: Callable) -> DataTree | Tuple[DataTree, ...]:
                     output_node_data = None
 
                 # Discard parentage so that new trees don't include parents of input nodes
-                # TODO use a proper relative_path method on DataTree(/TreeNode) to do this
-                relative_path = removeprefix(p, ancestors_of_new_root)
+                relative_path = str(NodePath(p).relative_to(original_root_path))
+                relative_path = "/" if relative_path == "." else relative_path
                 out_tree_contents[relative_path] = output_node_data
 
             new_tree = DataTree.from_dict(
-                name=first_tree.name, data_objects=out_tree_contents
+                out_tree_contents,
+                name=first_tree.name,
             )
             result_trees.append(new_tree)
 
