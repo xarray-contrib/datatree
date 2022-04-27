@@ -242,7 +242,8 @@ class DataTree(
         Counterpart to the public .get method, and also only works on the immediate node, not other nodes in the tree.
         """
         if isinstance(val, DataTree):
-            super()._set(key, val)
+            val.name = key
+            val.parent = self
         elif isinstance(val, (DataArray, Variable)):
             # TODO this should also accomodate other types that can be coerced into Variables
             self.ds[key] = val
