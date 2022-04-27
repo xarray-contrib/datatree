@@ -19,12 +19,12 @@ def diff_nodewise_summary(a, b, compat):
         a_ds, b_ds = node_a.ds, node_b.ds
 
         if not a_ds._all_compat(b_ds, compat):
-            path = node_a.pathstr
             dataset_diff = diff_dataset_repr(a_ds, b_ds, compat_str)
             data_diff = "\n".join(dataset_diff.split("\n", 1)[1:])
 
             nodediff = (
-                f"\nData in nodes at position '{path}' do not match:" f"{data_diff}"
+                f"\nData in nodes at position '{node_a.path}' do not match:"
+                f"{data_diff}"
             )
             summary.append(nodediff)
 

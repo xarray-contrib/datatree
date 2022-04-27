@@ -82,7 +82,7 @@ def diff_treestructure(a: DataTree, b: DataTree, require_names_equal: bool) -> s
     # Checking for isomorphism by walking in this way implicitly assumes that the tree is an ordered tree
     # (which it is so long as children are stored in a tuple or list rather than in a set).
     for node_a, node_b in zip(LevelOrderIter(a), LevelOrderIter(b)):
-        path_a, path_b = node_a.pathstr, node_b.pathstr
+        path_a, path_b = node_a.path, node_b.path
 
         if require_names_equal:
             if node_a.name != node_b.name:

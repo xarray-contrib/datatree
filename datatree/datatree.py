@@ -309,7 +309,8 @@ class DataTree(
             # Populate tree with children determined from data_objects mapping
             for path, data in d.items():
                 # Create and set new node
-                new_node = cls(data=data)
+                node_name = NodePath(path).name
+                new_node = cls(name=node_name, data=data)
                 obj._set_item(
                     path,
                     new_node,

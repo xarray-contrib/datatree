@@ -304,6 +304,12 @@ class TestTreeFromDict:
         highres_run = dt["highres/run"]
         assert highres_run.ds is dat1
 
+    def test_nones(self):
+        dt = DataTree.from_dict({"d": None, "d/e": None})
+        assert [node.name for node in dt.subtree] == [None, "d", "e"]
+        assert [node.path for node in dt.subtree] == ["/", "/d", "/d/e"]
+        xrt.assert_equal(dt["d/e"].ds, xr.Dataset())
+
     def test_full(self):
         dt = create_test_datatree()
         paths = list(node.path for node in dt.subtree)
