@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 from xarray.core.formatting import _compat_to_str, diff_dataset_repr
 
 from .mapping import diff_treestructure
 from .render import RenderTree
+
+if TYPE_CHECKING:
+    from .datatree import DataTree
 
 
 def diff_nodewise_summary(a, b, compat):
@@ -75,7 +80,7 @@ def tree_repr(dt):
     return "\n".join(lines)
 
 
-def _single_node_repr(node):
+def _single_node_repr(node: "DataTree") -> str:
     """Information about this node, not including its relationships to other nodes."""
     node_info = f"DataTree('{node.name}')"
 

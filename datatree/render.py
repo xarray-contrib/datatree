@@ -3,6 +3,10 @@ String Tree Rendering. Copied from anytree.
 """
 
 import collections
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .datatree import DataTree
 
 Row = collections.namedtuple("Row", ("pre", "fill", "node"))
 
@@ -58,7 +62,9 @@ class ContStyle(AbstractStyle):
 
 
 class RenderTree(object):
-    def __init__(self, node, style=ContStyle(), childiter=list, maxlevel=None):
+    def __init__(
+        self, node: "DataTree", style=ContStyle(), childiter=list, maxlevel=None
+    ):
         """
         Render tree starting at `node`.
         Keyword Args:
@@ -169,7 +175,7 @@ class RenderTree(object):
 
     def __next(self, node, continues, level=0):
         yield RenderTree.__item(node, continues, self.style)
-        children = node.children
+        children = node.children.values()
         level += 1
         if children and (self.maxlevel is None or level < self.maxlevel):
             children = self.childiter(children)

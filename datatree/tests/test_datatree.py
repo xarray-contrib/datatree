@@ -328,13 +328,13 @@ class TestRestructuring:
 
 class TestRepr:
     def test_print_empty_node(self):
-        dt = DataTree("root")
+        dt = DataTree(name="root")
         printout = dt.__str__()
         assert printout == "DataTree('root', parent=None)"
 
     def test_print_empty_node_with_attrs(self):
         dat = xr.Dataset(attrs={"note": "has attrs"})
-        dt = DataTree("root", data=dat)
+        dt = DataTree(name="root", data=dat)
         printout = dt.__str__()
         assert printout == textwrap.dedent(
             """\
@@ -348,7 +348,7 @@ class TestRepr:
 
     def test_print_node_with_data(self):
         dat = xr.Dataset({"a": [0, 2]})
-        dt = DataTree("root", data=dat)
+        dt = DataTree(name="root", data=dat)
         printout = dt.__str__()
         expected = [
             "DataTree('root', parent=None)",
@@ -363,19 +363,18 @@ class TestRepr:
 
     def test_nested_node(self):
         dat = xr.Dataset({"a": [0, 2]})
-        root = DataTree("root")
-        DataTree("results", data=dat, parent=root)
+        root = DataTree(name="root")
+        DataTree(name="results", data=dat, parent=root)
         printout = root.__str__()
         assert printout.splitlines()[2].startswith("    ")
 
     def test_print_datatree(self):
         dt = create_test_datatree()
         print(dt)
-        print(dt.descendants)
 
         # TODO work out how to test something complex like this
 
     def test_repr_of_node_with_data(self):
         dat = xr.Dataset({"a": [0, 2]})
-        dt = DataTree("root", data=dat)
+        dt = DataTree(name="root", data=dat)
         assert "Coordinates" in repr(dt)

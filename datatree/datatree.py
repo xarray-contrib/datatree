@@ -552,7 +552,7 @@ class DataTree(
     @property
     def groups(self):
         """Return all netCDF4 groups in the tree, given as a tuple of path-like strings."""
-        return tuple(node.pathstr for node in self.subtree)
+        return tuple(node.path for node in self.subtree)
 
     def to_netcdf(
         self, filepath, mode: str = "w", encoding=None, unlimited_dims=None, **kwargs
