@@ -77,6 +77,19 @@ Internal Changes
 
 .. _whats-new.v0.0.4:
 
-v0.0.4 (unreleased)
+v0.0.4 (31/03/2022)
 -------------------
 
+- Ensure you get the pretty tree-like string representation by default in ipython (:pull:`73`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Now available on conda-forge (as xarray-datatree)! (:pull:`71`)
+  By `Anderson Banihirwe <https://github.com/andersy005>`_.
+- Allow for python 3.8 (:pull:`70`).
+  By `Don Setiawan <https://github.com/lsetiawan>`_.
+
+.. _whats-new.v0.0.3:
+
+v0.0.3 (30/03/2022)
+-------------------
+
+- First released version available on both pypi (as xarray-datatree)!
