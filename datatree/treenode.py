@@ -337,13 +337,13 @@ class TreeNode:
                     raise KeyError(f"Could not find node at {path}")
         return current_node
 
-    def update(self, other: Mapping[str, TreeNode]) -> None:
+    def _set(self, key: str, val: TreeNode) -> None:
         """
-        Update this node's children.
+        Set the child node with the specified key to value.
 
-        Just like `dict.update` this is an in-place operation.
+        Counterpart to the public .get method, and also only works on the immediate node, not other nodes in the tree.
         """
-        new_children = {**self.children, **other}
+        new_children = {**self.children, key: val}
         self.children = new_children
 
     def _set_item(
@@ -404,10 +404,9 @@ class TreeNode:
                     if part in current_node.children:
                         current_node = current_node.children[part]
                     elif new_nodes_along_path:
-                        new_node = type(
-                            self
-                        )()  # Want child classes to populate tree with their own types
-                        current_node.update({**current_node.children, part: new_node})
+                        # Want child classes (i.e. DataTree) to populate tree with their own types
+                        new_node = type(self)()
+                        current_node._set(part, new_node)
                         current_node = current_node.children[part]
                     else:
                         raise KeyError(f"Could not reach node at path {path}")
@@ -415,14 +414,23 @@ class TreeNode:
         if name in current_node.children:
             # Deal with anything already existing at this location
             if allow_overwrite:
-                current_node.update({**current_node.children, name: item})
+                current_node._set(name, item)
             else:
                 raise KeyError(f"Already a node object at path {path}")
         else:
-            current_node.update({**current_node.children, name: item})
+            current_node._set(name, item)
 
     def del_node(self, path: str):
         raise NotImplementedError
+
+    def update(self, other: Mapping[str, TreeNode]) -> None:
+        """
+        Update this node's children.
+
+        Just like `dict.update` this is an in-place operation.
+        """
+        new_children = {**self.children, **other}
+        self.children = new_children
 
     @property
     def name(self) -> str | None:
@@ -443,7 +451,8 @@ class TreeNode:
         if self.is_root:
             return "/"
         else:
-            this_node, *ancestors = self.ancestors
+            root, *ancestors = self.ancestors
+            # don't include name of root because (a) root might not have a name & (b) we want path relative to root.
             return "/" + "/".join(node.name for node in ancestors)
 
     def relative_to(self, other: TreeNode) -> str:

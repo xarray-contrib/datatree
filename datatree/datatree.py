@@ -235,28 +235,19 @@ class DataTree(
         else:
             raise ValueError("Invalid format for key")
 
-    def update(self, other: Dataset | Mapping[str, DataTree | CoercibleValue]) -> None:
+    def _set(self, key: str, val: DataTree | CoercibleValue) -> None:
         """
-        Update this node's children and / or variables.
+        Set the child node or variable with the specified key to value.
 
-        Just like `dict.update` this is an in-place operation.
+        Counterpart to the public .get method, and also only works on the immediate node, not other nodes in the tree.
         """
-        # TODO separate by type
-        new_children = {}
-        new_variables = {}
-        for k, v in other.items():
-            if isinstance(v, DataTree):
-                new_children[k] = v
-            elif isinstance(v, (DataArray, Variable)):
-                # TODO this should also accomodate other types that can be coerced into Variables
-                new_variables[k] = v
-            elif isinstance(v, Dataset):
-                new_variables = v.variables
-            else:
-                raise TypeError(f"Type {type(v)} cannot be assigned to a DataTree")
-
-        super().update(new_children)
-        self.ds.update(new_variables)
+        if isinstance(val, DataTree):
+            super()._set(key, val)
+        elif isinstance(val, (DataArray, Variable)):
+            # TODO this should also accomodate other types that can be coerced into Variables
+            self.ds[key] = val
+        else:
+            raise TypeError(f"Type {type(val)} cannot be assigned to a DataTree")
 
     def __setitem__(
         self, key: str, value: DataTree | Dataset | DataArray | Variable
@@ -279,6 +270,29 @@ class DataTree(
             return self._set_item(path, value, new_nodes_along_path=True)
         else:
             raise ValueError("Invalid format for key")
+
+    def update(self, other: Dataset | Mapping[str, DataTree | CoercibleValue]) -> None:
+        """
+        Update this node's children and / or variables.
+
+        Just like `dict.update` this is an in-place operation.
+        """
+        # TODO separate by type
+        new_children = {}
+        new_variables = {}
+        for k, v in other.items():
+            if isinstance(v, DataTree):
+                new_children[k] = v
+            elif isinstance(v, (DataArray, Variable)):
+                # TODO this should also accomodate other types that can be coerced into Variables
+                new_variables[k] = v
+            elif isinstance(v, Dataset):
+                new_variables = v.variables
+            else:
+                raise TypeError(f"Type {type(v)} cannot be assigned to a DataTree")
+
+        super().update(new_children)
+        self.ds.update(new_variables)
 
     @classmethod
     def from_dict(
