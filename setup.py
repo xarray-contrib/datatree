@@ -13,29 +13,27 @@ else:
 
 
 setup(
-    name="datatree",
+    name="xarray-datatree",
     description="Hierarchical tree-like data structures for xarray",
     long_description=long_description,
-    url="https://github.com/TomNicholas/datatree",
+    url="https://github.com/xarray-contrib/datatree",
     author="Thomas Nicholas",
     author_email="thomas.nicholas@columbia.edu",
     license="Apache",
     classifiers=[
-        "Development Status :: 5 - Production/Stable",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering",
-        "License :: OSI Approved :: Apache License",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
     packages=find_packages(exclude=["docs", "tests", "tests.*", "docs.*"]),
     install_requires=install_requires,
-    python_requires=">=3.9",
-    setup_requires="setuptools_scm",
-    use_scm_version={
-        "write_to": "datatree/_version.py",
-        "write_to_template": '__version__ = "{version}"',
-        "tag_regex": r"^(?P<prefix>v)?(?P<version>[^\+]+)(?P<suffix>.*)?$",
-    },
+    python_requires=">=3.8",
+    use_scm_version={"version_scheme": "post-release", "local_scheme": "dirty-tag"},
+    setup_requires=["setuptools_scm>=3.4", "setuptools>=42"],
 )
