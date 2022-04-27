@@ -1,8 +1,6 @@
-from typing import Sequence
-
 from xarray import Dataset, open_dataset
 
-from .datatree import DataTree, NodePath, T_Path
+from .datatree import DataTree, NodePath
 
 
 def _iter_zarr_groups(root, parent="/"):
@@ -58,6 +56,8 @@ def open_datatree(filename_or_obj, engine=None, **kwargs) -> DataTree:
         return _open_datatree_zarr(filename_or_obj, **kwargs)
     elif engine in [None, "netcdf4", "h5netcdf"]:
         return _open_datatree_netcdf(filename_or_obj, engine=engine, **kwargs)
+    else:
+        raise ValueError("Unsupported engine")
 
 
 def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
@@ -103,31 +103,6 @@ def _open_datatree_zarr(store, **kwargs) -> DataTree:
                 new_nodes_along_path=True,
             )
     return tree_root
-
-
-def open_mfdatatree(
-    filepaths, rootnames: Sequence[T_Path] = None, chunks=None, **kwargs
-) -> DataTree:
-    """
-    Open multiple files as a single DataTree.
-
-    Groups found in each file will be merged at the root level, unless rootnames are specified,
-    which will then be used to organise the Tree instead.
-    """
-    if rootnames is None:
-        rootnames = ["/" for _ in filepaths]
-    elif len(rootnames) != len(filepaths):
-        raise ValueError
-
-    full_tree = DataTree()
-
-    for file, root in zip(filepaths, rootnames):
-        dt = open_datatree(file, chunks=chunks, **kwargs)
-        full_tree.set_node(
-            path=root, node=dt, new_nodes_along_path=True, allow_overwrite=False
-        )
-
-    return full_tree
 
 
 def _maybe_extract_group_kwargs(enc, group):

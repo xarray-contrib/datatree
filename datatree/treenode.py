@@ -74,7 +74,7 @@ class TreeNode:
         """Parent of this node."""
         return self._parent
 
-    def _set_parent(self, new_parent: TreeNode | None, child_name: str = None):
+    def _set_parent(self, new_parent: TreeNode | None, child_name: str = ""):
         # TODO is it possible to refactor in a way that removes this private method?
 
         if new_parent is not None and not isinstance(new_parent, TreeNode):
@@ -117,7 +117,7 @@ class TreeNode:
             self._parent = None
             self._post_detach(parent)
 
-    def _attach(self, parent: TreeNode | None, child_name: str = None):
+    def _attach(self, parent: TreeNode | None, child_name: str):
         if parent is not None:
             self._pre_attach(parent)
             parentchildren = parent._children
@@ -130,7 +130,7 @@ class TreeNode:
         else:
             self._parent = None
 
-    def orphan(self):
+    def orphan(self) -> None:
         """Detach this node from its parent."""
         self._set_parent(new_parent=None)
 
@@ -168,7 +168,7 @@ class TreeNode:
         self._post_detach_children(children)
 
     @staticmethod
-    def _check_children(children: Mapping[str, TreeNode]):
+    def _check_children(children: Mapping[str, TreeNode]) -> None:
         """Check children for correct types and for any duplicates."""
         if not is_dict_like(children):
             raise TypeError(
@@ -191,7 +191,7 @@ class TreeNode:
                     f"Cannot add same node {name} multiple times as different children."
                 )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"TreeNode(children={dict(self._children)})"
 
     def _pre_detach_children(self, children: Mapping[str, TreeNode]):
@@ -219,7 +219,7 @@ class TreeNode:
             node = node.parent
 
     @property
-    def lineage(self) -> Tuple[TreeNode]:
+    def lineage(self) -> Tuple[TreeNode, ...]:
         """All parent nodes and their parent nodes, starting with the closest."""
         return tuple(self.iter_lineage())
 
@@ -255,13 +255,16 @@ class TreeNode:
         """
         Nodes with the same parent as this node.
         """
-        return OrderedDict(
-            {
-                name: child
-                for name, child in self.parent.children.items()
-                if child is not self
-            }
-        )
+        if self.parent:
+            return OrderedDict(
+                {
+                    name: child
+                    for name, child in self.parent.children.items()
+                    if child is not self
+                }
+            )
+        else:
+            return OrderedDict()
 
     @property
     def subtree(self) -> Iterator[TreeNode]:
@@ -311,12 +314,13 @@ class TreeNode:
         if isinstance(path, str):
             path = NodePath(path)
 
+        current_node: TreeNode | None
         if path.root:
             current_node = self.root
-            root, *parts = path.parts
+            root, *parts = list(path.parts)
         else:
             current_node = self
-            parts = path.parts
+            parts = list(path.parts)
 
         for part in parts:
             if part == "..":
@@ -448,7 +452,8 @@ class TreeNode:
         else:
             root, *ancestors = self.ancestors
             # don't include name of root because (a) root might not have a name & (b) we want path relative to root.
-            return "/" + "/".join(node.name for node in ancestors)
+            names = [node.name for node in ancestors]
+            return "/" + "/".join(names)  # type: ignore
 
     def relative_to(self, other: TreeNode) -> str:
         """

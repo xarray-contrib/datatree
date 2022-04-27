@@ -4,7 +4,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Hashable,
     Iterable,
     Mapping,
     MutableMapping,
@@ -515,31 +514,6 @@ class DataTree(
             print(f"{pre}DataTree('{self.name}')")
             for ds_line in repr(node.ds)[1:]:
                 print(f"{fill}{ds_line}")
-
-    # TODO re-implement using anytree findall function?
-    def get_all(self, *tags: Hashable) -> DataTree:
-        """
-        Return a DataTree containing the stored objects whose path contains all of the given tags,
-        where the tags can be present in any order.
-        """
-        matching_children = {
-            c.tags: c.get_node(tags)
-            for c in self.descendants
-            if all(tag in c.tags for tag in tags)
-        }
-        return DataTree(data_objects=matching_children)
-
-    # TODO re-implement using anytree find function?
-    def get_any(self, *tags: Hashable) -> DataTree:
-        """
-        Return a DataTree containing the stored objects whose path contains any of the given tags.
-        """
-        matching_children = {
-            c.tags: c.get_node(tags)
-            for c in self.descendants
-            if any(tag in c.tags for tag in tags)
-        }
-        return DataTree(data_objects=matching_children)
 
     def merge(self, datatree: DataTree) -> DataTree:
         """Merge all the leaves of a second DataTree into this one."""
