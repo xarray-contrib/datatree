@@ -27,6 +27,8 @@ class NodePath(PurePosixPath):
                 'Root of NodePath can only be either "/" or "", with "" meaning the path is relative.'
             )
 
+        # TODO should we also forbid suffixes to avoid node names with dots in them?
+
         return obj
 
 

@@ -16,6 +16,9 @@ class TestIO:
         original_dt.to_netcdf(filepath, engine="netcdf4")
 
         roundtrip_dt = open_datatree(filepath)
+
+        print(original_dt)
+        print(roundtrip_dt)
         assert_equal(original_dt, roundtrip_dt)
 
     @requires_h5netcdf
@@ -38,6 +41,9 @@ class TestIO:
         original_dt.to_zarr(filepath)
 
         roundtrip_dt = open_datatree(filepath, engine="zarr")
+
+        print(original_dt)
+        print(roundtrip_dt)
         assert_equal(original_dt, roundtrip_dt)
 
     @requires_zarr
