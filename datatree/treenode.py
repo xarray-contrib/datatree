@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Generic, Iterator, Mapping, Tuple, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Generic,
+    Iterator,
+    Mapping,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from xarray.core.utils import Frozen, is_dict_like
 
@@ -64,7 +73,7 @@ class TreeNode(Generic[Tree]):
     (This class is heavily inspired by the anytree library's NodeMixin class.)
     """
 
-    _parent: Tree | None
+    _parent: Optional[Tree]
     _children: OrderedDict[str, Tree]
 
     def __init__(self, children: Mapping[str, Tree] = None):
@@ -75,11 +84,11 @@ class TreeNode(Generic[Tree]):
             self.children = children
 
     @property
-    def parent(self: Tree) -> Tree | None:
+    def parent(self) -> Tree | None:
         """Parent of this node."""
         return self._parent
 
-    def _set_parent(self, new_parent: Tree | None, child_name: str = "") -> None:
+    def _set_parent(self, new_parent: Tree | None, child_name: str = None) -> None:
         # TODO is it possible to refactor in a way that removes this private method?
 
         if new_parent is not None and not isinstance(new_parent, TreeNode):
@@ -122,8 +131,11 @@ class TreeNode(Generic[Tree]):
             self._parent = None
             self._post_detach(parent)
 
-    def _attach(self, parent: Tree | None, child_name: str) -> None:
+    def _attach(self, parent: Tree | None, child_name: str = None) -> None:
         if parent is not None:
+            if child_name is None:
+                raise ValueError()
+
             self._pre_attach(parent)
             parentchildren = parent._children
             assert not any(
@@ -298,7 +310,7 @@ class TreeNode(Generic[Tree]):
         """Method call after attaching to `parent`."""
         pass
 
-    def get(self: Tree, key: str, default: Tree = None) -> Tree | None:
+    def get(self: Tree, key: str, default: Tree = None) -> Optional[Tree]:
         """
         Return the child node with the specified key.
 
@@ -309,6 +321,8 @@ class TreeNode(Generic[Tree]):
             return self.children[key]
         else:
             return default
+
+    # TODO `._walk` method to be called by both `_get_item` and `_set_item`
 
     def _get_item(self: Tree, path: str | NodePath) -> Union[Tree, T_DataArray]:
         """
