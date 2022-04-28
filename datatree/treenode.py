@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from pathlib import PurePosixPath
-from typing import Any, Iterator, Mapping, Tuple
+from typing import TYPE_CHECKING, Generic, Iterator, Mapping, Tuple, TypeVar, Union
 
 from xarray.core.utils import Frozen, is_dict_like
+
+if TYPE_CHECKING:
+    from xarray.core.types import T_DataArray
 
 
 class TreeError(Exception):
@@ -32,7 +35,10 @@ class NodePath(PurePosixPath):
         return obj
 
 
-class TreeNode:
+Tree = TypeVar("Tree", bound="TreeNode")
+
+
+class TreeNode(Generic[Tree]):
     """
     Base class representing a node of a tree, with methods for traversing and altering the tree.
 
@@ -58,11 +64,10 @@ class TreeNode:
     (This class is heavily inspired by the anytree library's NodeMixin class.)
     """
 
-    # TODO replace all type annotations that use "TreeNode" with "Self", so it's still correct when subclassed (requires python 3.11)
-    _parent: TreeNode | None
-    _children: OrderedDict[str, TreeNode]
+    _parent: Tree | None
+    _children: OrderedDict[str, Tree]
 
-    def __init__(self, children: Mapping[str, TreeNode] = None):
+    def __init__(self, children: Mapping[str, Tree] = None):
         """Create a parentless node."""
         self._parent = None
         self._children = OrderedDict()
@@ -70,11 +75,11 @@ class TreeNode:
             self.children = children
 
     @property
-    def parent(self) -> TreeNode | None:
+    def parent(self: Tree) -> Tree | None:
         """Parent of this node."""
         return self._parent
 
-    def _set_parent(self, new_parent: TreeNode | None, child_name: str = ""):
+    def _set_parent(self, new_parent: Tree | None, child_name: str = "") -> None:
         # TODO is it possible to refactor in a way that removes this private method?
 
         if new_parent is not None and not isinstance(new_parent, TreeNode):
@@ -89,7 +94,7 @@ class TreeNode:
             self._detach(old_parent)
             self._attach(new_parent, child_name)
 
-    def _check_loop(self, new_parent: TreeNode | None):
+    def _check_loop(self, new_parent: Tree | None) -> None:
         """Checks that assignment of this new parent will not create a cycle."""
         if new_parent is not None:
             if new_parent is self:
@@ -103,7 +108,7 @@ class TreeNode:
                     f"Cannot set parent, as node {self} is already a descendant of node {new_parent}."
                 )
 
-    def _detach(self, parent: TreeNode | None):
+    def _detach(self, parent: Tree | None) -> None:
         if parent is not None:
             self._pre_detach(parent)
             parents_children = parent.children
@@ -117,7 +122,7 @@ class TreeNode:
             self._parent = None
             self._post_detach(parent)
 
-    def _attach(self, parent: TreeNode | None, child_name: str):
+    def _attach(self, parent: Tree | None, child_name: str) -> None:
         if parent is not None:
             self._pre_attach(parent)
             parentchildren = parent._children
@@ -135,12 +140,12 @@ class TreeNode:
         self._set_parent(new_parent=None)
 
     @property
-    def children(self) -> Mapping[str, TreeNode]:
+    def children(self: Tree) -> Mapping[str, Tree]:
         """Child nodes of this node, stored under a mapping via their names."""
         return Frozen(self._children)
 
     @children.setter
-    def children(self, children: Mapping[str, TreeNode]):
+    def children(self: Tree, children: Mapping[str, Tree]) -> None:
         self._check_children(children)
         children = OrderedDict(children)
 
@@ -158,7 +163,7 @@ class TreeNode:
             raise
 
     @children.deleter
-    def children(self):
+    def children(self) -> None:
         # TODO this just detaches all the children, it doesn't actually delete them...
         children = self.children
         self._pre_detach_children(children)
@@ -168,7 +173,7 @@ class TreeNode:
         self._post_detach_children(children)
 
     @staticmethod
-    def _check_children(children: Mapping[str, TreeNode]) -> None:
+    def _check_children(children: Mapping[str, Tree]) -> None:
         """Check children for correct types and for any duplicates."""
         if not is_dict_like(children):
             raise TypeError(
@@ -194,37 +199,37 @@ class TreeNode:
     def __repr__(self) -> str:
         return f"TreeNode(children={dict(self._children)})"
 
-    def _pre_detach_children(self, children: Mapping[str, TreeNode]):
+    def _pre_detach_children(self: Tree, children: Mapping[str, Tree]) -> None:
         """Method call before detaching `children`."""
         pass
 
-    def _post_detach_children(self, children: Mapping[str, TreeNode]):
+    def _post_detach_children(self: Tree, children: Mapping[str, Tree]) -> None:
         """Method call after detaching `children`."""
         pass
 
-    def _pre_attach_children(self, children: Mapping[str, TreeNode]):
+    def _pre_attach_children(self: Tree, children: Mapping[str, Tree]) -> None:
         """Method call before attaching `children`."""
         pass
 
-    def _post_attach_children(self, children: Mapping[str, TreeNode]):
+    def _post_attach_children(self: Tree, children: Mapping[str, Tree]) -> None:
         """Method call after attaching `children`."""
         pass
 
-    def iter_lineage(self) -> Iterator[TreeNode]:
+    def iter_lineage(self: Tree) -> Iterator[Tree]:
         """Iterate up the tree, starting from the current node."""
         # TODO should this instead return an OrderedDict, so as to include node names?
-        node: TreeNode | None = self
+        node: Tree | None = self
         while node is not None:
             yield node
             node = node.parent
 
     @property
-    def lineage(self) -> Tuple[TreeNode, ...]:
+    def lineage(self: Tree) -> Tuple[Tree, ...]:
         """All parent nodes and their parent nodes, starting with the closest."""
         return tuple(self.iter_lineage())
 
     @property
-    def ancestors(self) -> Tuple[TreeNode, ...]:
+    def ancestors(self: Tree) -> Tuple[Tree, ...]:
         """All parent nodes and their parent nodes, starting with the most distant."""
         if self.parent is None:
             return (self,)
@@ -233,7 +238,7 @@ class TreeNode:
             return ancestors
 
     @property
-    def root(self) -> TreeNode:
+    def root(self: Tree) -> Tree:
         """Root node of the tree"""
         node = self
         while node.parent is not None:
@@ -251,7 +256,7 @@ class TreeNode:
         return self.children == {}
 
     @property
-    def siblings(self) -> OrderedDict[str, TreeNode]:
+    def siblings(self: Tree) -> OrderedDict[str, Tree]:
         """
         Nodes with the same parent as this node.
         """
@@ -267,7 +272,7 @@ class TreeNode:
             return OrderedDict()
 
     @property
-    def subtree(self) -> Iterator[TreeNode]:
+    def subtree(self: Tree) -> Iterator[Tree]:
         """
         An iterator over all nodes in this tree, including both self and all descendants.
 
@@ -277,23 +282,23 @@ class TreeNode:
 
         return iterators.PreOrderIter(self)
 
-    def _pre_detach(self, parent: TreeNode):
+    def _pre_detach(self: Tree, parent: Tree) -> None:
         """Method call before detaching from `parent`."""
         pass
 
-    def _post_detach(self, parent: TreeNode):
+    def _post_detach(self: Tree, parent: Tree) -> None:
         """Method call after detaching from `parent`."""
         pass
 
-    def _pre_attach(self, parent: TreeNode):
+    def _pre_attach(self: Tree, parent: Tree) -> None:
         """Method call before attaching to `parent`."""
         pass
 
-    def _post_attach(self, parent: TreeNode):
+    def _post_attach(self: Tree, parent: Tree) -> None:
         """Method call after attaching to `parent`."""
         pass
 
-    def get(self, key: str, default: TreeNode = None) -> TreeNode | None:
+    def get(self: Tree, key: str, default: Tree = None) -> Tree | None:
         """
         Return the child node with the specified key.
 
@@ -305,7 +310,7 @@ class TreeNode:
         else:
             return default
 
-    def _get_item(self, path: str | NodePath) -> Any:
+    def _get_item(self: Tree, path: str | NodePath) -> Union[Tree, T_DataArray]:
         """
         Returns the object lying at the given path.
 
@@ -314,7 +319,6 @@ class TreeNode:
         if isinstance(path, str):
             path = NodePath(path)
 
-        current_node: TreeNode | None
         if path.root:
             current_node = self.root
             root, *parts = list(path.parts)
@@ -324,19 +328,20 @@ class TreeNode:
 
         for part in parts:
             if part == "..":
-                parent = current_node.parent
-                if parent is None:
+                if current_node.parent is None:
                     raise KeyError(f"Could not find node at {path}")
-                current_node = parent
+                else:
+                    current_node = current_node.parent
             elif part in ("", "."):
                 pass
             else:
-                current_node = current_node.get(part)
-                if current_node is None:
+                if current_node.get(part) is None:
                     raise KeyError(f"Could not find node at {path}")
+                else:
+                    current_node = current_node.get(part)
         return current_node
 
-    def _set(self, key: str, val: TreeNode) -> None:
+    def _set(self: Tree, key: str, val: Tree) -> None:
         """
         Set the child node with the specified key to value.
 
@@ -346,12 +351,12 @@ class TreeNode:
         self.children = new_children
 
     def _set_item(
-        self,
+        self: Tree,
         path: str | NodePath,
-        item: Any,
+        item: Union[Tree, T_DataArray],
         new_nodes_along_path: bool = False,
         allow_overwrite: bool = True,
-    ):
+    ) -> None:
         """
         Set a new item in the tree, overwriting anything already present at that path.
 
@@ -392,11 +397,11 @@ class TreeNode:
             # Walk to location of new node, creating intermediate node objects as we go if necessary
             for part in parts:
                 if part == "..":
-                    parent = current_node.parent
-                    if parent is None:
+                    if current_node.parent is None:
                         # We can't create a parent if `new_nodes_along_path=True` as we wouldn't know what to name it
                         raise KeyError(f"Could not reach node at path {path}")
-                    current_node = parent
+                    else:
+                        current_node = current_node.parent
                 elif part in ("", "."):
                     pass
                 else:
@@ -422,7 +427,7 @@ class TreeNode:
     def del_node(self, path: str):
         raise NotImplementedError
 
-    def update(self, other: Mapping[str, TreeNode]) -> None:
+    def update(self: Tree, other: Mapping[str, Tree]) -> None:
         """
         Update this node's children.
 
@@ -441,7 +446,7 @@ class TreeNode:
         else:
             return None
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"TreeNode({self.name})" if self.name else "TreeNode()"
 
     @property
@@ -455,7 +460,7 @@ class TreeNode:
             names = [node.name for node in ancestors]
             return "/" + "/".join(names)  # type: ignore
 
-    def relative_to(self, other: TreeNode) -> str:
+    def relative_to(self, other: Tree) -> str:
         """
         Compute the relative path from this node to node `other`.
 
@@ -476,11 +481,11 @@ class TreeNode:
                 path_to_common_ancestor / this_path.relative_to(common_ancestor.path)
             )
 
-    def same_tree(self, other: TreeNode) -> bool:
+    def same_tree(self, other: Tree) -> bool:
         """True if other node is in the same tree as this node."""
         return self.root is other.root
 
-    def find_common_ancestor(self, other: TreeNode) -> TreeNode:
+    def find_common_ancestor(self, other: Tree) -> Tree:
         """
         Find the first common ancestor of two nodes in the same tree.
 
@@ -499,7 +504,7 @@ class TreeNode:
 
         return common_ancestor
 
-    def _path_to_ancestor(self, ancestor: TreeNode) -> NodePath:
+    def _path_to_ancestor(self, ancestor: Tree) -> NodePath:
         generation_gap = list(self.lineage).index(ancestor)
         path_upwards = "../" * generation_gap if generation_gap > 0 else "/"
         return NodePath(path_upwards)
