@@ -107,11 +107,11 @@ class TestVariablesChildrenNameCollisions:
     def test_assign_when_already_child_with_variables_name(self):
         dt = DataTree(data=None)
         DataTree(name="a", data=None, parent=dt)
-        with pytest.raises(KeyError, match="already has a child named a"):
+        with pytest.raises(KeyError, match="names would collide"):
             dt.ds = xr.Dataset({"a": 0})
 
         dt.ds = xr.Dataset()
-        with pytest.raises(KeyError, match="already has a child named a"):
+        with pytest.raises(KeyError, match="names would collide"):
             dt.ds = dt.ds.assign(a=xr.DataArray(0))
 
     @pytest.mark.xfail
@@ -119,7 +119,7 @@ class TestVariablesChildrenNameCollisions:
         # See issue #38
         dt = DataTree(name="root", data=None)
         DataTree(name="a", data=None, parent=dt)
-        with pytest.raises(KeyError, match="already has a child named a"):
+        with pytest.raises(KeyError, match="names would collide"):
             dt.ds["a"] = xr.DataArray(0)
 
 

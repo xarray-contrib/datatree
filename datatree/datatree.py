@@ -201,6 +201,17 @@ class DataTree(
         self._close = ds._close
         self._encoding = ds._encoding
 
+    def _pre_attach(self: DataTree, parent: DataTree) -> None:
+        """
+        Method which superclass calls before setting parent, here used to prevent having two
+        children with duplicate names (or a data variable with the same name as a child).
+        """
+        super()._pre_attach(parent)
+        if parent.has_data and self.name in list(parent.ds.variables):
+            raise KeyError(
+                f"parent {parent.name} already contains a data variable named {self.name}"
+            )
+
     def to_dataset(self) -> Dataset:
         """Return the data in this node as a new xarray Dataset object."""
         return Dataset._construct_direct(
