@@ -330,6 +330,11 @@ class TestTreeFromDict:
             "/set3",
         ]
 
+    def test_roundtrip(self):
+        dt = create_test_datatree()
+        roundtrip = DataTree.from_dict(dt.to_dict())
+        assert roundtrip.equals(dt)
+
 
 class TestBrowsing:
     ...
