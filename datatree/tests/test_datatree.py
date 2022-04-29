@@ -77,7 +77,7 @@ class TestStoreDatasets:
     def test_create_with_data(self):
         dat = xr.Dataset({"a": 0})
         john = DataTree(name="john", data=dat)
-        assert john.ds is dat
+        xrt.assert_identical(john.ds, dat)
 
         with pytest.raises(TypeError):
             DataTree(name="mary", parent=john, data="junk")  # noqa
@@ -86,7 +86,7 @@ class TestStoreDatasets:
         john = DataTree(name="john")
         dat = xr.Dataset({"a": 0})
         john.ds = dat
-        assert john.ds is dat
+        xrt.assert_identical(john.ds, dat)
         with pytest.raises(TypeError):
             john.ds = "junk"
 

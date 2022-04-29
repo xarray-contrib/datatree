@@ -192,12 +192,14 @@ class DataTree(
 
         _check_for_name_collisions(self.children, ds.variables)
 
-        self._close = ds._close
-        self._encoding = ds._encoding
+        # TODO this should probably be changed to use .replace, and this explicit setting of attributes reserved for constructors
         self._variables = ds._variables
         self._coord_names = ds._coord_names
         self._dims = ds._dims
         self._indexes = ds._indexes
+        self._attrs = ds._attrs
+        self._close = ds._close
+        self._encoding = ds._encoding
 
     def to_dataset(self) -> Dataset:
         """Return the data in this node as a new xarray Dataset object."""
