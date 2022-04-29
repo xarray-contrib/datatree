@@ -21,7 +21,7 @@ from typing import (
 from xarray import DataArray, Dataset
 from xarray.core import utils
 from xarray.core.indexes import Index
-from xarray.core.utils import Default, Frozen, _default
+from xarray.core.utils import Frozen
 from xarray.core.variable import Variable
 
 from .formatting import tree_repr
@@ -54,11 +54,14 @@ if TYPE_CHECKING:
 T_Path = Union[str, NodePath]
 
 
-def _check_for_name_collisions(children, variables):
-    for child in children:
-        for var in variables:
-            if var == child.name:
-                raise KeyError
+def _check_for_name_collisions(
+    children: Iterable[str], variables: Iterable[Hashable]
+) -> None:
+    colliding_names = set(children).intersection(set(variables))
+    if colliding_names:
+        raise KeyError(
+            f"Some names would collide between variables and children: {list(colliding_names)}"
+        )
 
 
 class DataTree(
@@ -139,31 +142,13 @@ class DataTree(
         DataTree.from_dict
         """
 
-        if isinstance(data, DataArray):
-            ds = data.to_dataset()
-        elif isinstance(data, Dataset):
-            ds = data
-        elif data is None:
-            ds = Dataset()
-        else:
-            raise TypeError(
-                f"{type(data)} object is not an xarray Dataset, DataArray, or None"
-            )
-
-        _check_for_name_collisions(children, ds.variables)
-
         # set tree attributes
         super().__init__(children=children)
         self.name = name
         self.parent = parent
 
         # set data attributes
-        self._close = ds._close
-        self._encoding = ds._encoding
-        self._variables = ds._variables
-        self._coord_names = ds._coord_names
-        self._dims = ds._dims
-        self._indexes = ds._indexes
+        self.ds = data
 
     @property
     def name(self) -> str | None:
@@ -188,27 +173,31 @@ class DataTree(
     @property
     def ds(self) -> Dataset:
         """The data in this node, returned as a Dataset."""
-        return self._ds
+        # TODO change this to return only an immutable view onto this node's data (see GH #80)
+        return self.to_dataset()
 
     @ds.setter
     def ds(self, data: Union[Dataset, DataArray] = None) -> None:
-        if not isinstance(data, (Dataset, DataArray)) and data is not None:
+
+        if isinstance(data, DataArray):
+            ds = data.to_dataset()
+        elif isinstance(data, Dataset):
+            ds = data
+        elif data is None:
+            ds = Dataset()
+        else:
             raise TypeError(
                 f"{type(data)} object is not an xarray Dataset, DataArray, or None"
             )
 
-        if isinstance(data, DataArray):
-            data = data.to_dataset()
-        elif data is None:
-            data = Dataset()
+        _check_for_name_collisions(self.children, ds.variables)
 
-        for var in list(data.variables):
-            if var in self.children:
-                raise KeyError(
-                    f"Cannot add variable named {var}: node already has a child named {var}"
-                )
-
-        self._ds = data
+        self._close = ds._close
+        self._encoding = ds._encoding
+        self._variables = ds._variables
+        self._coord_names = ds._coord_names
+        self._dims = ds._dims
+        self._indexes = ds._indexes
 
     def to_dataset(self) -> Dataset:
         """Return the data in this node as a new xarray Dataset object."""
@@ -236,15 +225,6 @@ class DataTree(
     def is_empty(self) -> bool:
         """False if node contains any data or attrs. Does not look at children."""
         return not (self.has_data or self.has_attrs)
-
-    def _pre_attach(self: DataTree, parent: DataTree) -> None:
-        """
-        Method which superclass calls before setting parent, here used to prevent having two
-        children with duplicate names (or a data variable with the same name as a child).
-        """
-        super()._pre_attach(parent)
-        if parent.has_data:
-            _check_for_name_collisions([self.name], parent.variables)
 
     def __repr__(self):
         return tree_repr(self)
@@ -316,63 +296,13 @@ class DataTree(
         return key in self._variables or key in self.children
 
     def __len__(self) -> int:
-        return len(self.data_vars)
+        return len(self.ds.data_vars)
 
     def __bool__(self) -> bool:
-        return bool(self.data_vars)
+        return bool(self.ds.data_vars)
 
     def __iter__(self) -> Iterator[Hashable]:
-        return iter(self.data_vars)
-
-    @classmethod
-    def _construct_direct(
-        cls,
-        variables,
-        coord_names,
-        dims=None,
-        attrs=None,
-        indexes=None,
-        encoding=None,
-        close=None,
-    ):
-        """Shortcut around __init__ for internal use when we want to skip
-        costly validation
-        """
-        return NotImplementedError
-
-    def _replace(
-        self,
-        variables: Dict[Hashable, Variable] = None,
-        coord_names: Set[Hashable] = None,
-        dims: Dict[Any, int] = None,
-        attrs: Union[Dict[Hashable, Any], None, Default] = _default,
-        indexes: Union[Dict[Any, Index], None, Default] = _default,
-        encoding: Union[dict, None, Default] = _default,
-        inplace: bool = False,
-    ) -> "Dataset":
-        """Fastpath constructor for internal use.
-
-        Returns an object with optionally with replaced attributes.
-
-        Explicitly passed arguments are *not* copied when placed on the new
-        dataset. It is up to the caller to ensure that they have the right type
-        and are not used elsewhere.
-        """
-        _check_for_name_collisions(self.children, variables)
-
-        # TODO I don't really know the best way to do this without inheritance
-
-        ds = Dataset._replace(
-            self,
-            variables=variables,
-            coord_names=coord_names,
-            dims=dims,
-            attrs=attrs,
-            indexes=indexes,
-            encoding=encoding,
-            inplace=inplace,
-        )
-        return self.from_data(name=self.name, data=ds)
+        return iter(self.ds.data_vars)
 
     def __str__(self):
         return tree_repr(self)
