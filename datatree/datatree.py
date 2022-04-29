@@ -125,8 +125,6 @@ class DataTree(
 
     @name.setter
     def name(self, name: str | None) -> None:
-        if not isinstance(name, str):
-            raise TypeError("name must be of type str")
         self._name = name
 
     @property
