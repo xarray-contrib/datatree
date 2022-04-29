@@ -334,14 +334,14 @@ class DataTree(
         # First create the root node
         # TODO there is a real bug here where what if root_data is of type DataTree?
         root_data = d.pop("/", None)
-        obj = cls(name=name, data=root_data, parent=None, children=None)
+        obj = cls(name=name, data=root_data, parent=None, children=None)  # type: ignore[arg-type]
 
         if d:
             # Populate tree with children determined from data_objects mapping
             for path, data in d.items():
                 # Create and set new node
                 node_name = NodePath(path).name
-                new_node = cls(name=node_name, data=data)
+                new_node = cls(name=node_name, data=data)  # type: ignore[arg-type]
                 obj._set_item(
                     path,
                     new_node,
@@ -490,7 +490,8 @@ class DataTree(
         """
         # TODO this signature means that func has no way to know which node it is being called upon - change?
 
-        return map_over_subtree(func)(self, *args, **kwargs)
+        # TODO fix this typing error
+        return map_over_subtree(func)(self, *args, **kwargs)  # type: ignore[operator]
 
     def map_over_subtree_inplace(
         self,
