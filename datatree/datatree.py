@@ -1,32 +1,27 @@
 from __future__ import annotations
 
-
-from typing import (
-    Dict,
-    Hashable,
-    Iterator,
-    Iterable,
-    Tuple,
-    List,
-    Set,
-)
-
-from xarray.core.indexes import Index
-from xarray.core.utils import Default, Frozen, _default
 from collections import OrderedDict
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Generic,
+    Hashable,
+    Iterable,
+    Iterator,
     Mapping,
     MutableMapping,
     Optional,
+    Set,
+    Tuple,
     Union,
 )
 
 from xarray import DataArray, Dataset
 from xarray.core import utils
+from xarray.core.indexes import Index
+from xarray.core.utils import Default, Frozen, _default
 from xarray.core.variable import Variable
 
 from .formatting import tree_repr
@@ -151,11 +146,18 @@ class DataTree(
         elif data is None:
             ds = Dataset()
         else:
-            raise TypeError(f"{type(data)} object is not an xarray Dataset, DataArray, or None")
+            raise TypeError(
+                f"{type(data)} object is not an xarray Dataset, DataArray, or None"
+            )
 
-        _check_for_name_collisions(children, data.variables)
+        _check_for_name_collisions(children, ds.variables)
 
-        super().__init__(name, parent, children=children)
+        # set tree attributes
+        super().__init__(children=children)
+        self.name = name
+        self.parent = parent
+
+        # set data attributes
         self._close = ds._close
         self._encoding = ds._encoding
         self._variables = ds._variables
@@ -209,17 +211,26 @@ class DataTree(
         self._ds = data
 
     def to_dataset(self) -> Dataset:
-        return Dataset._construct_direct(self._variables, self._coord_names, ...)
+        """Return the data in this node as a new xarray Dataset object."""
+        return Dataset._construct_direct(
+            self._variables,
+            self._coord_names,
+            self._dims,
+            self._attrs,
+            self._indexes,
+            self._encoding,
+            self._close,
+        )
 
     @property
-    def has_data(self) -> bool:
+    def has_data(self):
         """Whether or not there are any data variables in this node."""
-        return len(self.ds.variables) > 0
+        return len(self._variables) > 0
 
     @property
     def has_attrs(self) -> bool:
         """Whether or not there are any metadata attributes in this node."""
-        return len(self.ds.attrs.keys()) > 0
+        return len(self.attrs.keys()) > 0
 
     @property
     def is_empty(self) -> bool:
@@ -297,10 +308,6 @@ class DataTree(
         DataArray.sizes
         """
         return self.dims
-
-    @property
-    def has_data(self):
-        return len(self._variables) > 0
 
     def __contains__(self, key: object) -> bool:
         """The 'in' operator will return true or false depending on whether
