@@ -71,7 +71,7 @@ def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
 
             # TODO refactor to use __setitem__ once creation of new nodes by assigning Dataset works again
             node_name = NodePath(path).name
-            new_node = DataTree(name=node_name, data=subgroup_ds)
+            new_node: DataTree = DataTree(name=node_name, data=subgroup_ds)
             tree_root._set_item(
                 path,
                 new_node,
@@ -95,7 +95,7 @@ def _open_datatree_zarr(store, **kwargs) -> DataTree:
 
             # TODO refactor to use __setitem__ once creation of new nodes by assigning Dataset works again
             node_name = NodePath(path).name
-            new_node = DataTree(name=node_name, data=subgroup_ds)
+            new_node: DataTree = DataTree(name=node_name, data=subgroup_ds)
             tree_root._set_item(
                 path,
                 new_node,
