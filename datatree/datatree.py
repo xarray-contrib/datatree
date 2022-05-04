@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from collections import OrderedDict
 from typing import (
     TYPE_CHECKING,
@@ -21,7 +22,7 @@ from typing import (
 from xarray import DataArray, Dataset
 from xarray.core import utils
 from xarray.core.indexes import Index
-from xarray.core.utils import Frozen
+from xarray.core.utils import Default, Frozen, _default
 from xarray.core.variable import Variable
 
 from .formatting import tree_repr
@@ -320,6 +321,67 @@ class DataTree(
     def __str__(self):
         return tree_repr(self)
 
+    def _replace(
+        self,
+        variables: dict[Hashable, Variable] = None,
+        coord_names: set[Hashable] = None,
+        dims: dict[Any, int] = None,
+        attrs: dict[Hashable, Any] | None | Default = _default,
+        indexes: dict[Hashable, Index] = None,
+        encoding: dict | None | Default = _default,
+        parent: DataTree | None = None,
+        children: OrderedDict[str, Tree] = None,
+        inplace: bool = False,
+    ) -> DataTree:
+        """
+        Fastpath constructor for internal use.
+
+        Returns an object with optionally replaced attributes.
+
+        Explicitly passed arguments are *not* copied when placed on the new
+        datatree. It is up to the caller to ensure that they have the right type
+        and are not used elsewhere.
+        """
+        if inplace:
+            if variables is not None:
+                self._variables = variables
+            if coord_names is not None:
+                self._coord_names = coord_names
+            if dims is not None:
+                self._dims = dims
+            if attrs is not _default:
+                self._attrs = attrs
+            if indexes is not None:
+                self._indexes = indexes
+            if encoding is not _default:
+                self._encoding = encoding
+            if parent is not _default:
+                self._parent = parent
+            if children is not None:
+                self._children = children
+            obj = self
+        else:
+            if variables is None:
+                variables = self._variables.copy()
+            if coord_names is None:
+                coord_names = self._coord_names.copy()
+            if dims is None:
+                dims = self._dims.copy()
+            if attrs is _default:
+                attrs = copy.copy(self._attrs)
+            if indexes is None:
+                indexes = self._indexes.copy()
+            if encoding is _default:
+                encoding = copy.copy(self._encoding)
+            if parent is not _default:
+                self._parent = parent.copy()
+            if children is not None:
+                self._children = children.copy()
+            obj = self._construct_direct(
+                variables, coord_names, dims, attrs, indexes, encoding
+            )
+        return obj
+
     def get(
         self: DataTree, key: str, default: Optional[DataTree | DataArray] = None
     ) -> Optional[DataTree | DataArray]:
@@ -381,7 +443,7 @@ class DataTree(
             val.parent = self
         elif isinstance(val, (DataArray, Variable)):
             # TODO this should also accomodate other types that can be coerced into Variables
-            self.ds[key] = val
+            self.update({key: val})
         else:
             raise TypeError(f"Type {type(val)} cannot be assigned to a DataTree")
 

@@ -228,26 +228,27 @@ class TestSetItem:
         data = xr.Dataset({"temp": [0, 50]})
         results = DataTree(name="results")
         results["."] = data
-        assert results.ds is data
+        xrt.assert_identical(results.ds, data)
 
     @pytest.mark.xfail(reason="assigning Datasets doesn't yet create new nodes")
     def test_setitem_dataset_as_new_node(self):
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataTree(name="folder1")
         folder1["results"] = data
-        assert folder1["results"].ds is data
+        xrt.assert_identical(folder1["results"].ds, data)
 
     @pytest.mark.xfail(reason="assigning Datasets doesn't yet create new nodes")
     def test_setitem_dataset_as_new_node_requiring_intermediate_nodes(self):
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataTree(name="folder1")
         folder1["results/highres"] = data
-        assert folder1["results/highres"].ds is data
+        xrt.assert_identical(folder1["results/highres"].ds, data)
 
     def test_setitem_named_dataarray(self):
         data = xr.DataArray(name="temp", data=[0, 50])
         folder1 = DataTree(name="folder1")
         folder1["results"] = data
+        print(folder1)
         expected = data.rename("results")
         xrt.assert_equal(folder1["results"], expected)
 
