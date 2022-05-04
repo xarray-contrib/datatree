@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from html import escape
-from xarray.core.options import OPTIONS as XR_OPTS
-
 from collections import OrderedDict
+from html import escape
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,6 +17,7 @@ from typing import (
 
 from xarray import DataArray, Dataset
 from xarray.core import utils
+from xarray.core.options import OPTIONS as XR_OPTS
 from xarray.core.variable import Variable
 
 from . import formatting, formatting_html
