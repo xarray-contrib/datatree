@@ -40,10 +40,9 @@ def node_repr(group_title: str, dt: Any) -> str:
     header_components = [f"<div class='xr-obj-type'>{escape(group_title)}</div>"]
 
     ds = dt.ds
-    children = {c.name: c for c in dt.children}
 
     sections = [
-        children_section(children),
+        children_section(dt.children),
         dim_section(ds),
         coord_section(ds.coords),
         datavar_section(ds.data_vars),
