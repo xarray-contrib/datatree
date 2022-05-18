@@ -160,8 +160,8 @@ def _datatree_to_netcdf(
                 filepath,
                 group=group_path,
                 mode=mode,
-                encoding=_maybe_extract_group_kwargs(encoding, dt.path),
-                unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, dt.path),
+                encoding=_maybe_extract_group_kwargs(encoding, group_path),
+                unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, group_path),
                 **kwargs,
             )
         mode = "a"
