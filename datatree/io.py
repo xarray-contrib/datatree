@@ -68,16 +68,8 @@ def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
         tree_root = DataTree.from_dict({"/": ds})
         for path in _iter_nc_groups(ncds):
             subgroup_ds = open_dataset(filename, group=path, **kwargs)
+            tree_root[path] = DataTree(name=path, data=subgroup_ds)
 
-            # TODO refactor to use __setitem__ once creation of new nodes by assigning Dataset works again
-            node_name = NodePath(path).name
-            new_node: DataTree = DataTree(name=node_name, data=subgroup_ds)
-            tree_root._set_item(
-                path,
-                new_node,
-                allow_overwrite=False,
-                new_nodes_along_path=True,
-            )
     return tree_root
 
 
@@ -93,15 +85,8 @@ def _open_datatree_zarr(store, **kwargs) -> DataTree:
         except zarr.errors.PathNotFoundError:
             subgroup_ds = Dataset()
 
-        # TODO refactor to use __setitem__ once creation of new nodes by assigning Dataset works again
-        node_name = NodePath(path).name
-        new_node: DataTree = DataTree(name=node_name, data=subgroup_ds)
-        tree_root._set_item(
-            path,
-            new_node,
-            allow_overwrite=False,
-            new_nodes_along_path=True,
-        )
+        tree_root[path] = DataTree(name=path, data=subgroup_ds)
+
     return tree_root
 
 
