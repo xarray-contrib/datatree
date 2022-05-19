@@ -105,13 +105,6 @@ def _open_datatree_zarr(store, **kwargs) -> DataTree:
     return tree_root
 
 
-def _maybe_extract_group_kwargs(enc, group):
-    try:
-        return enc[group]
-    except KeyError:
-        return None
-
-
 def _create_empty_netcdf_group(filename, group, mode, engine):
     ncDataset = _get_nc_dataset_class(engine)
 
@@ -146,6 +139,11 @@ def _datatree_to_netcdf(
     if encoding is None:
         encoding = {}
 
+    if set(encoding) - set(dt.groups):
+        raise ValueError(
+            f"unexpected encoding group name(s) provided: {set(encoding) - set(dt.groups)}"
+        )
+
     if unlimited_dims is None:
         unlimited_dims = {}
 
@@ -155,16 +153,15 @@ def _datatree_to_netcdf(
         if ds is None:
             _create_empty_netcdf_group(filepath, group_path, mode, engine)
         else:
-
             ds.to_netcdf(
                 filepath,
                 group=group_path,
                 mode=mode,
-                encoding=_maybe_extract_group_kwargs(encoding, group_path),
-                unlimited_dims=_maybe_extract_group_kwargs(unlimited_dims, group_path),
+                encoding=encoding.get(node.path),
+                unlimited_dims=unlimited_dims.get(node.path),
                 **kwargs,
             )
-        mode = "a"
+        mode = "r+"
 
 
 def _create_empty_zarr_group(store, group, mode):
@@ -206,7 +203,7 @@ def _datatree_to_zarr(
                 store,
                 group=group_path,
                 mode=mode,
-                encoding=_maybe_extract_group_kwargs(encoding, dt.path),
+                encoding=encoding.get(node.path),
                 consolidated=False,
                 **kwargs,
             )
