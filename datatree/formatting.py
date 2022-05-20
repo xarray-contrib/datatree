@@ -52,7 +52,7 @@ def diff_tree_repr(a, b, compat):
     return "\n".join(summary)
 
 
-def tree_repr(dt):
+def datatree_repr(dt):
     """A printable representation of the structure of this entire tree."""
     renderer = RenderTree(dt)
 
@@ -69,7 +69,7 @@ def tree_repr(dt):
                 if len(node.children) > 0:
                     lines.append(f"{fill}{renderer.style.vertical}{line}")
                 else:
-                    lines.append(f"{fill}{line}")
+                    lines.append(f"{fill}{' ' * len(renderer.style.vertical)}{line}")
 
     # Tack on info about whether or not root node has a parent at the start
     first_line = lines[0]
