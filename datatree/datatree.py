@@ -58,7 +58,7 @@ if TYPE_CHECKING:
 T_Path = Union[str, NodePath]
 
 
-def _coerce_to_dataset(data: DataArray | Dataset | None) -> Dataset:
+def _coerce_to_dataset(data: Dataset | DataArray | None) -> Dataset:
     if isinstance(data, DataArray):
         ds = data.to_dataset()
     elif isinstance(data, Dataset):
@@ -67,7 +67,7 @@ def _coerce_to_dataset(data: DataArray | Dataset | None) -> Dataset:
         ds = Dataset()
     else:
         raise TypeError(
-            f"{type(data)} object is not an xarray Dataset, DataArray, or None"
+            f"data object is not an xarray Dataset, DataArray, or None, it is of type {type(data)}"
         )
     return ds
 
@@ -188,6 +188,8 @@ class DataTree(
 
     @name.setter
     def name(self, name: str | None) -> None:
+        if not isinstance(name, str) and name is not None:
+            raise TypeError("name must either be a string or None")
         self._name = name
 
     @property

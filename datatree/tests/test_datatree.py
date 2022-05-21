@@ -40,15 +40,16 @@ def create_test_datatree(modify=lambda ds: ds):
     root_data = modify(xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])}))
 
     # Avoid using __init__ so we can independently test it
-    root = DataTree(data=root_data)
-    set1 = DataTree(name="set1", parent=root, data=set1_data)
-    DataTree(name="set1", parent=set1)
-    DataTree(name="set2", parent=set1)
-    set2 = DataTree(name="set2", parent=root, data=set2_data)
-    DataTree(name="set1", parent=set2)
-    DataTree(name="set3", parent=root)
-
-    return root
+    d = {
+        "/": root_data,
+        "/set1": set1_data,
+        "/set1/set1": None,
+        "/set1/set2": None,
+        "/set2": set2_data,
+        "/set2/set1": None,
+        "/set3": None,
+    }
+    return DataTree.from_dict(d)
 
 
 class TestTreeCreation:
@@ -69,6 +70,31 @@ class TestFamilyTree:
         john = DataTree(name="john")
         with pytest.raises(ValueError, match="unnamed"):
             DataTree(parent=john)
+
+    def test_create_two_children(self):
+        root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])})
+        set1_data = xr.Dataset({"a": 0, "b": 1})
+
+        root = DataTree(data=root_data)
+        set1 = DataTree(name="set1", parent=root, data=set1_data)
+        DataTree(name="set1", parent=root)
+        DataTree(name="set2", parent=set1)
+
+    def test_create_full_tree(self):
+        root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])})
+        set1_data = xr.Dataset({"a": 0, "b": 1})
+        set2_data = xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])})
+
+        root = DataTree(data=root_data)
+        set1 = DataTree(name="set1", parent=root, data=set1_data)
+        DataTree(name="set1", parent=set1)
+        DataTree(name="set2", parent=set1)
+        set2 = DataTree(name="set2", parent=root, data=set2_data)
+        DataTree(name="set1", parent=set2)
+        DataTree(name="set3", parent=root)
+
+        expected = create_test_datatree()
+        assert root.identical(expected)
 
 
 class TestStoreDatasets:
@@ -251,7 +277,6 @@ class TestSetItem:
         da = xr.DataArray(name="temp", data=[0, 50])
         folder1 = DataTree(name="folder1")
         folder1["results"] = da
-        print(folder1._variables)
         expected = da.rename("results")
         xrt.assert_equal(folder1["results"], expected)
 
