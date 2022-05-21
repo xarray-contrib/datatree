@@ -26,7 +26,7 @@ from xarray.core.indexes import Index
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
 from xarray.core.utils import Default, Frozen, _default
-from xarray.core.variable import Variable, calculate_dimensions
+from xarray.core.variable import Variable
 
 from . import formatting, formatting_html
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
@@ -56,6 +56,20 @@ if TYPE_CHECKING:
 
 
 T_Path = Union[str, NodePath]
+
+
+def _coerce_to_dataset(data: DataArray | Dataset | None) -> Dataset:
+    if isinstance(data, DataArray):
+        ds = data.to_dataset()
+    elif isinstance(data, Dataset):
+        ds = data
+    elif data is None:
+        ds = Dataset()
+    else:
+        raise TypeError(
+            f"{type(data)} object is not an xarray Dataset, DataArray, or None"
+        )
+    return ds
 
 
 def _check_for_name_collisions(
@@ -152,7 +166,20 @@ class DataTree(
         self.parent = parent
 
         # set data attributes
-        self.ds = data
+        ds = _coerce_to_dataset(data)
+
+        _check_for_name_collisions(self.children, ds.variables)
+
+        self._replace(
+            inplace=True,
+            variables=ds._variables,
+            coord_names=ds._coord_names,
+            dims=ds._dims,
+            indexes=ds._indexes,
+            attrs=ds._attrs,
+            encoding=ds._encoding,
+        )
+        self._close = ds._close
 
     @property
     def name(self) -> str | None:
@@ -183,16 +210,7 @@ class DataTree(
     @ds.setter
     def ds(self, data: Union[Dataset, DataArray] = None) -> None:
 
-        if isinstance(data, DataArray):
-            ds = data.to_dataset()
-        elif isinstance(data, Dataset):
-            ds = data
-        elif data is None:
-            ds = Dataset()
-        else:
-            raise TypeError(
-                f"{type(data)} object is not an xarray Dataset, DataArray, or None"
-            )
+        ds = _coerce_to_dataset(data)
 
         _check_for_name_collisions(self.children, ds.variables)
 
@@ -336,7 +354,7 @@ class DataTree(
         attrs: dict[Hashable, Any] | None | Default = _default,
         indexes: dict[Hashable, Index] = None,
         encoding: dict | None | Default = _default,
-        parent: DataTree | None = None,
+        parent: DataTree | None = _default,
         children: OrderedDict[str, DataTree] = None,
         inplace: bool = False,
     ) -> DataTree:
