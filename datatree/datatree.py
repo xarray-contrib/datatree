@@ -23,8 +23,9 @@ from typing import (
 from xarray import DataArray, Dataset
 from xarray.core import utils
 from xarray.core.indexes import Index
-from xarray.core.utils import Default, Frozen, _default
+from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
+from xarray.core.utils import Default, Frozen, _default
 from xarray.core.variable import Variable
 
 from . import formatting, formatting_html
@@ -308,9 +309,6 @@ class DataTree(
         """
         return key in self._variables or key in self.children
 
-    def __len__(self) -> int:
-        return len(self.ds.data_vars)
-
     def __bool__(self) -> bool:
         return bool(self.ds.data_vars)
 
@@ -497,8 +495,12 @@ class DataTree(
             else:
                 raise TypeError(f"Type {type(v)} cannot be assigned to a DataTree")
 
-        super().update(new_children)
-        self.ds.update(new_variables)
+        vars_merge_result = dataset_update_method(self.to_dataset(), new_variables)
+        # TODO are there any subtleties with preserving order of children like this?
+        merged_children = OrderedDict(**self.children, **new_children)
+        self._replace(
+            inplace=True, children=merged_children, **vars_merge_result._asdict()
+        )
 
     @classmethod
     def from_dict(
