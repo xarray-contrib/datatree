@@ -26,7 +26,7 @@ from xarray.core.indexes import Index
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
 from xarray.core.utils import Default, Frozen, _default
-from xarray.core.variable import Variable
+from xarray.core.variable import Variable, calculate_dimensions
 
 from . import formatting, formatting_html
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
@@ -196,14 +196,15 @@ class DataTree(
 
         _check_for_name_collisions(self.children, ds.variables)
 
-        # TODO this should probably be changed to use .replace, and this explicit setting of attributes reserved for constructors
-        self._variables = ds._variables
-        self._coord_names = ds._coord_names
-        self._dims = ds._dims
-        self._indexes = ds._indexes
-        self._attrs = ds._attrs
-        self._close = ds._close
-        self._encoding = ds._encoding
+        self._replace(
+            inplace=True,
+            variables=ds._variables,
+            coord_names=ds._coord_names,
+            dims=ds._dims,
+            indexes=ds._indexes,
+            attrs=ds._attrs,
+            encoding=ds._encoding,
+        )
 
     def _pre_attach(self: DataTree, parent: DataTree) -> None:
         """
@@ -217,7 +218,7 @@ class DataTree(
             )
 
     def to_dataset(self) -> Dataset:
-        """Return the data in this node as a new xarray Dataset object."""
+        """Return the data in this node as a new xarray.Dataset object."""
         return Dataset._construct_direct(
             self._variables,
             self._coord_names,
@@ -328,7 +329,7 @@ class DataTree(
         return formatting_html.datatree_repr(self)
 
     def _replace(
-        self,
+        self: DataTree,
         variables: dict[Hashable, Variable] = None,
         coord_names: set[Hashable] = None,
         dims: dict[Any, int] = None,
@@ -336,7 +337,7 @@ class DataTree(
         indexes: dict[Hashable, Index] = None,
         encoding: dict | None | Default = _default,
         parent: DataTree | None = None,
-        children: OrderedDict[str, Tree] = None,
+        children: OrderedDict[str, DataTree] = None,
         inplace: bool = False,
     ) -> DataTree:
         """
