@@ -175,7 +175,12 @@ class TestGetItem:
 
 
 class TestUpdate:
-    ...
+    def test_update_new_named_dataarray(self):
+        da = xr.DataArray(name="temp", data=[0, 50])
+        folder1 = DataTree(name="folder1")
+        folder1.update({"results": da})
+        expected = da.rename("results")
+        xrt.assert_equal(folder1["results"], expected)
 
 
 class TestSetItem:
@@ -243,11 +248,11 @@ class TestSetItem:
         xrt.assert_identical(folder1["results/highres"].ds, data)
 
     def test_setitem_named_dataarray(self):
-        data = xr.DataArray(name="temp", data=[0, 50])
+        da = xr.DataArray(name="temp", data=[0, 50])
         folder1 = DataTree(name="folder1")
-        folder1["results"] = data
-        print(folder1)
-        expected = data.rename("results")
+        folder1["results"] = da
+        print(folder1._variables)
+        expected = da.rename("results")
         xrt.assert_equal(folder1["results"], expected)
 
     def test_setitem_unnamed_dataarray(self):
@@ -290,16 +295,16 @@ class TestTreeFromDict:
         assert dt.name is None
         assert dt.parent is None
         assert dt.children == {}
-        assert dt.ds is dat
+        xrt.assert_identical(dt.ds, dat)
 
     def test_one_layer(self):
         dat1, dat2 = xr.Dataset({"a": 1}), xr.Dataset({"b": 2})
         dt = DataTree.from_dict({"run1": dat1, "run2": dat2})
         xrt.assert_identical(dt.ds, xr.Dataset())
         assert dt.name is None
-        assert dt["run1"].ds is dat1
+        xrt.assert_identical(dt["run1"].ds, dat1)
         assert dt["run1"].children == {}
-        assert dt["run2"].ds is dat2
+        xrt.assert_identical(dt["run2"].ds, dat2)
         assert dt["run2"].children == {}
 
     def test_two_layers(self):
@@ -308,13 +313,13 @@ class TestTreeFromDict:
         assert "highres" in dt.children
         assert "lowres" in dt.children
         highres_run = dt["highres/run"]
-        assert highres_run.ds is dat1
+        xrt.assert_identical(highres_run.ds, dat1)
 
     def test_nones(self):
         dt = DataTree.from_dict({"d": None, "d/e": None})
         assert [node.name for node in dt.subtree] == [None, "d", "e"]
         assert [node.path for node in dt.subtree] == ["/", "/d", "/d/e"]
-        xrt.assert_equal(dt["d/e"].ds, xr.Dataset())
+        xrt.assert_identical(dt["d/e"].ds, xr.Dataset())
 
     def test_full(self):
         dt = create_test_datatree()
