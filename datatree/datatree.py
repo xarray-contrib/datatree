@@ -26,7 +26,7 @@ from xarray.core.indexes import Index
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
 from xarray.core.utils import Default, Frozen, _default
-from xarray.core.variable import Variable
+from xarray.core.variable import Variable, calculate_dimensions
 
 from . import formatting, formatting_html
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
@@ -118,15 +118,15 @@ class DataTree(
     # TODO all groupby classes
 
     _name: Optional[str]
-    _parent: Optional[Tree]
-    _children: OrderedDict[str, Tree]
+    _parent: Optional[DataTree]
+    _children: OrderedDict[str, DataTree]
     _attrs: Optional[Dict[Hashable, Any]]
     _cache: Dict[str, Any]
     _coord_names: Set[Hashable]
     _dims: Dict[Hashable, int]
     _encoding: Optional[Dict[Hashable, Any]]
     _close: Optional[Callable[[], None]]
-    _indexes: Optional[Dict[Hashable, Index]]
+    _indexes: Dict[Hashable, Index]
     _variables: Dict[Hashable, Variable]
 
     def __init__(
@@ -160,16 +160,18 @@ class DataTree(
         DataTree.from_dict
         """
 
+        # validate input
+        if children is None:
+            children = {}
+        ds = _coerce_to_dataset(data)
+        _check_for_name_collisions(children, ds.variables)
+
         # set tree attributes
         super().__init__(children=children)
         self.name = name
         self.parent = parent
 
         # set data attributes
-        ds = _coerce_to_dataset(data)
-
-        _check_for_name_collisions(self.children, ds.variables)
-
         self._replace(
             inplace=True,
             variables=ds._variables,
@@ -225,6 +227,7 @@ class DataTree(
             attrs=ds._attrs,
             encoding=ds._encoding,
         )
+        self._close = ds._close
 
     def _pre_attach(self: DataTree, parent: DataTree) -> None:
         """
@@ -348,6 +351,48 @@ class DataTree(
             return f"<pre>{escape(repr(self))}</pre>"
         return formatting_html.datatree_repr(self)
 
+    @classmethod
+    def _construct_direct(
+        cls,
+        variables: dict[Any, Variable],
+        coord_names: set[Hashable],
+        dims: dict[Any, int] = None,
+        attrs: dict = None,
+        indexes: dict[Any, Index] = None,
+        encoding: dict = None,
+        name: str | None = None,
+        parent: DataTree | None = None,
+        children: OrderedDict[str, DataTree] = None,
+        close: Callable[[], None] = None,
+    ) -> DataTree:
+        """Shortcut around __init__ for internal use when we want to skip
+        costly validation
+        """
+
+        # data attributes
+        if dims is None:
+            dims = calculate_dimensions(variables)
+        if indexes is None:
+            indexes = {}
+        if children is None:
+            children = OrderedDict()
+
+        obj: DataTree = object.__new__(cls)
+        obj._variables = variables
+        obj._coord_names = coord_names
+        obj._dims = dims
+        obj._indexes = indexes
+        obj._attrs = attrs
+        obj._close = close
+        obj._encoding = encoding
+
+        # tree attributes
+        obj._name = name
+        obj._children = children
+        obj._parent = parent
+
+        return obj
+
     def _replace(
         self: DataTree,
         variables: dict[Hashable, Variable] = None,
@@ -356,6 +401,7 @@ class DataTree(
         attrs: dict[Hashable, Any] | None | Default = _default,
         indexes: dict[Hashable, Index] = None,
         encoding: dict | None | Default = _default,
+        name: str | None | Default = _default,
         parent: DataTree | None = _default,
         children: OrderedDict[str, DataTree] = None,
         inplace: bool = False,
@@ -382,6 +428,8 @@ class DataTree(
                 self._indexes = indexes
             if encoding is not _default:
                 self._encoding = encoding
+            if name is not _default:
+                self._name = name
             if parent is not _default:
                 self._parent = parent
             if children is not None:
@@ -400,14 +448,73 @@ class DataTree(
                 indexes = self._indexes.copy()
             if encoding is _default:
                 encoding = copy.copy(self._encoding)
-            if parent is not _default:
-                self._parent = parent.copy()
-            if children is not None:
-                self._children = children.copy()
+            if name is _default:
+                name = self._name  # no need to copy str objects or None
+            if parent is _default:
+                parent = copy.copy(self._parent)
+            if children is _default:
+                children = copy.copy(self._children)
             obj = self._construct_direct(
-                variables, coord_names, dims, attrs, indexes, encoding
+                variables,
+                coord_names,
+                dims,
+                attrs,
+                indexes,
+                encoding,
+                name,
+                parent,
+                children,
             )
         return obj
+
+    def copy(self: DataTree, deep: bool = False, data: Mapping = None) -> DataTree:
+        """Returns a copy of this DataTree, including parents and children.
+
+        If `deep=True`, a deep copy is made of each of the component variables in each node.
+        Otherwise, a shallow copy of each of the component variable is made, so
+        that the underlying memory region of the new dataset is the same as in
+        the original dataset.
+
+        Use `data` to create a new tree object with the same structure as
+        original but entirely new data on this node.
+
+        Parameters
+        ----------
+        deep : bool, optional
+            Whether each component variable is loaded into memory and copied onto
+            the new object. Default is False.
+        data : dict-like, optional
+            Data to use in the new object. Each item in `data` must have same
+            shape as corresponding data variable in original. When `data` is
+            used, `deep` is ignored for the data variables and only used for
+            coords.
+
+        Returns
+        -------
+        object : DataTree
+            New object with dimensions, attributes, coordinates, name, encoding,
+            and optionally data copied from original.
+        """
+        ds = self.to_dataset().copy(deep=deep, data=data)
+        parent = copy.deepcopy(self._parent) if deep else copy.copy(self._parent)
+        children = copy.deepcopy(self._children) if deep else copy.copy(self._children)
+
+        # TODO should we have a "replace_data" method?
+        return self._replace(
+            ds._variables,
+            attrs=ds._attrs,
+            indexes=ds._indexes,
+            parent=parent,
+            children=children,
+        )
+
+    def __copy__(self):
+        return self.copy(deep=False)
+
+    def __deepcopy__(self, memo=None) -> DataTree:
+        # memo does nothing but is required for compatibility with
+        # copy.deepcopy
+        return self.copy(deep=True)
 
     def get(
         self: DataTree, key: str, default: Optional[DataTree | DataArray] = None

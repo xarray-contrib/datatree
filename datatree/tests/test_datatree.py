@@ -1,7 +1,12 @@
+from copy import copy, deepcopy
+
+import numpy as np
 import pytest
 import xarray as xr
 import xarray.testing as xrt
+from xarray.tests import source_ndarray
 
+import datatree.testing as dtt
 from datatree import DataTree
 
 
@@ -207,6 +212,76 @@ class TestUpdate:
         folder1.update({"results": da})
         expected = da.rename("results")
         xrt.assert_equal(folder1["results"], expected)
+
+
+class TestCopy:
+    @pytest.mark.xfail(reason="bug when assigning dataarray to node")
+    def test_copy(self):
+        dt = create_test_datatree()
+        dt.attrs["Test"] = [1, 2, 3]
+
+        for copied in [dt.copy(deep=False), copy(dt)]:
+            dtt.assert_identical(dt, copied)
+
+            for node, copied_node in zip(dt.root.subtree, copied.root.subtree):
+                assert node.encoding == copied_node.encoding
+                # Note: IndexVariable objects with string dtype are always
+                # copied because of xarray.core.util.safe_cast_to_index.
+                # Limiting the test to data variables.
+                # TODO use .data_vars once that property is available
+                data_vars = [v for v in node.variables if v not in node._coord_names]
+                for k in data_vars:
+                    v0 = node.variables[k]
+                    v1 = copied_node.variables[k]
+                    assert source_ndarray(v0.data) is source_ndarray(v1.data)
+                copied_node["foo"] = xr.DataArray(data=np.arange(5), dims="z")
+                assert "foo" not in node
+
+                copied_node.attrs["foo"] = "bar"
+                assert "foo" not in node.attrs
+                assert node.attrs["Test"] is copied_node.attrs["Test"]
+
+    @pytest.mark.xfail(reason="bug causing recursion error")
+    def test_deepcopy(self):
+        dt = create_test_datatree()
+        dt.attrs["Test"] = [1, 2, 3]
+
+        for copied in [dt.copy(deep=True), deepcopy(dt)]:
+            dtt.assert_identical(dt, copied)
+
+            for node, copied_node in zip(dt.root.subtree, copied.root.subtree):
+                assert node.encoding == copied_node.encoding
+                # Note: IndexVariable objects with string dtype are always
+                # copied because of xarray.core.util.safe_cast_to_index.
+                # Limiting the test to data variables.
+                # TODO use .data_vars once that property is available
+                data_vars = [v for v in node.variables if v not in node._coord_names]
+                for k in data_vars:
+                    v0 = node.variables[k]
+                    v1 = copied_node.variables[k]
+                    assert source_ndarray(v0.data) is source_ndarray(v1.data)
+                copied_node["foo"] = xr.DataArray(data=np.arange(5), dims="z")
+                assert "foo" not in node
+
+                copied_node.attrs["foo"] = "bar"
+                assert "foo" not in node.attrs
+                assert node.attrs["Test"] is copied_node.attrs["Test"]
+
+    def test_copy_with_data(self):
+        orig = create_test_datatree()
+        # TODO use .data_vars once that property is available
+        data_vars = {
+            k: v for k, v in orig.variables.items() if k not in orig._coord_names
+        }
+        new_data = {k: np.random.randn(*v.shape) for k, v in data_vars.items()}
+        actual = orig.copy(data=new_data)
+
+        expected = orig.copy()
+        for k, v in new_data.items():
+            expected[k].data = v
+        dtt.assert_identical(expected, actual)
+
+        # TODO test parents and children?
 
 
 class TestSetItem:
