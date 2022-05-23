@@ -215,15 +215,17 @@ class TestUpdate:
 
 
 class TestCopy:
-    @pytest.mark.xfail(reason="bug when assigning dataarray to node")
     def test_copy(self):
         dt = create_test_datatree()
-        dt.attrs["Test"] = [1, 2, 3]
+
+        for node in dt.root.subtree:
+            node.attrs["Test"] = [1, 2, 3]
 
         for copied in [dt.copy(deep=False), copy(dt)]:
             dtt.assert_identical(dt, copied)
 
             for node, copied_node in zip(dt.root.subtree, copied.root.subtree):
+
                 assert node.encoding == copied_node.encoding
                 # Note: IndexVariable objects with string dtype are always
                 # copied because of xarray.core.util.safe_cast_to_index.
@@ -241,10 +243,11 @@ class TestCopy:
                 assert "foo" not in node.attrs
                 assert node.attrs["Test"] is copied_node.attrs["Test"]
 
-    @pytest.mark.xfail(reason="bug causing recursion error")
     def test_deepcopy(self):
         dt = create_test_datatree()
-        dt.attrs["Test"] = [1, 2, 3]
+
+        for node in dt.root.subtree:
+            node.attrs["Test"] = [1, 2, 3]
 
         for copied in [dt.copy(deep=True), deepcopy(dt)]:
             dtt.assert_identical(dt, copied)
@@ -267,6 +270,7 @@ class TestCopy:
                 assert "foo" not in node.attrs
                 assert node.attrs["Test"] is copied_node.attrs["Test"]
 
+    @pytest.mark.xfail(reason="data argument not yet implemented")
     def test_copy_with_data(self):
         orig = create_test_datatree()
         # TODO use .data_vars once that property is available

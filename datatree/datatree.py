@@ -467,46 +467,37 @@ class DataTree(
             )
         return obj
 
-    def copy(self: DataTree, deep: bool = False, data: Mapping = None) -> DataTree:
-        """Returns a copy of this DataTree, including parents and children.
+    def copy(self: DataTree, deep: bool = False) -> DataTree:
+        """Returns a copy of this DataTree.
+
+        Copies all nodes in the tree, from the root down to all children in the subtree.
 
         If `deep=True`, a deep copy is made of each of the component variables in each node.
         Otherwise, a shallow copy of each of the component variable is made, so
-        that the underlying memory region of the new dataset is the same as in
-        the original dataset.
-
-        Use `data` to create a new tree object with the same structure as
-        original but entirely new data on this node.
+        that the underlying memory region of the new datasets is the same as in
+        the original datasets.
 
         Parameters
         ----------
         deep : bool, optional
             Whether each component variable is loaded into memory and copied onto
             the new object. Default is False.
-        data : dict-like, optional
-            Data to use in the new object. Each item in `data` must have same
-            shape as corresponding data variable in original. When `data` is
-            used, `deep` is ignored for the data variables and only used for
-            coords.
 
         Returns
         -------
         object : DataTree
             New object with dimensions, attributes, coordinates, name, encoding,
-            and optionally data copied from original.
+            and data copied from original.
         """
-        ds = self.to_dataset().copy(deep=deep, data=data)
-        parent = copy.deepcopy(self._parent) if deep else copy.copy(self._parent)
-        children = copy.deepcopy(self._children) if deep else copy.copy(self._children)
 
-        # TODO should we have a "replace_data" method?
-        return self._replace(
-            ds._variables,
-            attrs=ds._attrs,
-            indexes=ds._indexes,
-            parent=parent,
-            children=children,
-        )
+        # TODO add a "data" argument like Dataset.copy has?
+        # TODO should "data" be a dict of paths to datasets?
+
+        copied_from_root = {}
+        for node in self.root.subtree:
+            copied_from_root[node.path] = node.to_dataset().copy(deep=deep)
+
+        return DataTree.from_dict(copied_from_root, name=self.root.name)
 
     def __copy__(self):
         return self.copy(deep=False)
