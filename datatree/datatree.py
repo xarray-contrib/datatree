@@ -20,12 +20,16 @@ from typing import (
     Union,
 )
 
-from xarray import DataArray, Dataset
+import pandas as pd
 from xarray.core import utils
-from xarray.core.indexes import Index
+from xarray.core.common import AttrAccessMixin
+from xarray.core.coordinates import DatasetCoordinates
+from xarray.core.dataarray import DataArray
+from xarray.core.dataset import Dataset, DataVariables
+from xarray.core.indexes import Index, Indexes
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
-from xarray.core.utils import Default, Frozen, _default
+from xarray.core.utils import Default, Frozen, HybridMappingProxy, _default
 from xarray.core.variable import Variable, calculate_dimensions
 
 from . import formatting, formatting_html
@@ -87,6 +91,7 @@ class DataTree(
     MappedDatasetMethodsMixin,
     MappedDataWithCoords,
     DataTreeArithmeticMixin,
+    AttrAccessMixin,
     Generic[Tree],
 ):
     """
@@ -95,25 +100,15 @@ class DataTree(
     Attempts to present an API like that of xarray.Dataset, but methods are wrapped to also update all the tree's child nodes.
     """
 
-    # TODO attribute-like access for both vars and child nodes (by inheriting from xarray.core.common.AttrsAccessMixin?)
-
-    # TODO ipython autocomplete for child nodes
-
     # TODO Some way of sorting children by depth
-
-    # TODO Consistency in copying vs updating objects
 
     # TODO do we need a watch out for if methods intended only for root nodes are called on non-root nodes?
 
     # TODO dataset methods which should not or cannot act over the whole tree, such as .to_array
 
-    # TODO del and delitem methods
-
-    # TODO .loc, __contains__, __iter__, __array__, __len__
+    # TODO .loc method
 
     # TODO a lot of properties like .variables could be defined in a DataMapping class which both Dataset and DataTree inherit from
-
-    # TODO __slots__
 
     # TODO all groupby classes
 
@@ -128,6 +123,20 @@ class DataTree(
     _close: Optional[Callable[[], None]]
     _indexes: Dict[Hashable, Index]
     _variables: Dict[Hashable, Variable]
+
+    __slots__ = (
+        "_name",
+        "_parent",
+        "_children",
+        "_attrs",
+        "_cache",
+        "_coord_names",
+        "_dims",
+        "_encoding",
+        "_close",
+        "_indexes",
+        "_variables",
+    )
 
     def __init__(
         self,
@@ -327,6 +336,23 @@ class DataTree(
         """
         return self.dims
 
+    @property
+    def _attr_sources(self) -> Iterable[Mapping[Hashable, Any]]:
+        """Places to look-up items for attribute-style access"""
+        yield from self._item_sources
+        yield self.attrs
+
+    @property
+    def _item_sources(self) -> Iterable[Mapping[Any, Any]]:
+        """Places to look-up items for key-completion"""
+        yield self.data_vars
+        yield HybridMappingProxy(keys=self._coord_names, mapping=self.coords)
+
+        # virtual coordinates
+        yield HybridMappingProxy(keys=self.dims, mapping=self)
+
+        yield self.children
+
     def __contains__(self, key: object) -> bool:
         """The 'in' operator will return true or false depending on whether
         'key' is either an array stored in the datatree or a child node, or neither.
@@ -338,6 +364,14 @@ class DataTree(
 
     def __iter__(self) -> Iterator[Hashable]:
         return iter(self.ds.data_vars)
+
+    def __array__(self, dtype=None):
+        raise TypeError(
+            "cannot directly convert a DataTree into a "
+            "numpy array. Instead, create an xarray.DataArray "
+            "first, either with indexing on the DataTree or by "
+            "invoking the `to_array()` method."
+        )
 
     def __repr__(self) -> str:
         return formatting.datatree_repr(self)
@@ -685,11 +719,38 @@ class DataTree(
         return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
 
     def __len__(self) -> int:
-        if self.children:
-            n_children = len(self.children)
-        else:
-            n_children = 0
-        return n_children + len(self.ds)
+        return len(self.children) + len(self.ds)
+
+    @property
+    def indexes(self) -> Indexes[pd.Index]:
+        """Mapping of pandas.Index objects used for label based indexing.
+
+        Raises an error if this DataTree node has indexes that cannot be coerced
+        to pandas.Index objects.
+
+        See Also /
+        --------
+        DataTree.xindexes
+
+        """
+        return self.xindexes.to_pandas_indexes()
+
+    @property
+    def xindexes(self) -> Indexes[Index]:
+        """Mapping of xarray Index objects used for label based indexing."""
+        return Indexes(self._indexes, {k: self._variables[k] for k in self._indexes})
+
+    @property
+    def coords(self) -> DatasetCoordinates:
+        """Dictionary of xarray.DataArray objects corresponding to coordinate
+        variables
+        """
+        return DatasetCoordinates(self.to_dataset())
+
+    @property
+    def data_vars(self) -> DataVariables:
+        """Dictionary of DataArray objects corresponding to data variables"""
+        return DataVariables(self.to_dataset())
 
     def isomorphic(
         self,

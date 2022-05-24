@@ -460,3 +460,29 @@ class TestBrowsing:
 
 class TestRestructuring:
     ...
+
+
+class TestAccess:
+    def test_attribute_access(self):
+        dt = create_test_datatree()
+
+        # vars / coords
+        for key in ["a", "set0"]:
+            xrt.assert_equal(dt[key], getattr(dt, key))
+            assert key in dir(dt)
+
+        # dims
+        xrt.assert_equal(dt["a"]["y"], getattr(dt.a, "y"))
+        assert "y" in dir(dt["a"])
+
+        # children
+        for key in ["set1", "set2", "set3"]:
+            dtt.assert_equal(dt[key], getattr(dt, key))
+            assert key in dir(dt)
+
+        # attrs
+        # assert dt.attrs["meta"] == "NASA"
+        # assert "meta" in dir(dt)
+
+    def test_ipython_key_completions(self):
+        ...
