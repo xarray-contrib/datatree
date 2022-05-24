@@ -86,7 +86,9 @@ class TestFamilyTree:
         DataTree(name="set2", parent=set1)
 
     def test_create_full_tree(self):
-        root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])}, attrs={"meta": "NASA"})
+        root_data = xr.Dataset(
+            {"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])}, attrs={"meta": "NASA"}
+        )
         set1_data = xr.Dataset({"a": 0, "b": 1})
         set2_data = xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])})
 
