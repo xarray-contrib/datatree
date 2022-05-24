@@ -40,7 +40,7 @@ def create_test_datatree(modify=lambda ds: ds):
     The structure has deliberately repeated names of tags, variables, and
     dimensions in order to better check for bugs caused by name conflicts.
     """
-    set1_data = modify(xr.Dataset({"a": 0, "b": 1}))
+    set1_data = modify(xr.Dataset({"a": 0, "b": 1}, attrs={"meta": "NASA"}))
     set2_data = modify(xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])}))
     root_data = modify(xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])}))
 
@@ -86,7 +86,7 @@ class TestFamilyTree:
         DataTree(name="set2", parent=set1)
 
     def test_create_full_tree(self):
-        root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])})
+        root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])}, attrs={"meta": "NASA"})
         set1_data = xr.Dataset({"a": 0, "b": 1})
         set2_data = xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])})
 
@@ -99,6 +99,8 @@ class TestFamilyTree:
         DataTree(name="set3", parent=root)
 
         expected = create_test_datatree()
+        print(root.ds)
+        print(root)
         assert root.identical(expected)
 
 
@@ -481,8 +483,10 @@ class TestAccess:
             assert key in dir(dt)
 
         # attrs
-        # assert dt.attrs["meta"] == "NASA"
-        # assert "meta" in dir(dt)
+        print(dt._attrs)
+        print(dt.attrs)
+        assert dt.attrs["meta"] == "NASA"
+        assert "meta" in dir(dt)
 
     def test_ipython_key_completions(self):
         ...
