@@ -193,6 +193,11 @@ def _datatree_to_zarr(
     if encoding is None:
         encoding = {}
 
+    if set(encoding) - set(dt.groups):
+        raise ValueError(
+            f"unexpected encoding group name(s) provided: {set(encoding) - set(dt.groups)}"
+        )
+
     for node in dt.subtree:
         ds = node.ds
         group_path = node.path
