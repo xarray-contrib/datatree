@@ -27,13 +27,13 @@ class TestIO:
 
         # add compression
         comp = dict(zlib=True, complevel=9)
-        enc = {"/set1": {var: comp for var in original_dt["/set1"].ds.data_vars}}
+        enc = {"/set2": {var: comp for var in original_dt["/set2"].ds.data_vars}}
 
         original_dt.to_netcdf(filepath, encoding=enc, engine="netcdf4")
         roundtrip_dt = open_datatree(filepath)
 
-        assert roundtrip_dt["/set1/a"].encoding["zlib"] == comp["zlib"]
-        assert roundtrip_dt["/set1/a"].encoding["complevel"] == comp["complevel"]
+        assert roundtrip_dt["/set2/a"].encoding["zlib"] == comp["zlib"]
+        assert roundtrip_dt["/set2/a"].encoding["complevel"] == comp["complevel"]
 
     @requires_h5netcdf
     def test_to_h5netcdf(self, tmpdir):
