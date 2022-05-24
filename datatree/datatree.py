@@ -82,6 +82,50 @@ def _check_for_name_collisions(
         )
 
 
+class DatasetView(Dataset):
+    _wrapping_node: DataTree
+
+    __slots__ = ["_wrapping_node"]
+
+    @classmethod
+    def _from_node(
+        cls,
+        wrapping_node,
+    ) -> DatasetView:
+        """Constructor, using dataset attributes from wrapping node"""
+
+        obj: DatasetView = object.__new__(cls)
+        obj._wrapping_node = wrapping_node
+        obj._variables = wrapping_node._variables
+        obj._coord_names = wrapping_node._coord_names
+        obj._dims = wrapping_node._dims
+        obj._indexes = wrapping_node._indexes
+        obj._attrs = wrapping_node._attrs
+        obj._close = wrapping_node._close
+        obj._encoding = wrapping_node._encoding
+
+        return obj
+
+    def __setitem__(self, key, val) -> None:
+        raise AttributeError(
+            "Mutation of the DatasetView is not allowed, please use __setitem__ on the wrapping DataTree node, "
+            "or use `DataTree.to_dataset()` if you want a mutable dataset"
+        )
+
+    def __getitem__(self, key) -> DataArray:
+        # calling the `_get_item` method of DataTree allows path-like access to contents of other nodes
+        obj = self._wrapping_node[key]
+        if isinstance(obj, DataArray):
+            return obj
+        else:
+            raise KeyError(
+                "DatasetView is only allowed to return variables, not entire DataTree nodes"
+            )
+
+    # all API that doesn't modify state in-place can just be inherited from Dataset
+    ...
+
+
 class DataTree(
     TreeNode,
     MappedDatasetMethodsMixin,
@@ -201,15 +245,19 @@ class DataTree(
 
     @parent.setter
     def parent(self: DataTree, new_parent: DataTree) -> None:
-        if new_parent and self.name is None:
+        if new_parent is not None and self.name is None:
             raise ValueError("Cannot set an unnamed node as a child of another node")
         self._set_parent(new_parent, self.name)
 
     @property
-    def ds(self) -> Dataset:
-        """The data in this node, returned as a Dataset."""
-        # TODO change this to return only an immutable view onto this node's data (see GH #80)
-        return self.to_dataset()
+    def ds(self) -> DatasetView:
+        """
+        An immutable Dataset-like view onto the data in this node.
+
+        If you want a mutable Dataset containing the same data as in this node,
+        use `.to_dataset()` instead.
+        """
+        return DatasetView._from_node(self)
 
     @ds.setter
     def ds(self, data: Union[Dataset, DataArray] = None) -> None:
