@@ -139,6 +139,9 @@ def _datatree_to_netcdf(
     if encoding is None:
         encoding = {}
 
+    # In the future, we may want to expand this check to insure all the provided encoding
+    # options are valid. For now, this simply checks that all provided encoding keys are
+    # groups in the datatree.
     if set(encoding) - set(dt.groups):
         raise ValueError(
             f"unexpected encoding group name(s) provided: {set(encoding) - set(dt.groups)}"
@@ -193,6 +196,9 @@ def _datatree_to_zarr(
     if encoding is None:
         encoding = {}
 
+    # In the future, we may want to expand this check to insure all the provided encoding
+    # options are valid. For now, this simply checks that all provided encoding keys are
+    # groups in the datatree.
     if set(encoding) - set(dt.groups):
         raise ValueError(
             f"unexpected encoding group name(s) provided: {set(encoding) - set(dt.groups)}"
