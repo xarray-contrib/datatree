@@ -501,46 +501,6 @@ class DataTree(
             )
         return obj
 
-    def copy(self: DataTree, deep: bool = False) -> DataTree:
-        """Returns a copy of this DataTree.
-
-        Copies all nodes in the tree, from the root down to all children in the subtree.
-
-        If `deep=True`, a deep copy is made of each of the component variables in each node.
-        Otherwise, a shallow copy of each of the component variable is made, so
-        that the underlying memory region of the new datasets is the same as in
-        the original datasets.
-
-        Parameters
-        ----------
-        deep : bool, optional
-            Whether each component variable is loaded into memory and copied onto
-            the new object. Default is False.
-
-        Returns
-        -------
-        object : DataTree
-            New object with dimensions, attributes, coordinates, name, encoding,
-            and data copied from original.
-        """
-
-        # TODO add a "data" argument like Dataset.copy has?
-        # TODO should "data" be a dict of paths to datasets?
-
-        copied_from_root = {}
-        for node in self.root.subtree:
-            copied_from_root[node.path] = node.to_dataset().copy(deep=deep)
-
-        return DataTree.from_dict(copied_from_root, name=self.root.name)
-
-    def __copy__(self):
-        return self.copy(deep=False)
-
-    def __deepcopy__(self, memo=None) -> DataTree:
-        # memo does nothing but is required for compatibility with
-        # copy.deepcopy
-        return self.copy(deep=True)
-
     def get(
         self: DataTree, key: str, default: Optional[DataTree | DataArray] = None
     ) -> Optional[DataTree | DataArray]:
@@ -727,11 +687,10 @@ class DataTree(
 
         Raises an error if this DataTree node has indexes that cannot be coerced
         to pandas.Index objects.
-
-        See Also /
+        
+        See Also
         --------
         DataTree.xindexes
-
         """
         return self.xindexes.to_pandas_indexes()
 
