@@ -20,9 +20,12 @@ from typing import (
     Union,
 )
 
-from xarray import DataArray, Dataset
+import pandas as pd
 from xarray.core import utils
-from xarray.core.indexes import Index
+from xarray.core.coordinates import DatasetCoordinates
+from xarray.core.dataarray import DataArray
+from xarray.core.dataset import Dataset, DataVariables
+from xarray.core.indexes import Index, Indexes
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
 from xarray.core.utils import Default, Frozen, _default
@@ -645,11 +648,35 @@ class DataTree(
         return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
 
     def __len__(self) -> int:
-        if self.children:
-            n_children = len(self.children)
-        else:
-            n_children = 0
-        return n_children + len(self.ds)
+        return len(self.children) + len(self.ds)
+
+    @property
+    def indexes(self) -> Indexes[pd.Index]:
+        """Mapping of pandas.Index objects used for label based indexing.
+        Raises an error if this DataTree node has indexes that cannot be coerced
+        to pandas.Index objects.
+        See Also /
+        --------
+        DataTree.xindexes
+        """
+        return self.xindexes.to_pandas_indexes()
+
+    @property
+    def xindexes(self) -> Indexes[Index]:
+        """Mapping of xarray Index objects used for label based indexing."""
+        return Indexes(self._indexes, {k: self._variables[k] for k in self._indexes})
+
+    @property
+    def coords(self) -> DatasetCoordinates:
+        """Dictionary of xarray.DataArray objects corresponding to coordinate
+        variables
+        """
+        return DatasetCoordinates(self.to_dataset())
+
+    @property
+    def data_vars(self) -> DataVariables:
+        """Dictionary of DataArray objects corresponding to data variables"""
+        return DataVariables(self.to_dataset())
 
     def isomorphic(
         self,
