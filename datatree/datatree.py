@@ -687,7 +687,7 @@ class DataTree(
 
         Raises an error if this DataTree node has indexes that cannot be coerced
         to pandas.Index objects.
-        
+
         See Also
         --------
         DataTree.xindexes
