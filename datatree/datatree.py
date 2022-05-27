@@ -93,9 +93,31 @@ def _check_for_name_collisions(
 
 
 class DatasetView(Dataset):
+    """
+    An immutable Dataset-like view onto the data in a single DataTree node.
+
+    In-place operations on this object should raise an AttributeError.
+
+    Operations returning a new result will return a new xarray.Dataset object.
+    This includes all API on Dataset, which will be inherited.
+
+    This object also keeps a reference to its wrapping tree node, to allow getting
+    items from elsewhere in the tree.
+    """
+
+    # TODO what happens if user alters (in-place) a DataArray they extracted from this object?
+
     _wrapping_node: DataTree
 
     __slots__ = ["_wrapping_node"]
+
+    def __init__(
+        self,
+        data_vars: Mapping[Any, Any] = None,
+        coords: Mapping[Any, Any] = None,
+        attrs: Mapping[Any, Any] = None,
+    ):
+        raise AttributeError("DatasetView objects are not to be initialized directly")
 
     @classmethod
     def _from_node(
@@ -122,6 +144,12 @@ class DatasetView(Dataset):
             "or use `DataTree.to_dataset()` if you want a mutable dataset"
         )
 
+    def update(self, other) -> None:
+        raise AttributeError(
+            "Mutation of the DatasetView is not allowed, please use .update on the wrapping DataTree node, "
+            "or use `DataTree.to_dataset()` if you want a mutable dataset"
+        )
+
     def __getitem__(self, key) -> DataArray:
         # calling the `_get_item` method of DataTree allows path-like access to contents of other nodes
         obj = self._wrapping_node[key]
@@ -132,8 +160,33 @@ class DatasetView(Dataset):
                 "DatasetView is only allowed to return variables, not entire DataTree nodes"
             )
 
-    # all API that doesn't modify state in-place can just be inherited from Dataset
-    ...
+    def _replace(
+        self,
+        variables: dict[Hashable, Variable] = None,
+        coord_names: set[Hashable] = None,
+        dims: dict[Any, int] = None,
+        attrs: dict[Hashable, Any] | None | Default = _default,
+        indexes: dict[Hashable, Index] = None,
+        encoding: dict | None | Default = _default,
+        inplace: bool = False,
+    ) -> Dataset:
+
+        # Overriding this method should hopefully ensure that the return type of any
+        # method on this object is a Dataset
+
+        if inplace:
+            raise AttributeError("In-place mutation of the DatasetView is not allowed")
+
+        return Dataset._replace(
+            self,
+            variables=variables,
+            coord_names=coord_names,
+            dims=dims,
+            attrs=attrs,
+            indexes=indexes,
+            encoding=encoding,
+            inplace=inplace,
+        )
 
 
 class DataTree(
