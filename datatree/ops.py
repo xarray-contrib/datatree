@@ -57,7 +57,6 @@ _DATASET_METHODS_TO_MAP = [
     "reorder_levels",
     "stack",
     "unstack",
-    "update",
     "merge",
     "drop_vars",
     "drop_sel",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import itertools
 from collections import OrderedDict
 from html import escape
 from typing import (
@@ -30,7 +31,7 @@ from xarray.core.indexes import Index, Indexes
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
 from xarray.core.utils import Default, Frozen, HybridMappingProxy, _default
-from xarray.core.variable import Variable, calculate_dimensions
+from xarray.core.variable import Variable
 
 from . import formatting, formatting_html
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
@@ -41,6 +42,12 @@ from .ops import (
 )
 from .render import RenderTree
 from .treenode import NodePath, Tree, TreeNode
+
+try:
+    from xarray.core.variable import calculate_dimensions
+except ImportError:
+    # for xarray versions 2022.03.0 and earlier
+    from xarray.core.dataset import calculate_dimensions
 
 if TYPE_CHECKING:
     from xarray.core.merge import CoercibleValue
@@ -93,6 +100,7 @@ class DataTree(
     DataTreeArithmeticMixin,
     AttrAccessMixin,
     Generic[Tree],
+    Mapping,
 ):
     """
     A tree-like hierarchical collection of xarray objects.
@@ -244,7 +252,7 @@ class DataTree(
         children with duplicate names (or a data variable with the same name as a child).
         """
         super()._pre_attach(parent)
-        if parent.has_data and self.name in list(parent.ds.variables):
+        if self.name in list(parent.ds.variables):
             raise KeyError(
                 f"parent {parent.name} already contains a data variable named {self.name}"
             )
@@ -357,13 +365,13 @@ class DataTree(
         """The 'in' operator will return true or false depending on whether
         'key' is either an array stored in the datatree or a child node, or neither.
         """
-        return key in self._variables or key in self.children
+        return key in self.variables or key in self.children
 
     def __bool__(self) -> bool:
-        return bool(self.ds.data_vars)
+        return bool(self.ds.data_vars) or bool(self.children)
 
     def __iter__(self) -> Iterator[Hashable]:
-        return iter(self.ds.data_vars)
+        return itertools.chain(self.ds.data_vars, self.children)
 
     def __array__(self, dtype=None):
         raise TypeError(
@@ -676,10 +684,10 @@ class DataTree(
 
     @property
     def nbytes(self) -> int:
-        return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
+        return sum(node.to_dataset().nbytes for node in self.subtree)
 
     def __len__(self) -> int:
-        return len(self.children) + len(self.ds)
+        return len(self.children) + len(self.data_vars)
 
     @property
     def indexes(self) -> Indexes[pd.Index]:

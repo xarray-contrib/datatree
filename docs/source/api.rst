@@ -78,13 +78,9 @@ Dictionary interface
    DataTree.__delitem__
    DataTree.update
    DataTree.get
-
-..
-
-   Missing:
-   ``DataTree.items``
-   ``DataTree.keys``
-   ``DataTree.values``
+   DataTree.items
+   DataTree.keys
+   DataTree.values
 
 Tree Manipulation
 -----------------
@@ -104,7 +100,7 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
 DataTree Contents
 -----------------
 
-Manipulate the contents of a single DataTree node.
+Manipulate the contents of all nodes in a tree simultaneously.
 
 .. autosummary::
    :toctree: generated/
@@ -119,12 +115,14 @@ Manipulate the contents of a single DataTree node.
    DataTree.swap_dims
    DataTree.expand_dims
    DataTree.drop_vars
-   DataTree.drop_duplicates
    DataTree.drop_dims
    DataTree.set_coords
    DataTree.reset_coords
-   DataTree.convert_calendar
-   DataTree.interp_calendar
+
+DataTree Node Contents
+----------------------
+
+Manipulate the contents of a single DataTree node.
 
 Comparisons
 ===========
@@ -141,7 +139,7 @@ Compare one ``DataTree`` object to another.
 Indexing
 ========
 
-Index into each and every node of a tree.
+Index into all nodes in the subtree simultaneously.
 
 .. autosummary::
    :toctree: generated/
@@ -189,7 +187,7 @@ Missing Value Handling
 Computation
 ===========
 
-Apply a computation to the data in each and every node of a tree.
+Apply a computation to the data in all nodes in the subtree simultaneously.
 
 .. autosummary::
    :toctree: generated/
@@ -207,7 +205,7 @@ Apply a computation to the data in each and every node of a tree.
 Aggregation
 ===========
 
-Aggregate data in each and every node, creating a new tree.
+Aggregate data in all nodes in the subtree simultaneously.
 
 .. autosummary::
    :toctree: generated/
@@ -232,7 +230,7 @@ Aggregate data in each and every node, creating a new tree.
 ndarray methods
 ===============
 
-Methods copied from `np.ndarray` objects, here applying to the data in each and every node of the tree.
+Methods copied from `np.ndarray` objects, here applying to the data in all nodes in the subtree.
 
 .. autosummary::
    :toctree: generated/
@@ -250,7 +248,7 @@ Methods copied from `np.ndarray` objects, here applying to the data in each and 
 Reshaping and reorganising
 ==========================
 
-Reshape or reorganise the data in each and every node of a tree.
+Reshape or reorganise the data in all nodes in the subtree.
 
 .. autosummary::
    :toctree: generated/
@@ -269,6 +267,8 @@ Plotting
 
 I/O
 ===
+
+Create or
 
 .. autosummary::
    :toctree: generated/
