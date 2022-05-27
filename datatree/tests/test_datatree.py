@@ -63,7 +63,7 @@ class TestTreeCreation:
         assert dt.name == "root"
         assert dt.parent is None
         assert dt.children == {}
-        xrt.assert_identical(dt.ds, xr.Dataset())
+        xrt.assert_identical(dt.to_dataset(), xr.Dataset())
 
     def test_unnamed(self):
         dt = DataTree()
@@ -106,7 +106,7 @@ class TestStoreDatasets:
     def test_create_with_data(self):
         dat = xr.Dataset({"a": 0})
         john = DataTree(name="john", data=dat)
-        xrt.assert_identical(john.ds, dat)
+        xrt.assert_identical(john.to_dataset(), dat)
 
         with pytest.raises(TypeError):
             DataTree(name="mary", parent=john, data="junk")  # noqa
@@ -115,7 +115,7 @@ class TestStoreDatasets:
         john = DataTree(name="john")
         dat = xr.Dataset({"a": 0})
         john.ds = dat
-        xrt.assert_identical(john.ds, dat)
+        xrt.assert_identical(john.to_dataset(), dat)
         with pytest.raises(TypeError):
             john.ds = "junk"
 
@@ -140,16 +140,9 @@ class TestVariablesChildrenNameCollisions:
             dt.ds = xr.Dataset({"a": 0})
 
         dt.ds = xr.Dataset()
+        new_ds = dt.to_dataset().assign(a=xr.DataArray(0))
         with pytest.raises(KeyError, match="names would collide"):
-            dt.ds = dt.ds.assign(a=xr.DataArray(0))
-
-    @pytest.mark.xfail
-    def test_update_when_already_child_with_variables_name(self):
-        # See issue #38
-        dt = DataTree(name="root", data=None)
-        DataTree(name="a", data=None, parent=dt)
-        with pytest.raises(KeyError, match="names would collide"):
-            dt.ds["a"] = xr.DataArray(0)
+            dt.ds = new_ds
 
 
 class TestGet:
@@ -320,13 +313,13 @@ class TestSetItem:
         john["mary"] = DataTree()
         mary = john["mary"]
         assert isinstance(mary, DataTree)
-        xrt.assert_identical(mary.ds, xr.Dataset())
+        xrt.assert_identical(mary.to_dataset(), xr.Dataset())
 
     def test_setitem_overwrite_data_in_node_with_none(self):
         john = DataTree(name="john")
         mary = DataTree(name="mary", parent=john, data=xr.Dataset())
         john["mary"] = DataTree()
-        xrt.assert_identical(mary.ds, xr.Dataset())
+        xrt.assert_identical(mary.to_dataset(), xr.Dataset())
 
         john.ds = xr.Dataset()
         with pytest.raises(ValueError, match="has no name"):
@@ -337,21 +330,21 @@ class TestSetItem:
         data = xr.Dataset({"temp": [0, 50]})
         results = DataTree(name="results")
         results["."] = data
-        xrt.assert_identical(results.ds, data)
+        xrt.assert_identical(results.to_dataset(), data)
 
     @pytest.mark.xfail(reason="assigning Datasets doesn't yet create new nodes")
     def test_setitem_dataset_as_new_node(self):
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataTree(name="folder1")
         folder1["results"] = data
-        xrt.assert_identical(folder1["results"].ds, data)
+        xrt.assert_identical(folder1["results"].to_dataset(), data)
 
     @pytest.mark.xfail(reason="assigning Datasets doesn't yet create new nodes")
     def test_setitem_dataset_as_new_node_requiring_intermediate_nodes(self):
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataTree(name="folder1")
         folder1["results/highres"] = data
-        xrt.assert_identical(folder1["results/highres"].ds, data)
+        xrt.assert_identical(folder1["results/highres"].to_dataset(), data)
 
     def test_setitem_named_dataarray(self):
         da = xr.DataArray(name="temp", data=[0, 50])
@@ -386,7 +379,7 @@ class TestSetItem:
         p = xr.DataArray(data=[2, 3])
         results["pressure"] = p
         expected = t.assign(pressure=p)
-        xrt.assert_identical(results.ds, expected)
+        xrt.assert_identical(results.to_dataset(), expected)
 
 
 class TestDictionaryInterface:
@@ -400,16 +393,16 @@ class TestTreeFromDict:
         assert dt.name is None
         assert dt.parent is None
         assert dt.children == {}
-        xrt.assert_identical(dt.ds, dat)
+        xrt.assert_identical(dt.to_dataset(), dat)
 
     def test_one_layer(self):
         dat1, dat2 = xr.Dataset({"a": 1}), xr.Dataset({"b": 2})
         dt = DataTree.from_dict({"run1": dat1, "run2": dat2})
-        xrt.assert_identical(dt.ds, xr.Dataset())
+        xrt.assert_identical(dt.to_dataset(), xr.Dataset())
         assert dt.name is None
-        xrt.assert_identical(dt["run1"].ds, dat1)
+        xrt.assert_identical(dt["run1"].to_dataset(), dat1)
         assert dt["run1"].children == {}
-        xrt.assert_identical(dt["run2"].ds, dat2)
+        xrt.assert_identical(dt["run2"].to_dataset(), dat2)
         assert dt["run2"].children == {}
 
     def test_two_layers(self):
@@ -418,13 +411,13 @@ class TestTreeFromDict:
         assert "highres" in dt.children
         assert "lowres" in dt.children
         highres_run = dt["highres/run"]
-        xrt.assert_identical(highres_run.ds, dat1)
+        xrt.assert_identical(highres_run.to_dataset(), dat1)
 
     def test_nones(self):
         dt = DataTree.from_dict({"d": None, "d/e": None})
         assert [node.name for node in dt.subtree] == [None, "d", "e"]
         assert [node.path for node in dt.subtree] == ["/", "/d", "/d/e"]
-        xrt.assert_identical(dt["d/e"].ds, xr.Dataset())
+        xrt.assert_identical(dt["d/e"].to_dataset(), xr.Dataset())
 
     def test_full(self):
         dt = create_test_datatree()
@@ -454,8 +447,24 @@ class TestTreeFromDict:
         assert roundtrip.equals(dt)
 
 
-class TestBrowsing:
-    ...
+class TestDatasetView:
+    def test_view_contents(self):
+        ...
+
+    @pytest.mark.xfail
+    def test_immutability(self):
+        # See issue #38
+        dt = DataTree(name="root", data=None)
+        DataTree(name="a", data=None, parent=dt)
+        with pytest.raises(KeyError, match="names would collide"):
+            dt.ds["a"] = xr.DataArray(0)
+
+        # TODO also test any other ways you can normally modify state (in-place)
+        # TODO this includes .update
+        # (but not attribute-like assignment because that doesn't work on Dataset anyway)
+
+    def test_get_items_in_other_nodes(self):
+        ...
 
 
 class TestRestructuring:
