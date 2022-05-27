@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import xarray as xr
 import xarray.testing as xrt
-from xarray.tests import source_ndarray
+from xarray.tests import create_test_data, source_ndarray
 
 import datatree.testing as dtt
 from datatree import DataTree
@@ -449,19 +449,36 @@ class TestTreeFromDict:
 
 class TestDatasetView:
     def test_view_contents(self):
-        ...
+        ds = create_test_data()
+        dt = DataTree(data=ds)
+        assert ds.identical(
+            dt.ds
+        )  # this only works because Dataset.identical doesn't check types
+        assert isinstance(dt.ds, xr.Dataset)
 
-    @pytest.mark.xfail
     def test_immutability(self):
         # See issue #38
         dt = DataTree(name="root", data=None)
         DataTree(name="a", data=None, parent=dt)
-        with pytest.raises(KeyError, match="names would collide"):
+
+        with pytest.raises(
+            AttributeError, match="Mutation of the DatasetView is not allowed"
+        ):
             dt.ds["a"] = xr.DataArray(0)
 
-        # TODO also test any other ways you can normally modify state (in-place)
-        # TODO this includes .update
-        # (but not attribute-like assignment because that doesn't work on Dataset anyway)
+        with pytest.raises(
+            AttributeError, match="Mutation of the DatasetView is not allowed"
+        ):
+            dt.ds.update({"a": 0})
+
+        # TODO are there any other ways you can normally modify state (in-place)?
+        # (not attribute-like assignment because that doesn't work on Dataset anyway)
+
+    def test_methods(self):
+        ds = create_test_data()
+        dt = DataTree(data=ds)
+        assert ds.mean().identical(dt.ds.mean())
+        assert type(dt.ds.mean()) == xr.Dataset
 
     def test_get_items_in_other_nodes(self):
         ...

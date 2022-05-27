@@ -19,6 +19,8 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
+    overload,
 )
 
 import pandas as pd
@@ -29,7 +31,7 @@ from xarray.core.dataset import Dataset, DataVariables
 from xarray.core.indexes import Index, Indexes
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
-from xarray.core.utils import Default, Frozen, _default
+from xarray.core.utils import Default, Frozen, _default, hashable
 from xarray.core.variable import Variable
 
 from . import formatting, formatting_html
@@ -96,10 +98,12 @@ class DatasetView(Dataset):
     """
     An immutable Dataset-like view onto the data in a single DataTree node.
 
-    In-place operations on this object should raise an AttributeError.
+    In-place operations modifying this object should raise an AttributeError.
 
     Operations returning a new result will return a new xarray.Dataset object.
     This includes all API on Dataset, which will be inherited.
+
+    This requires overriding all inherited private constructors
 
     This object also keeps a reference to its wrapping tree node, to allow getting
     items from elsewhere in the tree.
@@ -122,7 +126,7 @@ class DatasetView(Dataset):
     @classmethod
     def _from_node(
         cls,
-        wrapping_node,
+        wrapping_node: DataTree,
     ) -> DatasetView:
         """Constructor, using dataset attributes from wrapping node"""
 
@@ -150,15 +154,68 @@ class DatasetView(Dataset):
             "or use `DataTree.to_dataset()` if you want a mutable dataset"
         )
 
+    # FIXME https://github.com/python/mypy/issues/7328
+    @overload
+    def __getitem__(self, key: Mapping) -> Dataset:  # type: ignore[misc]
+        ...
+
+    @overload
+    def __getitem__(self, key: Hashable) -> DataArray:  # type: ignore[misc]
+        ...
+
+    @overload
+    def __getitem__(self, key: Any) -> Dataset:
+        ...
+
     def __getitem__(self, key) -> DataArray:
-        # calling the `_get_item` method of DataTree allows path-like access to contents of other nodes
-        obj = self._wrapping_node[key]
-        if isinstance(obj, DataArray):
-            return obj
+
+        # Copy the internals of Dataset.__getitem__
+        if utils.is_dict_like(key):
+            dsv = self.isel(**cast(Mapping, key))
+            return dsv
+
+        if hashable(key):
+            return self._construct_dataarray(key)
         else:
-            raise KeyError(
-                "DatasetView is only allowed to return variables, not entire DataTree nodes"
-            )
+            return self._copy_listed(key)
+
+        # TODO call the `_get_item` method of DataTree to allow path-like access to contents of other nodes
+        # obj = self[key]
+        # if isinstance(obj, DataArray):
+        #     return obj
+        # else:
+        #     raise KeyError(
+        #         "DatasetView is only allowed to return variables, not entire DataTree nodes"
+        #     )
+
+    @classmethod
+    def _construct_direct(
+        cls,
+        variables: dict[Any, Variable],
+        coord_names: set[Hashable],
+        dims: dict[Any, int] = None,
+        attrs: dict = None,
+        indexes: dict[Any, Index] = None,
+        encoding: dict = None,
+        close: Callable[[], None] = None,
+    ) -> Dataset:
+        """
+        Overriding this method (along with ._replace) and modifying it to return a Dataset object
+        should hopefully ensure that the return type of any method on this object is a Dataset.
+        """
+        if dims is None:
+            dims = calculate_dimensions(variables)
+        if indexes is None:
+            indexes = {}
+        obj = object.__new__(Dataset)
+        obj._variables = variables
+        obj._coord_names = coord_names
+        obj._dims = dims
+        obj._indexes = indexes
+        obj._attrs = attrs
+        obj._close = close
+        obj._encoding = encoding
+        return obj
 
     def _replace(
         self,
@@ -170,9 +227,10 @@ class DatasetView(Dataset):
         encoding: dict | None | Default = _default,
         inplace: bool = False,
     ) -> Dataset:
-
-        # Overriding this method should hopefully ensure that the return type of any
-        # method on this object is a Dataset
+        """
+        Overriding this method (along with ._construct_direct) and modifying it to return a Dataset object
+        should hopefully ensure that the return type of any method on this object is a Dataset.
+        """
 
         if inplace:
             raise AttributeError("In-place mutation of the DatasetView is not allowed")
