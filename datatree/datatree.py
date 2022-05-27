@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import itertools
 from collections import OrderedDict
 from html import escape
 from typing import (
@@ -97,6 +98,7 @@ class DataTree(
     MappedDataWithCoords,
     DataTreeArithmeticMixin,
     Generic[Tree],
+    Mapping,
 ):
     """
     A tree-like hierarchical collection of xarray objects.
@@ -340,13 +342,13 @@ class DataTree(
         """The 'in' operator will return true or false depending on whether
         'key' is either an array stored in the datatree or a child node, or neither.
         """
-        return key in self._variables or key in self.children
+        return key in self.variables or key in self.children
 
     def __bool__(self) -> bool:
-        return bool(self.ds.data_vars)
+        return bool(self.ds.data_vars) or bool(self.children)
 
     def __iter__(self) -> Iterator[Hashable]:
-        return iter(self.ds.data_vars)
+        return itertools.chain(self.ds.data_vars, self.children)
 
     def __repr__(self) -> str:
         return formatting.datatree_repr(self)
@@ -654,7 +656,7 @@ class DataTree(
         return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
 
     def __len__(self) -> int:
-        return len(self.children) + len(self.ds)
+        return len(self.children) + len(self.data_vars)
 
     @property
     def indexes(self) -> Indexes[pd.Index]:
