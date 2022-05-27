@@ -246,7 +246,7 @@ class DataTree(
         children with duplicate names (or a data variable with the same name as a child).
         """
         super()._pre_attach(parent)
-        if parent.has_data and self.name in list(parent.ds.variables):
+        if self.name in list(parent.ds.variables):
             raise KeyError(
                 f"parent {parent.name} already contains a data variable named {self.name}"
             )
@@ -653,7 +653,7 @@ class DataTree(
 
     @property
     def nbytes(self) -> int:
-        return sum(node.ds.nbytes if node.has_data else 0 for node in self.subtree)
+        return sum(node.to_dataset().nbytes for node in self.subtree)
 
     def __len__(self) -> int:
         return len(self.children) + len(self.data_vars)
