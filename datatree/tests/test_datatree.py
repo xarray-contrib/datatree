@@ -482,13 +482,13 @@ class TestDatasetView:
 
     def test_getitem(self):
         dt = create_test_datatree()
-        da = dt.ds['a']
+        da = dt.ds["a"]
         print(da)
-        expected = xr.DataArray(dims=("y", ), data=[6, 7, 8])
+        expected = xr.DataArray(dims=("y",), data=[6, 7, 8])
         print(expected)
         xrt.assert_equal(da, expected)
 
-    #@pytest.mark.xfail
+    # @pytest.mark.xfail
     def test_get_items_in_other_nodes(self):
         dt = create_test_datatree()
         node_dsv = dt["set1"].ds
