@@ -19,7 +19,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    cast,
     overload,
 )
 
@@ -31,7 +30,7 @@ from xarray.core.dataset import Dataset, DataVariables
 from xarray.core.indexes import Index, Indexes
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
-from xarray.core.utils import Default, Frozen, _default, hashable
+from xarray.core.utils import Default, Frozen, _default
 from xarray.core.variable import Variable
 
 from . import formatting, formatting_html
@@ -168,25 +167,9 @@ class DatasetView(Dataset):
         ...
 
     def __getitem__(self, key) -> DataArray:
-
-        # Copy the internals of Dataset.__getitem__
-        if utils.is_dict_like(key):
-            dsv = self.isel(**cast(Mapping, key))
-            return dsv
-
-        if hashable(key):
-            return self._construct_dataarray(key)
-        else:
-            return self._copy_listed(key)
-
         # TODO call the `_get_item` method of DataTree to allow path-like access to contents of other nodes
-        # obj = self[key]
-        # if isinstance(obj, DataArray):
-        #     return obj
-        # else:
-        #     raise KeyError(
-        #         "DatasetView is only allowed to return variables, not entire DataTree nodes"
-        #     )
+        # For now just call Dataset.__getitem__
+        return Dataset.__getitem__(self, key)
 
     @classmethod
     def _construct_direct(
