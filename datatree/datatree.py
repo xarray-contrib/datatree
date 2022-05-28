@@ -167,26 +167,23 @@ class DatasetView(Dataset):
     def __getitem__(self, key: Any) -> Dataset:
         ...
 
-    def __getitem__(self, key) -> DataArray:
+    def __getitem__(self, key):
 
         # Copy the internals of Dataset.__getitem__
         if utils.is_dict_like(key):
-            dsv = self.isel(**cast(Mapping, key))
-            return dsv
-
+            return self.isel(**cast(Mapping, key))
         if hashable(key):
-            return self._construct_dataarray(key)
+            # allow path-like access to contents of other nodes
+            path = NodePath(key)
+            da = self._wrapped_node._get_item(path)
+            if isinstance(da, DataArray):
+                return da
+            else:
+                raise KeyError(
+                    "DatasetView is only allowed to return variables, not entire DataTree nodes"
+                )
         else:
             return self._copy_listed(key)
-
-        # TODO call the `_get_item` method of DataTree to allow path-like access to contents of other nodes
-        # obj = self[key]
-        # if isinstance(obj, DataArray):
-        #     return obj
-        # else:
-        #     raise KeyError(
-        #         "DatasetView is only allowed to return variables, not entire DataTree nodes"
-        #     )
 
     @classmethod
     def _construct_direct(
@@ -653,8 +650,8 @@ class DataTree(
         """
         if key in self.children:
             return self.children[key]
-        elif key in self.ds:
-            return self.ds[key]
+        elif key in self.variables:
+            return self.to_dataset()._construct_dataarray(key)
         else:
             return default
 
