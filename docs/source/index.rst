@@ -11,7 +11,6 @@ Datatree
    Installation <installation>
    Quick Overview <quick-overview>
    Tutorial <tutorial>
-   Data Model <data-structures>
    API Reference <api>
    How do I ... <howdoi>
    Contributing Guide <contributing>
