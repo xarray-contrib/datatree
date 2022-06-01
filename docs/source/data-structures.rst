@@ -52,7 +52,7 @@ Each child automatically knows about its parent node, and a node without a paren
 (represented by the ``parent`` attribute pointing to ``None``).
 Nodes can have multiple children, but as each child node has at most one parent, there can only ever be one root node in a given tree.
 
-The overall structure is technically a `connected acyclic undirected graph`, otherwise known as a
+The overall structure is technically a `connected acyclic undirected rooted graph`, otherwise known as a
 `"Tree" <https://en.wikipedia.org/wiki/Tree_(graph_theory)>`_.
 
 .. note::
@@ -63,11 +63,89 @@ The overall structure is technically a `connected acyclic undirected graph`, oth
 
 
 ``DataTree`` objects can also optionally have a ``name`` as well as ``attrs``, just like a ``DataArray``.
-Again these are not used unless explicitly accessed by the user.
+Again these are not normally used unless explicitly accessed by the user.
 
 
 Creating a DataTree
 ~~~~~~~~~~~~~~~~~~~
+
+There are two ways to create a ``DataTree`` from scratch. The first is to create each node individually,
+specifying the nodes' relationship to one another as you create each one.
+
+The ``DataTree`` constructor takes:
+
+- ``data``: The data that will be stored in this node, represented by a single ``xarray.Dataset``, or a named ``xarray.DataArray``.
+- ``parent``: The parent node (if there is one), given as a ``DataTree`` object.
+- ``children``: The various child nodes (if there are any), given as a mapping from string keys to ``DataTree`` objects.
+- ``name``: A string to use as the name of this node.
+
+Let's make a datatree node without anything in it:
+
+.. ipython:: python
+
+    from datatree import DataTree
+
+    # create root node
+    node1 = DataTree(name="Oak")
+
+    node1
+
+At this point our node is also the root node, as every tree has a root node.
+
+We can add a second node to this tree either by referring to the first node in the constructor of the second:
+
+.. ipython:: python
+
+    # add a child by referring to the parent node
+    node2 = DataTree(name="Little Bonsai", parent=node1)
+
+or by dynamically updating the attributes of one node to refer to another:
+
+.. ipython:: python
+
+    # add a grandparent by updating the .parent property of an existing node
+    node0 = DataTree(name="General Sherman")
+    node1.parent = node0
+
+Our tree now has a new root:
+
+.. ipython:: python
+
+    node2.root
+
+Is is at tree construction time that consistency checks are enforced. For instance, if we try to create a `cycle` the constructor will raise an error:
+
+.. ipython:: python
+    :okexcept:
+
+    node0.parent = node2
+
+The second way is to build the tree from a dictionary of filesystem-like paths and corresponding ``xarray.Dataset` objects.
+This relies on
+
+
+
+
+If you have a file containing data on disk (such as a netCDF file or a Zarr Store), you can also create a datatree by opening the
+file using ``:py:func::~datatree.open_datatree``.
+
+
+DataTree Contents
+~~~~~~~~~~~~~~~~~
+
+Now let's add some data to our tree.
+
+.. ipython:: python
+
+    # create some data
+    ds1 = xr.Dataset({"a": ("x", [1, 2, 3])})
+
+    ds1
+
+
+You can see that the data in the node is displayed in the same way that the contents of the xarray Dataset we added would have been.
+
+
 
 Navigating the Tree
 ~~~~~~~~~~~~~~~~~~~
