@@ -149,6 +149,15 @@ file using ``:py:func::~datatree.open_datatree``.
 DataTree Contents
 ~~~~~~~~~~~~~~~~~
 
+Like ``xarray.Dataset``, ``DataTree`` implements the python mapping interface, but with values given by either ``xarray.DataArray`` objects or other ``DataTree`` objects.
+
+.. ipython:: python
+
+   dt['a']
+
+
+Iterating over keys will iterate over both the names of variables and child nodes.
+
 Now let's add some data to our tree.
 
 .. ipython:: python
@@ -162,7 +171,13 @@ Now let's add some data to our tree.
 
 You can see that the data in the node is displayed in the same way that the contents of the xarray Dataset we added would have been.
 
+Dictionary-like methods
+~~~~~~~~~~~~~~~~~~~~~~~
 
+We can update the contents of the tree in-place using a dictionary-like syntax.
+
+If you copy a ``DataTree`` using the ``:py:func::copy`` method it will copy the entire tree, including all parents and children.
+Like for ``Dataset``, this copy is shallow by default.
 
 Navigating the Tree
 ~~~~~~~~~~~~~~~~~~~
