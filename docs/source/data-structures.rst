@@ -97,7 +97,7 @@ We can add a second node to this tree either by referring to the first node in t
 .. ipython:: python
 
     # add a child by referring to the parent node
-    node2 = DataTree(name="Little Bonsai", parent=node1)
+    node2 = DataTree(name="Bonsai", parent=node1)
 
 or by dynamically updating the attributes of one node to refer to another:
 
@@ -107,11 +107,11 @@ or by dynamically updating the attributes of one node to refer to another:
     node0 = DataTree(name="General Sherman")
     node1.parent = node0
 
-Our tree now has a new root:
+Our tree now has three nodes within it, and one of the two new nodes has become the new root:
 
 .. ipython:: python
 
-    node2.root
+    node0
 
 Is is at tree construction time that consistency checks are enforced. For instance, if we try to create a `cycle` the constructor will raise an error:
 
@@ -120,13 +120,29 @@ Is is at tree construction time that consistency checks are enforced. For instan
 
     node0.parent = node2
 
-The second way is to build the tree from a dictionary of filesystem-like paths and corresponding ``xarray.Dataset` objects.
-This relies on
+The second way is to build the tree from a dictionary of filesystem-like paths and corresponding ``xarray.Dataset`` objects.
 
+This relies on a syntax inspired by unix-like filesystems, where the "path" to a node is specified by the keys of each intermediate node in sequence,
+separated by forward slashes. The root node is referred to by ``"/"``, so the path from our current root node to its grand-child would be ``"/Oak/Bonsai"``.
 
+If we have a dictionary where each key is a valid path, and each value is either valid data or ``None``,
+we can construct a complex tree quickly using the alternative constructor ``:py:func::DataTree.from_dict``:
 
+.. ipython:: python
 
-If you have a file containing data on disk (such as a netCDF file or a Zarr Store), you can also create a datatree by opening the
+   d = {
+       "/": None,
+       "/a": xr.Dataset({"foo": 0}),
+       "/a/b": xr.Dataset({"bar": ("y", [0, 1, 2])}),
+       "a/c/d": None,
+   }
+   dt = DataTree.from_dict(d)
+   dt
+
+Notice that this method will also create any intermediate empty node necessary to reach the end of the specified path
+(i.e. the node labelled `"c"` in this case.)
+
+Finally if you have a file containing data on disk (such as a netCDF file or a Zarr Store), you can also create a datatree by opening the
 file using ``:py:func::~datatree.open_datatree``.
 
 
@@ -139,6 +155,7 @@ Now let's add some data to our tree.
 
     # create some data
     ds1 = xr.Dataset({"a": ("x", [1, 2, 3])})
+    ds1
 
     ds1
 
