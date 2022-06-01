@@ -243,7 +243,6 @@ class TestCopy:
                 assert "foo" not in node.attrs
                 assert node.attrs["Test"] is copied_node.attrs["Test"]
 
-    @pytest.mark.xfail(reason="unresolved bug with deepcopying")
     def test_deepcopy(self):
         dt = create_test_datatree()
 
@@ -263,13 +262,13 @@ class TestCopy:
                 for k in data_vars:
                     v0 = node.variables[k]
                     v1 = copied_node.variables[k]
-                    assert source_ndarray(v0.data) is source_ndarray(v1.data)
+                    assert source_ndarray(v0.data) is not source_ndarray(v1.data)
                 copied_node["foo"] = xr.DataArray(data=np.arange(5), dims="z")
                 assert "foo" not in node
 
                 copied_node.attrs["foo"] = "bar"
                 assert "foo" not in node.attrs
-                assert node.attrs["Test"] is copied_node.attrs["Test"]
+                assert node.attrs["Test"] is not copied_node.attrs["Test"]
 
     @pytest.mark.xfail(reason="data argument not yet implemented")
     def test_copy_with_data(self):
