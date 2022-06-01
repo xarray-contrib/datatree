@@ -230,9 +230,7 @@ class TestCopy:
                 # Note: IndexVariable objects with string dtype are always
                 # copied because of xarray.core.util.safe_cast_to_index.
                 # Limiting the test to data variables.
-                # TODO use .data_vars once that property is available
-                data_vars = [v for v in node.variables if v not in node._coord_names]
-                for k in data_vars:
+                for k in node.data_vars:
                     v0 = node.variables[k]
                     v1 = copied_node.variables[k]
                     assert source_ndarray(v0.data) is source_ndarray(v1.data)
@@ -257,9 +255,7 @@ class TestCopy:
                 # Note: IndexVariable objects with string dtype are always
                 # copied because of xarray.core.util.safe_cast_to_index.
                 # Limiting the test to data variables.
-                # TODO use .data_vars once that property is available
-                data_vars = [v for v in node.variables if v not in node._coord_names]
-                for k in data_vars:
+                for k in node.data_vars:
                     v0 = node.variables[k]
                     v1 = copied_node.variables[k]
                     assert source_ndarray(v0.data) is not source_ndarray(v1.data)
