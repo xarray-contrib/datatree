@@ -102,17 +102,10 @@ class DatasetView(Dataset):
     Operations returning a new result will return a new xarray.Dataset object.
     This includes all API on Dataset, which will be inherited.
 
-    This requires overriding all inherited private constructors
-
-    This object also keeps a reference to its wrapping tree node, to allow getting
-    items from elsewhere in the tree.
+    This requires overriding all inherited private constructors.
     """
 
     # TODO what happens if user alters (in-place) a DataArray they extracted from this object?
-
-    _wrapping_node: DataTree
-
-    __slots__ = ["_wrapping_node"]
 
     def __init__(
         self,
@@ -130,7 +123,6 @@ class DatasetView(Dataset):
         """Constructor, using dataset attributes from wrapping node"""
 
         obj: DatasetView = object.__new__(cls)
-        obj._wrapping_node = wrapping_node
         obj._variables = wrapping_node._variables
         obj._coord_names = wrapping_node._coord_names
         obj._dims = wrapping_node._dims
@@ -358,8 +350,8 @@ class DataTree(
     def ds(self) -> DatasetView:
         """
         An immutable Dataset-like view onto the data in this node.
-        If you want a mutable Dataset containing the same data as in this node,
-        use `.to_dataset()` instead.
+
+        For a mutable Dataset containing the same data as in this node, use `.to_dataset()` instead.
         """
         return DatasetView._from_node(self)
 
