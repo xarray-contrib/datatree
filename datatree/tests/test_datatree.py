@@ -486,9 +486,6 @@ class TestDatasetView:
         result = 10.0 * dt["set1"].ds
         assert result.identical(expected)
 
-    def test_get_items_in_other_nodes(self):
-        ...
-
 
 class TestRestructuring:
     ...
