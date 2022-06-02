@@ -130,14 +130,14 @@ we can construct a complex tree quickly using the alternative constructor ``:py:
 
 .. ipython:: python
 
-   d = {
-       "/": None,
-       "/a": xr.Dataset({"foo": 0}),
-       "/a/b": xr.Dataset({"bar": ("y", [0, 1, 2])}),
-       "a/c/d": None,
-   }
-   dt = DataTree.from_dict(d)
-   dt
+    d = {
+        "/": None,
+        "/a": xr.Dataset({"foo": 0}),
+        "/a/b": xr.Dataset({"bar": ("y", [0, 1, 2])}),
+        "a/c/d": None,
+    }
+    dt = DataTree.from_dict(d)
+    dt
 
 Notice that this method will also create any intermediate empty node necessary to reach the end of the specified path
 (i.e. the node labelled `"c"` in this case.)
