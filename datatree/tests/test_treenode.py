@@ -18,11 +18,14 @@ class TestFamilyTree:
         assert mary.parent == john
         assert john.children["Mary"] is mary
 
-    def test_no_time_travellers(self):
+    def test_no_time_traveller_loops(self):
         john = TreeNode()
 
         with pytest.raises(TreeError, match="cannot be a parent of itself"):
             john._set_parent(john, "John")
+
+        with pytest.raises(TreeError, match="cannot be a parent of itself"):
+            john.children = {"John": john}
 
         mary = TreeNode()
         rose = TreeNode()
@@ -31,6 +34,9 @@ class TestFamilyTree:
 
         with pytest.raises(TreeError, match="is already a descendant"):
             john._set_parent(rose, "John")
+
+        with pytest.raises(TreeError, match="is already a descendant"):
+            rose.children = {"John": john}
 
     def test_parent_swap(self):
         john = TreeNode()
