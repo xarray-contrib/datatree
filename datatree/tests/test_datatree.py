@@ -230,9 +230,7 @@ class TestCopy:
                 # Note: IndexVariable objects with string dtype are always
                 # copied because of xarray.core.util.safe_cast_to_index.
                 # Limiting the test to data variables.
-                # TODO use .data_vars once that property is available
-                data_vars = [v for v in node.variables if v not in node._coord_names]
-                for k in data_vars:
+                for k in node.data_vars:
                     v0 = node.variables[k]
                     v1 = copied_node.variables[k]
                     assert source_ndarray(v0.data) is source_ndarray(v1.data)
@@ -243,7 +241,6 @@ class TestCopy:
                 assert "foo" not in node.attrs
                 assert node.attrs["Test"] is copied_node.attrs["Test"]
 
-    @pytest.mark.xfail(reason="unresolved bug with deepcopying")
     def test_deepcopy(self):
         dt = create_test_datatree()
 
@@ -258,18 +255,16 @@ class TestCopy:
                 # Note: IndexVariable objects with string dtype are always
                 # copied because of xarray.core.util.safe_cast_to_index.
                 # Limiting the test to data variables.
-                # TODO use .data_vars once that property is available
-                data_vars = [v for v in node.variables if v not in node._coord_names]
-                for k in data_vars:
+                for k in node.data_vars:
                     v0 = node.variables[k]
                     v1 = copied_node.variables[k]
-                    assert source_ndarray(v0.data) is source_ndarray(v1.data)
+                    assert source_ndarray(v0.data) is not source_ndarray(v1.data)
                 copied_node["foo"] = xr.DataArray(data=np.arange(5), dims="z")
                 assert "foo" not in node
 
                 copied_node.attrs["foo"] = "bar"
                 assert "foo" not in node.attrs
-                assert node.attrs["Test"] is copied_node.attrs["Test"]
+                assert node.attrs["Test"] is not copied_node.attrs["Test"]
 
     @pytest.mark.xfail(reason="data argument not yet implemented")
     def test_copy_with_data(self):
