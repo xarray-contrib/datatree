@@ -153,7 +153,7 @@ Like ``xarray.Dataset``, ``DataTree`` implements the python mapping interface, b
 
 .. ipython:: python
 
-   dt['a']
+    dt["a"]
 
 
 Iterating over keys will iterate over both the names of variables and child nodes.
