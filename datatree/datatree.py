@@ -87,7 +87,7 @@ class DataTree(
 
     def __init__(
         self,
-        data: Optional[Dataset | DataArray] = None,
+        data: Dataset | DataArray = None,
         parent: DataTree = None,
         children: Mapping[str, DataTree] = None,
         name: str = None,
@@ -119,7 +119,7 @@ class DataTree(
         super().__init__(children=children)
         self.name = name
         self.parent = parent
-        self.ds = data  # type: ignore[assignment]
+        self.ds = data
 
     @property
     def name(self) -> str | None:
