@@ -142,7 +142,7 @@ class DataTree(
 
     def __init__(
         self,
-        data: Optional[Dataset | DataArray] = None,
+        data: Dataset | DataArray = None,
         parent: DataTree = None,
         children: Mapping[str, DataTree] = None,
         name: str = None,
@@ -201,8 +201,11 @@ class DataTree(
 
     @name.setter
     def name(self, name: str | None) -> None:
-        if not isinstance(name, str) and name is not None:
-            raise TypeError("name must either be a string or None")
+        if name is not None:
+            if not isinstance(name, str):
+                raise TypeError("node name must be a string or None")
+            if "/" in name:
+                raise ValueError("node names cannot contain forward slashes")
         self._name = name
 
     @property
