@@ -14,26 +14,27 @@ from xarray.core.options import OPTIONS
 
 OPTIONS["display_expand_groups"] = "default"
 
+
 def summarize_children(children: Mapping[str, Any]) -> str:
     N_CHILDREN = len(children) - 1
 
     # Get result from node_repr and wrap it
-    lines_callback = lambda n, c, end: _wrap_repr(
-        node_repr(n, c), end=end
-    )
+    lines_callback = lambda n, c, end: _wrap_repr(node_repr(n, c), end=end)
 
     children_html = "".join(
-        lines_callback(n, c, end=False)                         # Long lines
+        lines_callback(n, c, end=False)  # Long lines
         if i < N_CHILDREN
-        else lines_callback(n, c, end=True)                     # Short lines
+        else lines_callback(n, c, end=True)  # Short lines
         for i, (n, c) in enumerate(children.items())
     )
 
-    return "".join([
-        "<div style='display: inline-grid; grid-template-columns: 100%'>",
+    return "".join(
+        [
+            "<div style='display: inline-grid; grid-template-columns: 100%'>",
             children_html,
-        "</div>"
-    ])
+            "</div>",
+        ]
+    )
 
 
 children_section = partial(
@@ -43,6 +44,7 @@ children_section = partial(
     max_items_collapse=1,
     expand_option_name="display_expand_groups",
 )
+
 
 def node_repr(group_title: str, dt: Any) -> str:
     header_components = [f"<div class='xr-obj-type'>{escape(group_title)}</div>"]
@@ -58,6 +60,7 @@ def node_repr(group_title: str, dt: Any) -> str:
     ]
 
     return _obj_repr(ds, header_components, sections)
+
 
 def _wrap_repr(r: str, end: bool = False) -> str:
     """
@@ -98,35 +101,36 @@ def _wrap_repr(r: str, end: bool = False) -> str:
     """
     # height of line
     end = bool(end)
-    height = "100%" if end is False else "1.2em";
-    return "".join([
-        "<div style='display: inline-grid;'>",
+    height = "100%" if end is False else "1.2em"
+    return "".join(
+        [
+            "<div style='display: inline-grid;'>",
             "<div style='",
-                "grid-column-start: 1;",
-                "border-right: 0.2em solid;",
-                "border-color: var(--xr-border-color);",
-                f"height: {height};",
-                "width: 0px;",
+            "grid-column-start: 1;",
+            "border-right: 0.2em solid;",
+            "border-color: var(--xr-border-color);",
+            f"height: {height};",
+            "width: 0px;",
             "'>",
             "</div>",
             "<div style='",
-                "grid-column-start: 2;",
-                "grid-row-start: 1;",
-                "height: 1em;",
-                "width: 20px;",
-                "border-bottom: 0.2em solid;",
-                "border-color: var(--xr-border-color);",
+            "grid-column-start: 2;",
+            "grid-row-start: 1;",
+            "height: 1em;",
+            "width: 20px;",
+            "border-bottom: 0.2em solid;",
+            "border-color: var(--xr-border-color);",
             "'>",
             "</div>",
             "<div style='",
-                "grid-column-start: 3;",
+            "grid-column-start: 3;",
             "'>",
-                "<ul class='xr-sections'>",
-                    r,
-                "</ul>"
+            "<ul class='xr-sections'>",
+            r,
+            "</ul>" "</div>",
             "</div>",
-        "</div>",
-    ])
+        ]
+    )
 
 
 def datatree_repr(dt: Any) -> str:

@@ -1,18 +1,19 @@
 import pytest
 import xarray as xr
 
-from datatree import DataTree
+from datatree import DataTree, formatting_html
 
-from datatree import formatting_html
 
 @pytest.fixture(scope="module", params=["some html", "some other html"])
 def repr(request):
     return request.param
 
+
 class Test_summarize_children:
     """
     Unit tests for summarize_children.
     """
+
     func = staticmethod(formatting_html.summarize_children)
 
     @pytest.fixture(scope="class")
@@ -21,11 +22,14 @@ class Test_summarize_children:
         Fixture for a child-free DataTree factory.
         """
         from random import randint
+
         def _childfree_tree_factory():
-            return DataTree(data=xr.Dataset(
-                {"z": ("y", [randint(1,100) for _ in range(3)])}
-            ))
+            return DataTree(
+                data=xr.Dataset({"z": ("y", [randint(1, 100) for _ in range(3)])})
+            )
+
         return _childfree_tree_factory
+
     @pytest.fixture(scope="class")
     def childfree_tree(self, childfree_tree_factory):
         """
@@ -38,7 +42,7 @@ class Test_summarize_children:
         """
         Apply mocking for node_repr.
         """
-        from hashlib import sha1
+
         def mock(group_title, dt):
             """
             Mock with a simple result
@@ -52,12 +56,12 @@ class Test_summarize_children:
         """
         Apply mocking for _wrap_repr.
         """
-        from hashlib import sha1
+
         def mock(r, *, end, **kwargs):
             """
             Mock by appending "end" or "not end".
             """
-            return r + " " + ("end" if end else "not end") +"//"
+            return r + " " + ("end" if end else "not end") + "//"
 
         monkeypatch.setattr(formatting_html, "_wrap_repr", mock)
 
@@ -67,8 +71,7 @@ class Test_summarize_children:
         """
         children = {}
         assert self.func(children) == (
-            "<div style='display: inline-grid; grid-template-columns: 100%'>"
-            "</div>"
+            "<div style='display: inline-grid; grid-template-columns: 100%'>" "</div>"
         )
 
     def test_one_child(self, childfree_tree, mock_wrap_repr, mock_node_repr):
@@ -79,9 +82,7 @@ class Test_summarize_children:
         the inline lambda function "lines_callback".
         """
         # Create mapping of children
-        children = {
-            "a": childfree_tree
-        }
+        children = {"a": childfree_tree}
 
         # Expect first line to be produced from the first child, and
         # wrapped as the last child
@@ -89,7 +90,7 @@ class Test_summarize_children:
 
         assert self.func(children) == (
             "<div style='display: inline-grid; grid-template-columns: 100%'>"
-                f"{first_line}"
+            f"{first_line}"
             "</div>"
         )
 
@@ -102,10 +103,7 @@ class Test_summarize_children:
         """
 
         # Create mapping of children
-        children = {
-            "a": childfree_tree_factory(),
-            "b": childfree_tree_factory()
-        }
+        children = {"a": childfree_tree_factory(), "b": childfree_tree_factory()}
 
         # Expect first line to be produced from the first child, and
         # wrapped as _not_ the last child
@@ -117,8 +115,8 @@ class Test_summarize_children:
 
         assert self.func(children) == (
             "<div style='display: inline-grid; grid-template-columns: 100%'>"
-                f"{first_line}"
-                f"{second_line}"
+            f"{first_line}"
+            f"{second_line}"
             "</div>"
         )
 
@@ -127,6 +125,7 @@ class Test__wrap_repr:
     """
     Unit tests for _wrap_repr.
     """
+
     func = staticmethod(formatting_html._wrap_repr)
 
     def test_end(self, repr):
@@ -136,30 +135,30 @@ class Test__wrap_repr:
         r = self.func(repr, end=True)
         assert r == (
             "<div style='display: inline-grid;'>"
-                "<div style='"
-                    "grid-column-start: 1;"
-                    "border-right: 0.2em solid;"
-                    "border-color: var(--xr-border-color);"
-                    "height: 1.2em;"
-                    "width: 0px;"
-                "'>"
-                "</div>"
-                "<div style='"
-                    "grid-column-start: 2;"
-                    "grid-row-start: 1;"
-                    "height: 1em;"
-                    "width: 20px;"
-                    "border-bottom: 0.2em solid;"
-                    "border-color: var(--xr-border-color);"
-                "'>"
-                "</div>"
-                "<div style='"
-                    "grid-column-start: 3;"
-                "'>"
-                    "<ul class='xr-sections'>"
-                        f"{repr}"
-                    "</ul>"
-                "</div>"
+            "<div style='"
+            "grid-column-start: 1;"
+            "border-right: 0.2em solid;"
+            "border-color: var(--xr-border-color);"
+            "height: 1.2em;"
+            "width: 0px;"
+            "'>"
+            "</div>"
+            "<div style='"
+            "grid-column-start: 2;"
+            "grid-row-start: 1;"
+            "height: 1em;"
+            "width: 20px;"
+            "border-bottom: 0.2em solid;"
+            "border-color: var(--xr-border-color);"
+            "'>"
+            "</div>"
+            "<div style='"
+            "grid-column-start: 3;"
+            "'>"
+            "<ul class='xr-sections'>"
+            f"{repr}"
+            "</ul>"
+            "</div>"
             "</div>"
         )
 
@@ -170,29 +169,29 @@ class Test__wrap_repr:
         r = self.func(repr, end=False)
         assert r == (
             "<div style='display: inline-grid;'>"
-                "<div style='"
-                    "grid-column-start: 1;"
-                    "border-right: 0.2em solid;"
-                    "border-color: var(--xr-border-color);"
-                    "height: 100%;"
-                    "width: 0px;"
-                "'>"
-                "</div>"
-                "<div style='"
-                    "grid-column-start: 2;"
-                    "grid-row-start: 1;"
-                    "height: 1em;"
-                    "width: 20px;"
-                    "border-bottom: 0.2em solid;"
-                    "border-color: var(--xr-border-color);"
-                "'>"
-                "</div>"
-                "<div style='"
-                    "grid-column-start: 3;"
-                "'>"
-                    "<ul class='xr-sections'>"
-                        f"{repr}"
-                    "</ul>"
-                "</div>"
+            "<div style='"
+            "grid-column-start: 1;"
+            "border-right: 0.2em solid;"
+            "border-color: var(--xr-border-color);"
+            "height: 100%;"
+            "width: 0px;"
+            "'>"
+            "</div>"
+            "<div style='"
+            "grid-column-start: 2;"
+            "grid-row-start: 1;"
+            "height: 1em;"
+            "width: 20px;"
+            "border-bottom: 0.2em solid;"
+            "border-color: var(--xr-border-color);"
+            "'>"
+            "</div>"
+            "<div style='"
+            "grid-column-start: 3;"
+            "'>"
+            "<ul class='xr-sections'>"
+            f"{repr}"
+            "</ul>"
+            "</div>"
             "</div>"
         )
