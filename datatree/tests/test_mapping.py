@@ -5,7 +5,6 @@ from datatree.datatree import DataTree
 from datatree.mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
 from datatree.testing import assert_equal
 
-
 empty = xr.Dataset()
 
 

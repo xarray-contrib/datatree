@@ -4,6 +4,7 @@ import xarray.testing as xrt
 
 from datatree import DataTree
 
+
 class TestTreeCreation:
     def test_empty(self):
         dt = DataTree(name="root")

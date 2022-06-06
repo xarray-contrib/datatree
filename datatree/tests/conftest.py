@@ -1,7 +1,8 @@
 import pytest
-
 import xarray as xr
+
 from datatree import DataTree
+
 
 @pytest.fixture(scope="module")
 def create_test_datatree():
@@ -34,6 +35,7 @@ def create_test_datatree():
     The structure has deliberately repeated names of tags, variables, and
     dimensions in order to better check for bugs caused by name conflicts.
     """
+
     def _create_test_datatree(modify=lambda ds: ds):
         set1_data = modify(xr.Dataset({"a": 0, "b": 1}))
         set2_data = modify(xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])}))
@@ -49,7 +51,9 @@ def create_test_datatree():
         DataTree(name="set3", parent=root)
 
         return root
+
     return _create_test_datatree
+
 
 @pytest.fixture(scope="module")
 def simple_datatree(create_test_datatree):
