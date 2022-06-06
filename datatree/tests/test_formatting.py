@@ -5,8 +5,6 @@ from xarray import Dataset
 from datatree import DataTree
 from datatree.formatting import diff_tree_repr
 
-from .test_datatree import create_test_datatree, simple_datatree
-
 
 class TestRepr:
     def test_print_empty_node(self):

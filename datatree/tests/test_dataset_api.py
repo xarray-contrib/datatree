@@ -4,8 +4,6 @@ import xarray as xr
 from datatree import DataTree
 from datatree.testing import assert_equal
 
-from .test_datatree import create_test_datatree
-
 
 class TestDSMethodInheritance:
     def test_dataset_method(self):
