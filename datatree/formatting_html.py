@@ -15,9 +15,17 @@ from xarray.core.options import OPTIONS
 OPTIONS["display_expand_groups"] = "default"
 
 def summarize_children(children: Mapping[str, Any]) -> str:
+    N_CHILDREN = len(children) - 1
+
+    # Get result from node_repr and wrap it
+    lines_callback = lambda n, c, end: _wrap_repr(
+        node_repr(n, c), end=end
+    )
+
     children_html = "".join(
-        _wrapped_node_repr(n, c, end=False)                          # Long lines
-        if i < len(children)-1 else _wrapped_node_repr(n, c, end=True) # Short lines
+        lines_callback(n, c, end=False)                         # Long lines
+        if i < N_CHILDREN
+        else lines_callback(n, c, end=True)                     # Short lines
         for i, (n, c) in enumerate(children.items())
     )
 
@@ -51,10 +59,43 @@ def node_repr(group_title: str, dt: Any) -> str:
 
     return _obj_repr(ds, header_components, sections)
 
-def _wrapped_node_repr(*args, end=False, **kwargs):
-    # Get node repr
-    r = node_repr(*args, **kwargs)
+def _wrap_repr(r: str, end: bool = False) -> str:
+    """
+    Wrap HTML representation with a tee to the left of it.
 
+    Enclosing HTML tag is a <div> with :code:`display: inline-grid` style.
+
+    Turns:
+    [    title    ]
+    |   details   |
+    |_____________|
+
+    into (A):
+    |─ [    title    ]
+    |  |   details   |
+    |  |_____________|
+
+    or (B):
+    └─ [    title    ]
+       |   details   |
+       |_____________|
+
+    Parameters
+    ----------
+    r: str
+        HTML representation to wrap.
+    end: bool
+        Specify if the line on the left should continue or end.
+
+        Default is True.
+
+    Returns
+    -------
+    str
+        Wrapped HTML representation.
+
+        Tee color is set to the variable :code:`--xr-border-color`.
+    """
     # height of line
     end = bool(end)
     height = "100%" if end is False else "1.2em";
