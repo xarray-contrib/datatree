@@ -42,11 +42,7 @@ from .ops import (
 from .render import RenderTree
 from .treenode import NodePath, Tree, TreeNode
 
-try:
-    from xarray.core.variable import calculate_dimensions
-except ImportError:
-    # for xarray versions 2022.03.0 and earlier
-    from xarray.core.dataset import calculate_dimensions
+from xarray.core.variable import calculate_dimensions
 
 if TYPE_CHECKING:
     from xarray.core.merge import CoercibleValue
