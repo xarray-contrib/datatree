@@ -4,7 +4,7 @@ channels:
 dependencies:
   - pip
   - python>=3.8
-  - xarray>=2022.06.0rc0
+  - xarray>=2022.05.0.dev0
   - netcdf4
   - scipy
   - sphinx
