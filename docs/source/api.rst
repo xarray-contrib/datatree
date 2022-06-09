@@ -192,15 +192,15 @@ Apply a computation to the data in all nodes in the subtree simultaneously.
 .. autosummary::
    :toctree: generated/
 
-   Dataset.map
-   Dataset.reduce
-   Dataset.diff
-   Dataset.quantile
-   Dataset.differentiate
-   Dataset.integrate
-   Dataset.map_blocks
-   Dataset.polyfit
-   Dataset.curvefit
+   DataTree.map
+   DataTree.reduce
+   DataTree.diff
+   DataTree.quantile
+   DataTree.differentiate
+   DataTree.integrate
+   DataTree.map_blocks
+   DataTree.polyfit
+   DataTree.curvefit
 
 Aggregation
 ===========
@@ -210,22 +210,22 @@ Aggregate data in all nodes in the subtree simultaneously.
 .. autosummary::
    :toctree: generated/
 
-   Dataset.all
-   Dataset.any
-   Dataset.argmax
-   Dataset.argmin
-   Dataset.idxmax
-   Dataset.idxmin
-   Dataset.max
-   Dataset.min
-   Dataset.mean
-   Dataset.median
-   Dataset.prod
-   Dataset.sum
-   Dataset.std
-   Dataset.var
-   Dataset.cumsum
-   Dataset.cumprod
+   DataTree.all
+   DataTree.any
+   DataTree.argmax
+   DataTree.argmin
+   DataTree.idxmax
+   DataTree.idxmin
+   DataTree.max
+   DataTree.min
+   DataTree.mean
+   DataTree.median
+   DataTree.prod
+   DataTree.sum
+   DataTree.std
+   DataTree.var
+   DataTree.cumsum
+   DataTree.cumprod
 
 ndarray methods
 ===============
