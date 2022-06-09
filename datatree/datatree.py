@@ -30,7 +30,7 @@ from xarray.core.indexes import Index, Indexes
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
 from xarray.core.utils import Default, Frozen, _default
-from xarray.core.variable import Variable
+from xarray.core.variable import Variable, calculate_dimensions
 
 from . import formatting, formatting_html
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
@@ -41,12 +41,6 @@ from .ops import (
 )
 from .render import RenderTree
 from .treenode import NodePath, Tree, TreeNode
-
-try:
-    from xarray.core.variable import calculate_dimensions
-except ImportError:
-    # for xarray versions 2022.03.0 and earlier
-    from xarray.core.dataset import calculate_dimensions
 
 if TYPE_CHECKING:
     from xarray.core.merge import CoercibleValue
