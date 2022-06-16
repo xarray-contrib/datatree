@@ -10,53 +10,6 @@ import datatree.testing as dtt
 from datatree import DataTree
 
 
-def create_test_datatree(modify=lambda ds: ds):
-    """
-    Create a test datatree with this structure:
-
-    <datatree.DataTree>
-    |-- set1
-    |   |-- <xarray.Dataset>
-    |   |   Dimensions:  ()
-    |   |   Data variables:
-    |   |       a        int64 0
-    |   |       b        int64 1
-    |   |-- set1
-    |   |-- set2
-    |-- set2
-    |   |-- <xarray.Dataset>
-    |   |   Dimensions:  (x: 2)
-    |   |   Data variables:
-    |   |       a        (x) int64 2, 3
-    |   |       b        (x) int64 0.1, 0.2
-    |   |-- set1
-    |-- set3
-    |-- <xarray.Dataset>
-    |   Dimensions:  (x: 2, y: 3)
-    |   Data variables:
-    |       a        (y) int64 6, 7, 8
-    |       set0     (x) int64 9, 10
-
-    The structure has deliberately repeated names of tags, variables, and
-    dimensions in order to better check for bugs caused by name conflicts.
-    """
-    set1_data = modify(xr.Dataset({"a": 0, "b": 1}))
-    set2_data = modify(xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])}))
-    root_data = modify(xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])}))
-
-    # Avoid using __init__ so we can independently test it
-    d = {
-        "/": root_data,
-        "/set1": set1_data,
-        "/set1/set1": None,
-        "/set1/set2": None,
-        "/set2": set2_data,
-        "/set2/set1": None,
-        "/set3": None,
-    }
-    return DataTree.from_dict(d)
-
-
 class TestTreeCreation:
     def test_empty(self):
         dt = DataTree(name="root")
@@ -68,6 +21,13 @@ class TestTreeCreation:
     def test_unnamed(self):
         dt = DataTree()
         assert dt.name is None
+
+    def test_bad_names(self):
+        with pytest.raises(TypeError):
+            DataTree(name=5)
+
+        with pytest.raises(ValueError):
+            DataTree(name="folder/data")
 
 
 class TestFamilyTree:
@@ -85,7 +45,7 @@ class TestFamilyTree:
         DataTree(name="set1", parent=root)
         DataTree(name="set2", parent=set1)
 
-    def test_create_full_tree(self):
+    def test_create_full_tree(self, simple_datatree):
         root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])})
         set1_data = xr.Dataset({"a": 0, "b": 1})
         set2_data = xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])})
@@ -98,7 +58,7 @@ class TestFamilyTree:
         DataTree(name="set1", parent=set2)
         DataTree(name="set3", parent=root)
 
-        expected = create_test_datatree()
+        expected = simple_datatree
         assert root.identical(expected)
 
 
@@ -208,7 +168,7 @@ class TestUpdate:
 
 
 class TestCopy:
-    def test_copy(self):
+    def test_copy(self, create_test_datatree):
         dt = create_test_datatree()
 
         for node in dt.root.subtree:
@@ -223,9 +183,7 @@ class TestCopy:
                 # Note: IndexVariable objects with string dtype are always
                 # copied because of xarray.core.util.safe_cast_to_index.
                 # Limiting the test to data variables.
-                # TODO use .data_vars once that property is available
-                data_vars = [v for v in node.variables if v not in node._coord_names]
-                for k in data_vars:
+                for k in node.data_vars:
                     v0 = node.variables[k]
                     v1 = copied_node.variables[k]
                     assert source_ndarray(v0.data) is source_ndarray(v1.data)
@@ -236,8 +194,7 @@ class TestCopy:
                 assert "foo" not in node.attrs
                 assert node.attrs["Test"] is copied_node.attrs["Test"]
 
-    @pytest.mark.xfail(reason="unresolved bug with deepcopying")
-    def test_deepcopy(self):
+    def test_deepcopy(self, create_test_datatree):
         dt = create_test_datatree()
 
         for node in dt.root.subtree:
@@ -251,21 +208,19 @@ class TestCopy:
                 # Note: IndexVariable objects with string dtype are always
                 # copied because of xarray.core.util.safe_cast_to_index.
                 # Limiting the test to data variables.
-                # TODO use .data_vars once that property is available
-                data_vars = [v for v in node.variables if v not in node._coord_names]
-                for k in data_vars:
+                for k in node.data_vars:
                     v0 = node.variables[k]
                     v1 = copied_node.variables[k]
-                    assert source_ndarray(v0.data) is source_ndarray(v1.data)
+                    assert source_ndarray(v0.data) is not source_ndarray(v1.data)
                 copied_node["foo"] = xr.DataArray(data=np.arange(5), dims="z")
                 assert "foo" not in node
 
                 copied_node.attrs["foo"] = "bar"
                 assert "foo" not in node.attrs
-                assert node.attrs["Test"] is copied_node.attrs["Test"]
+                assert node.attrs["Test"] is not copied_node.attrs["Test"]
 
     @pytest.mark.xfail(reason="data argument not yet implemented")
-    def test_copy_with_data(self):
+    def test_copy_with_data(self, create_test_datatree):
         orig = create_test_datatree()
         # TODO use .data_vars once that property is available
         data_vars = {
@@ -419,8 +374,8 @@ class TestTreeFromDict:
         assert [node.path for node in dt.subtree] == ["/", "/d", "/d/e"]
         xrt.assert_identical(dt["d/e"].to_dataset(), xr.Dataset())
 
-    def test_full(self):
-        dt = create_test_datatree()
+    def test_full(self, simple_datatree):
+        dt = simple_datatree
         paths = list(node.path for node in dt.subtree)
         assert paths == [
             "/",
@@ -432,16 +387,16 @@ class TestTreeFromDict:
             "/set3",
         ]
 
-    def test_roundtrip(self):
-        dt = create_test_datatree()
+    def test_roundtrip(self, simple_datatree):
+        dt = simple_datatree
         roundtrip = DataTree.from_dict(dt.to_dict())
         assert roundtrip.equals(dt)
 
     @pytest.mark.xfail
-    def test_roundtrip_unnamed_root(self):
+    def test_roundtrip_unnamed_root(self, simple_datatree):
         # See GH81
 
-        dt = create_test_datatree()
+        dt = simple_datatree
         dt.name = "root"
         roundtrip = DataTree.from_dict(dt.to_dict())
         assert roundtrip.equals(dt)
