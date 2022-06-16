@@ -435,7 +435,7 @@ class TestDatasetView:
         assert ds.mean().identical(dt.ds.mean())
         assert type(dt.ds.mean()) == xr.Dataset
 
-    def test_arithmetic(self):
+    def test_arithmetic(self, create_test_datatree):
         dt = create_test_datatree()
         expected = create_test_datatree(modify=lambda ds: 10.0 * ds)["set1"]
         result = 10.0 * dt["set1"].ds
