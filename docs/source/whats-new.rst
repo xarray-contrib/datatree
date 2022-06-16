@@ -15,16 +15,23 @@ What's New
 
     np.random.seed(123456)
 
-.. _whats-new.v0.0.6:
+.. _whats-new.v0.0.7:
 
-v0.0.6 (unreleased)
+v0.0.7 (unreleased)
 -------------------
 
 New Features
 ~~~~~~~~~~~~
 
+- Improve the HTML repr by adding tree-style lines connecting groups and sub-groups (:pull:`109`).
+  By `Benjamin Woods <https://github.com/benjaminwoods>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+- The ``DataTree.ds`` attribute now returns a view onto an immutable Dataset-like object, instead of an actual instance
+  of ``xarray.Dataset``. This make break existing ``isinstance`` checks or ``assert`` comparisons. (:pull:`99`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 
 Deprecations
 ~~~~~~~~~~~~
@@ -32,14 +39,45 @@ Deprecations
 Bug fixes
 ~~~~~~~~~
 
-- Fixed bug with checking that assigning parent or new children did not create a loop in the tree (:pull:`105`)
+- Modifying the contents of a ``DataTree`` object via the ``DataTree.ds`` attribute is now forbidden, which prevents
+  any possibility of the contents of a ``DataTree`` object and its ``.ds`` attribute diverging. (:issue:`38`, :pull:`99`)
   By `Tom Nicholas <https://github.com/TomNicholas>`_.
 
 Documentation
 ~~~~~~~~~~~~~
 
+- API page updated with all the methods that are copied from ``xarray.Dataset``. (:pull:`41`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
 Internal Changes
 ~~~~~~~~~~~~~~~~
+
+- Refactored ``DataTree`` class to store a set of ``xarray.Variable`` objects instead of a single ``xarray.Dataset``.
+  This approach means that the ``DataTree`` class now effectively copies and extends the internal structure of
+  ``xarray.Dataset``. (:pull:`41`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Made ``testing.test_datatree.create_test_datatree`` into a pytest fixture (:pull:`107`).
+  By `Benjamin Woods <https://github.com/benjaminwoods>`_.
+
+
+.. _whats-new.v0.0.6:
+
+v0.0.6 (06/03/2022)
+-------------------
+
+Various small bug fixes, in preparation for more significant changes in the next version.
+
+Bug fixes
+~~~~~~~~~
+
+- Fixed bug with checking that assigning parent or new children did not create a loop in the tree (:pull:`105`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Do not call ``__exit__`` on Zarr store when opening (:pull:`90`)
+  By `Matt McCormick <https://github.com/thewtex>`_.
+- Fix netCDF encoding for compression (:pull:`95`)
+  By `Joe Hamman <https://github.com/jhamman>`_.
+- Added validity checking for node names (:pull:`106`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 
 .. _whats-new.v0.0.5:
 

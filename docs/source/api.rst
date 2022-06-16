@@ -96,10 +96,17 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
    DataTree.iter_lineage
    DataTree.find_common_ancestor
    map_over_subtree
+<<<<<<< HEAD
 
 DataTree Contents
 -----------------
 
+=======
+
+DataTree Contents
+-----------------
+
+>>>>>>> main
 Manipulate the contents of all nodes in a tree simultaneously.
 
 .. autosummary::
@@ -183,6 +190,7 @@ Missing Value Handling
    DataTree.interpolate_na
    DataTree.where
    DataTree.isin
+<<<<<<< HEAD
 
 Computation
 ===========
@@ -202,6 +210,27 @@ Apply a computation to the data in all nodes in the subtree simultaneously.
    Dataset.polyfit
    Dataset.curvefit
 
+=======
+
+Computation
+===========
+
+Apply a computation to the data in all nodes in the subtree simultaneously.
+
+.. autosummary::
+   :toctree: generated/
+
+   DataTree.map
+   DataTree.reduce
+   DataTree.diff
+   DataTree.quantile
+   DataTree.differentiate
+   DataTree.integrate
+   DataTree.map_blocks
+   DataTree.polyfit
+   DataTree.curvefit
+
+>>>>>>> main
 Aggregation
 ===========
 
@@ -210,6 +239,7 @@ Aggregate data in all nodes in the subtree simultaneously.
 .. autosummary::
    :toctree: generated/
 
+<<<<<<< HEAD
    Dataset.all
    Dataset.any
    Dataset.argmax
@@ -226,6 +256,24 @@ Aggregate data in all nodes in the subtree simultaneously.
    Dataset.var
    Dataset.cumsum
    Dataset.cumprod
+=======
+   DataTree.all
+   DataTree.any
+   DataTree.argmax
+   DataTree.argmin
+   DataTree.idxmax
+   DataTree.idxmin
+   DataTree.max
+   DataTree.min
+   DataTree.mean
+   DataTree.median
+   DataTree.prod
+   DataTree.sum
+   DataTree.std
+   DataTree.var
+   DataTree.cumsum
+   DataTree.cumprod
+>>>>>>> main
 
 ndarray methods
 ===============
