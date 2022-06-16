@@ -188,7 +188,8 @@ We can update the contents of the tree in-place using a dictionary-like syntax.
 We can update a datatree in-place using Python's standard dictionary syntax, similar to how we can for Dataset objects.
 For example, to create this example datatree from scratch, we could have written:
 
-# TODO update this example using ``.coords`` and ``.data_vars`` as setters, and allowing non-dataarray values to ``__setitem__``
+# TODO update this example allowing non-dataarray values to ``__setitem__``
+# TODO update this example using ``.coords`` and ``.data_vars`` as setters,
 
 .. ipython:: python
 
