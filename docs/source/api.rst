@@ -227,7 +227,6 @@ Aggregate data in all nodes in the subtree simultaneously.
    DataTree.cumsum
    DataTree.cumprod
 
-
 ndarray methods
 ===============
 
