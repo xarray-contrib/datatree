@@ -272,7 +272,10 @@ class DataTree(
         name: str = None,
     ):
         """
-        Create a single node of a DataTree, which optionally contains data in the form of an xarray.Dataset.
+        Create a single node of a DataTree.
+
+        The node may optionally contain data in the form of data and coordinate variables, stored in the same way as
+        data is stored in an xarray.Dataset.
 
         Parameters
         ----------
@@ -284,11 +287,11 @@ class DataTree(
         children : Mapping[str, DataTree], optional
             Any child nodes of this node. Default is None.
         name : str, optional
-            Name for the root node of the tree. Default is None.
+            Name for this node of the tree. Default is None.
 
         Returns
         -------
-        node :  DataTree
+        DataTree
 
         See Also
         --------
@@ -410,18 +413,18 @@ class DataTree(
 
     @property
     def variables(self) -> Mapping[Hashable, Variable]:
-        """Low level interface to Dataset contents as dict of Variable objects.
+        """Low level interface to node contents as dict of Variable objects.
 
         This ordered dictionary is frozen to prevent mutation that could
         violate Dataset invariants. It contains all variable objects
-        constituting the Dataset, including both data variables and
+        constituting this DataTree node, including both data variables and
         coordinates.
         """
         return Frozen(self._variables)
 
     @property
     def attrs(self) -> Dict[Hashable, Any]:
-        """Dictionary of global attributes on this dataset"""
+        """Dictionary of global attributes on this node"""
         if self._attrs is None:
             self._attrs = {}
         return self._attrs
@@ -432,7 +435,7 @@ class DataTree(
 
     @property
     def encoding(self) -> Dict:
-        """Dictionary of global encoding attributes on this dataset"""
+        """Dictionary of global encoding attributes on this node"""
         if self._encoding is None:
             self._encoding = {}
         return self._encoding
@@ -448,7 +451,7 @@ class DataTree(
         Cannot be modified directly, but is updated when adding new variables.
 
         Note that type of this object differs from `DataArray.dims`.
-        See `Dataset.sizes` and `DataArray.sizes` for consistently named
+        See `DataTree.sizes`, `Dataset.sizes`, and `DataArray.sizes` for consistently named
         properties.
         """
         return Frozen(self._dims)
@@ -459,7 +462,7 @@ class DataTree(
 
         Cannot be modified directly, but is updated when adding new variables.
 
-        This is an alias for `Dataset.dims` provided for the benefit of
+        This is an alias for `DataTree.dims` provided for the benefit of
         consistency with `DataArray.sizes`.
 
         See Also
@@ -506,9 +509,7 @@ class DataTree(
         children: OrderedDict[str, DataTree] = None,
         close: Callable[[], None] = None,
     ) -> DataTree:
-        """Shortcut around __init__ for internal use when we want to skip
-        costly validation
-        """
+        """Shortcut around __init__ for internal use when we want to skip costly validation."""
 
         # data attributes
         if dims is None:
@@ -612,16 +613,17 @@ class DataTree(
         self: DataTree, key: str, default: Optional[DataTree | DataArray] = None
     ) -> Optional[DataTree | DataArray]:
         """
-        Access child nodes stored in this node as a DataTree or variables or coordinates stored in this node as a
-        DataArray.
+        Access child nodes, variables, or coordinates stored in this node.
+
+        Returned object will be either a DataTree or DataArray object depending on whether the key given points to a
+        child or variable.
 
         Parameters
         ----------
         key : str
-            Name of variable / node item, which must lie in this immediate node (not elsewhere in the tree).
+            Name of variable / child within this node. Must lie in this immediate node (not elsewhere in the tree).
         default : DataTree | DataArray, optional
-            A value to return if the specified key does not exist.
-            Default value is None.
+            A value to return if the specified key does not exist. Default return value is None.
         """
         if key in self.children:
             return self.children[key]
@@ -632,13 +634,19 @@ class DataTree(
 
     def __getitem__(self: DataTree, key: str) -> DataTree | DataArray:
         """
-        Access child nodes stored in this tree as a DataTree or variables or coordinates stored in this tree as a
-        DataArray.
+        Access child nodes, variables, or coordinates stored anywhere in this tree.
+
+        Returned object will be either a DataTree or DataArray object depending on whether the key given points to a
+        child or variable.
 
         Parameters
         ----------
         key : str
-            Name of variable / node, or unix-like path to variable / node.
+            Name of variable / child within this node, or unix-like path to variable / child within another node.
+
+        Returns
+        -------
+        Union[DataTree, DataArray]
         """
 
         # Either:
@@ -729,7 +737,7 @@ class DataTree(
         name: str = None,
     ) -> DataTree:
         """
-        Create a datatree from a dictionary of data objects, labelled by paths into the tree.
+        Create a datatree from a dictionary of data objects, organised by paths into the tree.
 
         Parameters
         ----------
@@ -771,15 +779,15 @@ class DataTree(
 
         return obj
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Dataset]:
         """
         Create a dictionary mapping of absolute node paths to the data contained in those nodes.
 
         Returns
         -------
-        Dict
+        Dict[str, Dataset]
         """
-        return {node.path: node.ds for node in self.subtree}
+        return {node.path: node.to_dataset() for node in self.subtree}
 
     @property
     def nbytes(self) -> int:
@@ -793,7 +801,8 @@ class DataTree(
         """Mapping of pandas.Index objects used for label based indexing.
         Raises an error if this DataTree node has indexes that cannot be coerced
         to pandas.Index objects.
-        See Also /
+
+        See Also
         --------
         DataTree.xindexes
         """
@@ -828,7 +837,7 @@ class DataTree(
         Nothing about the data in each node is checked.
 
         Isomorphism is a necessary condition for two trees to be used in a nodewise binary operation,
-        such as tree1 + tree2.
+        such as ``tree1 + tree2``.
 
         By default this method does not check any part of the tree above the given node.
         Therefore this method can be used as default to check that two subtrees are isomorphic.
@@ -836,12 +845,13 @@ class DataTree(
         Parameters
         ----------
         other : DataTree
-            The tree object to compare to.
+            The other tree object to compare to.
         from_root : bool, optional, default is False
-            Whether or not to first traverse to the root of the trees before checking for isomorphism.
-            If a & b have no parents then this has no effect.
+            Whether or not to first traverse to the root of the two trees before checking for isomorphism.
+            If neither tree has a parent then this has no effect.
         strict_names : bool, optional, default is False
-            Whether or not to also check that each node has the same name as its counterpart.
+            Whether or not to also check that every node in the tree has the same name as its counterpart in the other
+            tree.
 
         See Also
         --------
@@ -869,10 +879,10 @@ class DataTree(
         Parameters
         ----------
         other : DataTree
-            The tree object to compare to.
+            The other tree object to compare to.
         from_root : bool, optional, default is True
-            Whether or not to first traverse to the root of the trees before checking.
-            If a & b have no parents then this has no effect.
+            Whether or not to first traverse to the root of the two trees before checking for isomorphism.
+            If neither tree has a parent then this has no effect.
 
         See Also
         --------
@@ -900,10 +910,10 @@ class DataTree(
         Parameters
         ----------
         other : DataTree
-            The tree object to compare to.
+            The other tree object to compare to.
         from_root : bool, optional, default is True
-            Whether or not to first traverse to the root of the trees before checking.
-            If a & b have no parents then this has no effect.
+            Whether or not to first traverse to the root of the two trees before checking for isomorphism.
+            If neither tree has a parent then this has no effect.
 
         See Also
         --------
