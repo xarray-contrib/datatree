@@ -185,5 +185,26 @@ Dictionary-like methods
 
 We can update the contents of the tree in-place using a dictionary-like syntax.
 
-If you copy a ``DataTree`` using the ``:py:func::copy`` method it will copy the entire tree, including all parents and children.
-Like for ``Dataset``, this copy is shallow by default.
+We can update a datatree in-place using Python's standard dictionary syntax, similar to how we can for Dataset objects.
+For example, to create this example datatree from scratch, we could have written:
+
+# TODO update this example using ``.coords`` and ``.data_vars`` as setters, and allowing non-dataarray values to ``__setitem__``
+
+.. ipython:: python
+
+    dt = DataTree()
+    dt["foo"] = xr.DataArray("orange")
+    dt["a"] = DataTree(data=xr.Dataset({"bar": 0}, coords={"y": ("y", [0, 1, 2])}))
+    dt["a/b/zed"] = xr.DataArray(np.NaN)
+    dt["a/c/d"] = DataTree()
+    dt
+
+To change the variables in a node of a ``DataTree``, you can use all the standard dictionary
+methods, including ``values``, ``items``, ``__delitem__``, ``get`` and
+:py:meth:`~xarray.DataTree.update`.
+Note that assigning a ``DataArray`` object to a ``DataTree`` variable using ``__setitem__`` or ``update`` will
+:ref:`automatically align<update>` the array(s) to the original node's indexes.
+
+If you copy a ``DataTree`` using the ``:py:func::copy`` function or the :py:meth:`~xarray.DataTree.copy` it will copy the entire tree,
+including all parents and children.
+Like for ``Dataset``, this copy is shallow by default, but you can copy all the data by calling ``dt.copy(deep=True)``.
