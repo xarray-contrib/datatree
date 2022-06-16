@@ -4,57 +4,10 @@ import numpy as np
 import pytest
 import xarray as xr
 import xarray.testing as xrt
-from xarray.tests import source_ndarray
+from xarray.tests import create_test_data, source_ndarray
 
 import datatree.testing as dtt
 from datatree import DataTree
-
-
-def create_test_datatree(modify=lambda ds: ds):
-    """
-    Create a test datatree with this structure:
-
-    <datatree.DataTree>
-    |-- set1
-    |   |-- <xarray.Dataset>
-    |   |   Dimensions:  ()
-    |   |   Data variables:
-    |   |       a        int64 0
-    |   |       b        int64 1
-    |   |-- set1
-    |   |-- set2
-    |-- set2
-    |   |-- <xarray.Dataset>
-    |   |   Dimensions:  (x: 2)
-    |   |   Data variables:
-    |   |       a        (x) int64 2, 3
-    |   |       b        (x) int64 0.1, 0.2
-    |   |-- set1
-    |-- set3
-    |-- <xarray.Dataset>
-    |   Dimensions:  (x: 2, y: 3)
-    |   Data variables:
-    |       a        (y) int64 6, 7, 8
-    |       set0     (x) int64 9, 10
-
-    The structure has deliberately repeated names of tags, variables, and
-    dimensions in order to better check for bugs caused by name conflicts.
-    """
-    set1_data = modify(xr.Dataset({"a": 0, "b": 1}))
-    set2_data = modify(xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])}))
-    root_data = modify(xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])}))
-
-    # Avoid using __init__ so we can independently test it
-    d = {
-        "/": root_data,
-        "/set1": set1_data,
-        "/set1/set1": None,
-        "/set1/set2": None,
-        "/set2": set2_data,
-        "/set2/set1": None,
-        "/set3": None,
-    }
-    return DataTree.from_dict(d)
 
 
 class TestTreeCreation:
@@ -63,11 +16,18 @@ class TestTreeCreation:
         assert dt.name == "root"
         assert dt.parent is None
         assert dt.children == {}
-        xrt.assert_identical(dt.ds, xr.Dataset())
+        xrt.assert_identical(dt.to_dataset(), xr.Dataset())
 
     def test_unnamed(self):
         dt = DataTree()
         assert dt.name is None
+
+    def test_bad_names(self):
+        with pytest.raises(TypeError):
+            DataTree(name=5)
+
+        with pytest.raises(ValueError):
+            DataTree(name="folder/data")
 
 
 class TestFamilyTree:
@@ -85,7 +45,7 @@ class TestFamilyTree:
         DataTree(name="set1", parent=root)
         DataTree(name="set2", parent=set1)
 
-    def test_create_full_tree(self):
+    def test_create_full_tree(self, simple_datatree):
         root_data = xr.Dataset({"a": ("y", [6, 7, 8]), "set0": ("x", [9, 10])})
         set1_data = xr.Dataset({"a": 0, "b": 1})
         set2_data = xr.Dataset({"a": ("x", [2, 3]), "b": ("x", [0.1, 0.2])})
@@ -98,7 +58,7 @@ class TestFamilyTree:
         DataTree(name="set1", parent=set2)
         DataTree(name="set3", parent=root)
 
-        expected = create_test_datatree()
+        expected = simple_datatree
         assert root.identical(expected)
 
 
@@ -106,7 +66,7 @@ class TestStoreDatasets:
     def test_create_with_data(self):
         dat = xr.Dataset({"a": 0})
         john = DataTree(name="john", data=dat)
-        xrt.assert_identical(john.ds, dat)
+        xrt.assert_identical(john.to_dataset(), dat)
 
         with pytest.raises(TypeError):
             DataTree(name="mary", parent=john, data="junk")  # noqa
@@ -115,7 +75,7 @@ class TestStoreDatasets:
         john = DataTree(name="john")
         dat = xr.Dataset({"a": 0})
         john.ds = dat
-        xrt.assert_identical(john.ds, dat)
+        xrt.assert_identical(john.to_dataset(), dat)
         with pytest.raises(TypeError):
             john.ds = "junk"
 
@@ -140,16 +100,9 @@ class TestVariablesChildrenNameCollisions:
             dt.ds = xr.Dataset({"a": 0})
 
         dt.ds = xr.Dataset()
+        new_ds = dt.to_dataset().assign(a=xr.DataArray(0))
         with pytest.raises(KeyError, match="names would collide"):
-            dt.ds = dt.ds.assign(a=xr.DataArray(0))
-
-    @pytest.mark.xfail
-    def test_update_when_already_child_with_variables_name(self):
-        # See issue #38
-        dt = DataTree(name="root", data=None)
-        DataTree(name="a", data=None, parent=dt)
-        with pytest.raises(KeyError, match="names would collide"):
-            dt.ds["a"] = xr.DataArray(0)
+            dt.ds = new_ds
 
 
 class TestGet:
@@ -215,7 +168,7 @@ class TestUpdate:
 
 
 class TestCopy:
-    def test_copy(self):
+    def test_copy(self, create_test_datatree):
         dt = create_test_datatree()
 
         for node in dt.root.subtree:
@@ -241,7 +194,7 @@ class TestCopy:
                 assert "foo" not in node.attrs
                 assert node.attrs["Test"] is copied_node.attrs["Test"]
 
-    def test_deepcopy(self):
+    def test_deepcopy(self, create_test_datatree):
         dt = create_test_datatree()
 
         for node in dt.root.subtree:
@@ -267,7 +220,7 @@ class TestCopy:
                 assert node.attrs["Test"] is not copied_node.attrs["Test"]
 
     @pytest.mark.xfail(reason="data argument not yet implemented")
-    def test_copy_with_data(self):
+    def test_copy_with_data(self, create_test_datatree):
         orig = create_test_datatree()
         # TODO use .data_vars once that property is available
         data_vars = {
@@ -315,13 +268,13 @@ class TestSetItem:
         john["mary"] = DataTree()
         mary = john["mary"]
         assert isinstance(mary, DataTree)
-        xrt.assert_identical(mary.ds, xr.Dataset())
+        xrt.assert_identical(mary.to_dataset(), xr.Dataset())
 
     def test_setitem_overwrite_data_in_node_with_none(self):
         john = DataTree(name="john")
         mary = DataTree(name="mary", parent=john, data=xr.Dataset())
         john["mary"] = DataTree()
-        xrt.assert_identical(mary.ds, xr.Dataset())
+        xrt.assert_identical(mary.to_dataset(), xr.Dataset())
 
         john.ds = xr.Dataset()
         with pytest.raises(ValueError, match="has no name"):
@@ -332,21 +285,21 @@ class TestSetItem:
         data = xr.Dataset({"temp": [0, 50]})
         results = DataTree(name="results")
         results["."] = data
-        xrt.assert_identical(results.ds, data)
+        xrt.assert_identical(results.to_dataset(), data)
 
     @pytest.mark.xfail(reason="assigning Datasets doesn't yet create new nodes")
     def test_setitem_dataset_as_new_node(self):
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataTree(name="folder1")
         folder1["results"] = data
-        xrt.assert_identical(folder1["results"].ds, data)
+        xrt.assert_identical(folder1["results"].to_dataset(), data)
 
     @pytest.mark.xfail(reason="assigning Datasets doesn't yet create new nodes")
     def test_setitem_dataset_as_new_node_requiring_intermediate_nodes(self):
         data = xr.Dataset({"temp": [0, 50]})
         folder1 = DataTree(name="folder1")
         folder1["results/highres"] = data
-        xrt.assert_identical(folder1["results/highres"].ds, data)
+        xrt.assert_identical(folder1["results/highres"].to_dataset(), data)
 
     def test_setitem_named_dataarray(self):
         da = xr.DataArray(name="temp", data=[0, 50])
@@ -381,7 +334,7 @@ class TestSetItem:
         p = xr.DataArray(data=[2, 3])
         results["pressure"] = p
         expected = t.assign(pressure=p)
-        xrt.assert_identical(results.ds, expected)
+        xrt.assert_identical(results.to_dataset(), expected)
 
 
 class TestDictionaryInterface:
@@ -395,16 +348,16 @@ class TestTreeFromDict:
         assert dt.name is None
         assert dt.parent is None
         assert dt.children == {}
-        xrt.assert_identical(dt.ds, dat)
+        xrt.assert_identical(dt.to_dataset(), dat)
 
     def test_one_layer(self):
         dat1, dat2 = xr.Dataset({"a": 1}), xr.Dataset({"b": 2})
         dt = DataTree.from_dict({"run1": dat1, "run2": dat2})
-        xrt.assert_identical(dt.ds, xr.Dataset())
+        xrt.assert_identical(dt.to_dataset(), xr.Dataset())
         assert dt.name is None
-        xrt.assert_identical(dt["run1"].ds, dat1)
+        xrt.assert_identical(dt["run1"].to_dataset(), dat1)
         assert dt["run1"].children == {}
-        xrt.assert_identical(dt["run2"].ds, dat2)
+        xrt.assert_identical(dt["run2"].to_dataset(), dat2)
         assert dt["run2"].children == {}
 
     def test_two_layers(self):
@@ -413,16 +366,16 @@ class TestTreeFromDict:
         assert "highres" in dt.children
         assert "lowres" in dt.children
         highres_run = dt["highres/run"]
-        xrt.assert_identical(highres_run.ds, dat1)
+        xrt.assert_identical(highres_run.to_dataset(), dat1)
 
     def test_nones(self):
         dt = DataTree.from_dict({"d": None, "d/e": None})
         assert [node.name for node in dt.subtree] == [None, "d", "e"]
         assert [node.path for node in dt.subtree] == ["/", "/d", "/d/e"]
-        xrt.assert_identical(dt["d/e"].ds, xr.Dataset())
+        xrt.assert_identical(dt["d/e"].to_dataset(), xr.Dataset())
 
-    def test_full(self):
-        dt = create_test_datatree()
+    def test_full(self, simple_datatree):
+        dt = simple_datatree
         paths = list(node.path for node in dt.subtree)
         assert paths == [
             "/",
@@ -434,23 +387,59 @@ class TestTreeFromDict:
             "/set3",
         ]
 
-    def test_roundtrip(self):
-        dt = create_test_datatree()
+    def test_roundtrip(self, simple_datatree):
+        dt = simple_datatree
         roundtrip = DataTree.from_dict(dt.to_dict())
         assert roundtrip.equals(dt)
 
     @pytest.mark.xfail
-    def test_roundtrip_unnamed_root(self):
+    def test_roundtrip_unnamed_root(self, simple_datatree):
         # See GH81
 
-        dt = create_test_datatree()
+        dt = simple_datatree
         dt.name = "root"
         roundtrip = DataTree.from_dict(dt.to_dict())
         assert roundtrip.equals(dt)
 
 
-class TestBrowsing:
-    ...
+class TestDatasetView:
+    def test_view_contents(self):
+        ds = create_test_data()
+        dt = DataTree(data=ds)
+        assert ds.identical(
+            dt.ds
+        )  # this only works because Dataset.identical doesn't check types
+        assert isinstance(dt.ds, xr.Dataset)
+
+    def test_immutability(self):
+        # See issue #38
+        dt = DataTree(name="root", data=None)
+        DataTree(name="a", data=None, parent=dt)
+
+        with pytest.raises(
+            AttributeError, match="Mutation of the DatasetView is not allowed"
+        ):
+            dt.ds["a"] = xr.DataArray(0)
+
+        with pytest.raises(
+            AttributeError, match="Mutation of the DatasetView is not allowed"
+        ):
+            dt.ds.update({"a": 0})
+
+        # TODO are there any other ways you can normally modify state (in-place)?
+        # (not attribute-like assignment because that doesn't work on Dataset anyway)
+
+    def test_methods(self):
+        ds = create_test_data()
+        dt = DataTree(data=ds)
+        assert ds.mean().identical(dt.ds.mean())
+        assert type(dt.ds.mean()) == xr.Dataset
+
+    def test_arithmetic(self, create_test_datatree):
+        dt = create_test_datatree()
+        expected = create_test_datatree(modify=lambda ds: 10.0 * ds)["set1"]
+        result = 10.0 * dt["set1"].ds
+        assert result.identical(expected)
 
 
 class TestRestructuring:

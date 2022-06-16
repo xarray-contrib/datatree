@@ -19,6 +19,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    overload,
 )
 
 import pandas as pd
@@ -30,7 +31,7 @@ from xarray.core.indexes import Index, Indexes
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
 from xarray.core.utils import Default, Frozen, _default
-from xarray.core.variable import Variable
+from xarray.core.variable import Variable, calculate_dimensions
 
 from . import formatting, formatting_html
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
@@ -41,12 +42,6 @@ from .ops import (
 )
 from .render import RenderTree
 from .treenode import NodePath, Tree, TreeNode
-
-try:
-    from xarray.core.variable import calculate_dimensions
-except ImportError:
-    # for xarray versions 2022.03.0 and earlier
-    from xarray.core.dataset import calculate_dimensions
 
 if TYPE_CHECKING:
     from xarray.core.merge import CoercibleValue
@@ -89,6 +84,135 @@ def _check_for_name_collisions(
     if colliding_names:
         raise KeyError(
             f"Some names would collide between variables and children: {list(colliding_names)}"
+        )
+
+
+class DatasetView(Dataset):
+    """
+    An immutable Dataset-like view onto the data in a single DataTree node.
+
+    In-place operations modifying this object should raise an AttributeError.
+
+    Operations returning a new result will return a new xarray.Dataset object.
+    This includes all API on Dataset, which will be inherited.
+
+    This requires overriding all inherited private constructors.
+    """
+
+    # TODO what happens if user alters (in-place) a DataArray they extracted from this object?
+
+    def __init__(
+        self,
+        data_vars: Mapping[Any, Any] = None,
+        coords: Mapping[Any, Any] = None,
+        attrs: Mapping[Any, Any] = None,
+    ):
+        raise AttributeError("DatasetView objects are not to be initialized directly")
+
+    @classmethod
+    def _from_node(
+        cls,
+        wrapping_node: DataTree,
+    ) -> DatasetView:
+        """Constructor, using dataset attributes from wrapping node"""
+
+        obj: DatasetView = object.__new__(cls)
+        obj._variables = wrapping_node._variables
+        obj._coord_names = wrapping_node._coord_names
+        obj._dims = wrapping_node._dims
+        obj._indexes = wrapping_node._indexes
+        obj._attrs = wrapping_node._attrs
+        obj._close = wrapping_node._close
+        obj._encoding = wrapping_node._encoding
+
+        return obj
+
+    def __setitem__(self, key, val) -> None:
+        raise AttributeError(
+            "Mutation of the DatasetView is not allowed, please use __setitem__ on the wrapping DataTree node, "
+            "or use `DataTree.to_dataset()` if you want a mutable dataset"
+        )
+
+    def update(self, other) -> None:
+        raise AttributeError(
+            "Mutation of the DatasetView is not allowed, please use .update on the wrapping DataTree node, "
+            "or use `DataTree.to_dataset()` if you want a mutable dataset"
+        )
+
+    # FIXME https://github.com/python/mypy/issues/7328
+    @overload
+    def __getitem__(self, key: Mapping) -> Dataset:  # type: ignore[misc]
+        ...
+
+    @overload
+    def __getitem__(self, key: Hashable) -> DataArray:  # type: ignore[misc]
+        ...
+
+    @overload
+    def __getitem__(self, key: Any) -> Dataset:
+        ...
+
+    def __getitem__(self, key) -> DataArray:
+        # TODO call the `_get_item` method of DataTree to allow path-like access to contents of other nodes
+        # For now just call Dataset.__getitem__
+        return Dataset.__getitem__(self, key)
+
+    @classmethod
+    def _construct_direct(
+        cls,
+        variables: dict[Any, Variable],
+        coord_names: set[Hashable],
+        dims: dict[Any, int] = None,
+        attrs: dict = None,
+        indexes: dict[Any, Index] = None,
+        encoding: dict = None,
+        close: Callable[[], None] = None,
+    ) -> Dataset:
+        """
+        Overriding this method (along with ._replace) and modifying it to return a Dataset object
+        should hopefully ensure that the return type of any method on this object is a Dataset.
+        """
+        if dims is None:
+            dims = calculate_dimensions(variables)
+        if indexes is None:
+            indexes = {}
+        obj = object.__new__(Dataset)
+        obj._variables = variables
+        obj._coord_names = coord_names
+        obj._dims = dims
+        obj._indexes = indexes
+        obj._attrs = attrs
+        obj._close = close
+        obj._encoding = encoding
+        return obj
+
+    def _replace(
+        self,
+        variables: dict[Hashable, Variable] = None,
+        coord_names: set[Hashable] = None,
+        dims: dict[Any, int] = None,
+        attrs: dict[Hashable, Any] | None | Default = _default,
+        indexes: dict[Hashable, Index] = None,
+        encoding: dict | None | Default = _default,
+        inplace: bool = False,
+    ) -> Dataset:
+        """
+        Overriding this method (along with ._construct_direct) and modifying it to return a Dataset object
+        should hopefully ensure that the return type of any method on this object is a Dataset.
+        """
+
+        if inplace:
+            raise AttributeError("In-place mutation of the DatasetView is not allowed")
+
+        return Dataset._replace(
+            self,
+            variables=variables,
+            coord_names=coord_names,
+            dims=dims,
+            attrs=attrs,
+            indexes=indexes,
+            encoding=encoding,
+            inplace=inplace,
         )
 
 
@@ -142,13 +266,16 @@ class DataTree(
 
     def __init__(
         self,
-        data: Optional[Dataset | DataArray] = None,
+        data: Dataset | DataArray = None,
         parent: DataTree = None,
         children: Mapping[str, DataTree] = None,
         name: str = None,
     ):
         """
-        Create a single node of a DataTree, which optionally contains data in the form of an xarray.Dataset.
+        Create a single node of a DataTree.
+
+        The node may optionally contain data in the form of data and coordinate variables, stored in the same way as
+        data is stored in an xarray.Dataset.
 
         Parameters
         ----------
@@ -160,11 +287,11 @@ class DataTree(
         children : Mapping[str, DataTree], optional
             Any child nodes of this node. Default is None.
         name : str, optional
-            Name for the root node of the tree. Default is None.
+            Name for this node of the tree. Default is None.
 
         Returns
         -------
-        node :  DataTree
+        DataTree
 
         See Also
         --------
@@ -201,8 +328,11 @@ class DataTree(
 
     @name.setter
     def name(self, name: str | None) -> None:
-        if not isinstance(name, str) and name is not None:
-            raise TypeError("name must either be a string or None")
+        if name is not None:
+            if not isinstance(name, str):
+                raise TypeError("node name must be a string or None")
+            if "/" in name:
+                raise ValueError("node names cannot contain forward slashes")
         self._name = name
 
     @property
@@ -217,10 +347,17 @@ class DataTree(
         self._set_parent(new_parent, self.name)
 
     @property
-    def ds(self) -> Dataset:
-        """The data in this node, returned as a Dataset."""
-        # TODO change this to return only an immutable view onto this node's data (see GH #80)
-        return self.to_dataset()
+    def ds(self) -> DatasetView:
+        """
+        An immutable Dataset-like view onto the data in this node.
+
+        For a mutable Dataset containing the same data as in this node, use `.to_dataset()` instead.
+
+        See Also
+        --------
+        DataTree.to_dataset
+        """
+        return DatasetView._from_node(self)
 
     @ds.setter
     def ds(self, data: Union[Dataset, DataArray] = None) -> None:
@@ -252,7 +389,13 @@ class DataTree(
             )
 
     def to_dataset(self) -> Dataset:
-        """Return the data in this node as a new xarray.Dataset object."""
+        """
+        Return the data in this node as a new xarray.Dataset object.
+
+        See Also
+        --------
+        DataTree.ds
+        """
         return Dataset._construct_direct(
             self._variables,
             self._coord_names,
@@ -280,18 +423,18 @@ class DataTree(
 
     @property
     def variables(self) -> Mapping[Hashable, Variable]:
-        """Low level interface to Dataset contents as dict of Variable objects.
+        """Low level interface to node contents as dict of Variable objects.
 
         This ordered dictionary is frozen to prevent mutation that could
         violate Dataset invariants. It contains all variable objects
-        constituting the Dataset, including both data variables and
+        constituting this DataTree node, including both data variables and
         coordinates.
         """
         return Frozen(self._variables)
 
     @property
     def attrs(self) -> Dict[Hashable, Any]:
-        """Dictionary of global attributes on this dataset"""
+        """Dictionary of global attributes on this node object."""
         if self._attrs is None:
             self._attrs = {}
         return self._attrs
@@ -302,7 +445,7 @@ class DataTree(
 
     @property
     def encoding(self) -> Dict:
-        """Dictionary of global encoding attributes on this dataset"""
+        """Dictionary of global encoding attributes on this node object."""
         if self._encoding is None:
             self._encoding = {}
         return self._encoding
@@ -318,7 +461,7 @@ class DataTree(
         Cannot be modified directly, but is updated when adding new variables.
 
         Note that type of this object differs from `DataArray.dims`.
-        See `Dataset.sizes` and `DataArray.sizes` for consistently named
+        See `DataTree.sizes`, `Dataset.sizes`, and `DataArray.sizes` for consistently named
         properties.
         """
         return Frozen(self._dims)
@@ -329,7 +472,7 @@ class DataTree(
 
         Cannot be modified directly, but is updated when adding new variables.
 
-        This is an alias for `Dataset.dims` provided for the benefit of
+        This is an alias for `DataTree.dims` provided for the benefit of
         consistency with `DataArray.sizes`.
 
         See Also
@@ -376,9 +519,7 @@ class DataTree(
         children: OrderedDict[str, DataTree] = None,
         close: Callable[[], None] = None,
     ) -> DataTree:
-        """Shortcut around __init__ for internal use when we want to skip
-        costly validation
-        """
+        """Shortcut around __init__ for internal use when we want to skip costly validation."""
 
         # data attributes
         if dims is None:
@@ -482,16 +623,17 @@ class DataTree(
         self: DataTree, key: str, default: Optional[DataTree | DataArray] = None
     ) -> Optional[DataTree | DataArray]:
         """
-        Access child nodes stored in this node as a DataTree or variables or coordinates stored in this node as a
-        DataArray.
+        Access child nodes, variables, or coordinates stored in this node.
+
+        Returned object will be either a DataTree or DataArray object depending on whether the key given points to a
+        child or variable.
 
         Parameters
         ----------
         key : str
-            Name of variable / node item, which must lie in this immediate node (not elsewhere in the tree).
+            Name of variable / child within this node. Must lie in this immediate node (not elsewhere in the tree).
         default : DataTree | DataArray, optional
-            A value to return if the specified key does not exist.
-            Default value is None.
+            A value to return if the specified key does not exist. Default return value is None.
         """
         if key in self.children:
             return self.children[key]
@@ -502,13 +644,19 @@ class DataTree(
 
     def __getitem__(self: DataTree, key: str) -> DataTree | DataArray:
         """
-        Access child nodes stored in this tree as a DataTree or variables or coordinates stored in this tree as a
-        DataArray.
+        Access child nodes, variables, or coordinates stored anywhere in this tree.
+
+        Returned object will be either a DataTree or DataArray object depending on whether the key given points to a
+        child or variable.
 
         Parameters
         ----------
         key : str
-            Name of variable / node, or unix-like path to variable / node.
+            Name of variable / child within this node, or unix-like path to variable / child within another node.
+
+        Returns
+        -------
+        Union[DataTree, DataArray]
         """
 
         # Either:
@@ -599,7 +747,7 @@ class DataTree(
         name: str = None,
     ) -> DataTree:
         """
-        Create a datatree from a dictionary of data objects, labelled by paths into the tree.
+        Create a datatree from a dictionary of data objects, organised by paths into the tree.
 
         Parameters
         ----------
@@ -641,15 +789,15 @@ class DataTree(
 
         return obj
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Dataset]:
         """
         Create a dictionary mapping of absolute node paths to the data contained in those nodes.
 
         Returns
         -------
-        Dict
+        Dict[str, Dataset]
         """
-        return {node.path: node.ds for node in self.subtree}
+        return {node.path: node.to_dataset() for node in self.subtree}
 
     @property
     def nbytes(self) -> int:
@@ -663,7 +811,8 @@ class DataTree(
         """Mapping of pandas.Index objects used for label based indexing.
         Raises an error if this DataTree node has indexes that cannot be coerced
         to pandas.Index objects.
-        See Also /
+
+        See Also
         --------
         DataTree.xindexes
         """
@@ -698,7 +847,7 @@ class DataTree(
         Nothing about the data in each node is checked.
 
         Isomorphism is a necessary condition for two trees to be used in a nodewise binary operation,
-        such as tree1 + tree2.
+        such as ``tree1 + tree2``.
 
         By default this method does not check any part of the tree above the given node.
         Therefore this method can be used as default to check that two subtrees are isomorphic.
@@ -706,12 +855,13 @@ class DataTree(
         Parameters
         ----------
         other : DataTree
-            The tree object to compare to.
+            The other tree object to compare to.
         from_root : bool, optional, default is False
-            Whether or not to first traverse to the root of the trees before checking for isomorphism.
-            If a & b have no parents then this has no effect.
+            Whether or not to first traverse to the root of the two trees before checking for isomorphism.
+            If neither tree has a parent then this has no effect.
         strict_names : bool, optional, default is False
-            Whether or not to also check that each node has the same name as its counterpart.
+            Whether or not to also check that every node in the tree has the same name as its counterpart in the other
+            tree.
 
         See Also
         --------
@@ -739,10 +889,10 @@ class DataTree(
         Parameters
         ----------
         other : DataTree
-            The tree object to compare to.
+            The other tree object to compare to.
         from_root : bool, optional, default is True
-            Whether or not to first traverse to the root of the trees before checking.
-            If a & b have no parents then this has no effect.
+            Whether or not to first traverse to the root of the two trees before checking for isomorphism.
+            If neither tree has a parent then this has no effect.
 
         See Also
         --------
@@ -770,10 +920,10 @@ class DataTree(
         Parameters
         ----------
         other : DataTree
-            The tree object to compare to.
+            The other tree object to compare to.
         from_root : bool, optional, default is True
-            Whether or not to first traverse to the root of the trees before checking.
-            If a & b have no parents then this has no effect.
+            Whether or not to first traverse to the root of the two trees before checking for isomorphism.
+            If neither tree has a parent then this has no effect.
 
         See Also
         --------
