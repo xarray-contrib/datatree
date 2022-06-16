@@ -131,9 +131,9 @@ we can construct a complex tree quickly using the alternative constructor ``:py:
 .. ipython:: python
 
     d = {
-        "/": None,
-        "/a": xr.Dataset({"foo": 0}),
-        "/a/b": xr.Dataset({"bar": ("y", [0, 1, 2])}),
+        "/": xr.Dataset({"foo": "orange"}),
+        "/a": xr.Dataset({"bar": 0}, coords={"y": ("y", [0, 1, 2])}),
+        "/a/b": xr.Dataset({"zed": np.NaN}),
         "a/c/d": None,
     }
     dt = DataTree.from_dict(d)
@@ -154,22 +154,31 @@ Like ``xarray.Dataset``, ``DataTree`` implements the python mapping interface, b
 .. ipython:: python
 
     dt["a"]
-
+    dt["foo"]
 
 Iterating over keys will iterate over both the names of variables and child nodes.
 
-Now let's add some data to our tree.
+We can also access all the data in a single node through a dataset-like view
 
 .. ipython:: python
 
-    # create some data
-    ds1 = xr.Dataset({"a": ("x", [1, 2, 3])})
-    ds1
+    dt["a"].ds
 
-    ds1
+This demonstrates the fact that the data in any one node is equivalent to the contents of a single ``xarray.Dataset`` object.
+The ``DataTree.ds`` property returns an immutable view, but we can instead extract the node's data contents as a new (and mutable)
+``xarray.Dataset`` object via ``.to_dataset()``:
 
+.. ipython:: python
 
-You can see that the data in the node is displayed in the same way that the contents of the xarray Dataset we added would have been.
+    dt["a"].to_dataset()
+
+Like with ``Dataset``, you can access the data and coordinate variables of a node separately via the ``data_vars`` and ``coords`` attributes:
+
+.. ipython:: python
+
+    dt["a"].data_vars
+    dt["a"].coords
+
 
 Dictionary-like methods
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -178,11 +187,3 @@ We can update the contents of the tree in-place using a dictionary-like syntax.
 
 If you copy a ``DataTree`` using the ``:py:func::copy`` method it will copy the entire tree, including all parents and children.
 Like for ``Dataset``, this copy is shallow by default.
-
-Navigating the Tree
-~~~~~~~~~~~~~~~~~~~
-
-Root, ancestors, parent, children, leaves, file-like access
-
-Mapping Operations Over the Tree
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
