@@ -349,15 +349,8 @@ class DataTree(
             self._close()
         self._close = None
 
-        if self._parent is not None:
-            if self._parent._close is not None:
-                self._parent._close()
-            self._parent._close = None
-
         for child in self._children.values():
-            if child._close is not None:
-                child._close()
-            child._close = None
+            child.close()
 
     def __enter__(self: DataTree) -> DataTree:
         return self
