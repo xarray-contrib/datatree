@@ -14,8 +14,8 @@ class TestIO:
         original_dt = simple_datatree
         original_dt.to_netcdf(filepath, engine="netcdf4")
 
-        roundtrip_dt = open_datatree(filepath)
-        assert_equal(original_dt, roundtrip_dt)
+        with open_datatree(filepath) as roundtrip_dt:
+            assert_equal(original_dt, roundtrip_dt)
 
     @requires_netCDF4
     def test_netcdf_encoding(self, tmpdir, simple_datatree):
@@ -29,10 +29,9 @@ class TestIO:
         enc = {"/set2": {var: comp for var in original_dt["/set2"].ds.data_vars}}
 
         original_dt.to_netcdf(filepath, encoding=enc, engine="netcdf4")
-        roundtrip_dt = open_datatree(filepath)
-
-        assert roundtrip_dt["/set2/a"].encoding["zlib"] == comp["zlib"]
-        assert roundtrip_dt["/set2/a"].encoding["complevel"] == comp["complevel"]
+        with open_datatree(filepath) as roundtrip_dt:
+            assert roundtrip_dt["/set2/a"].encoding["zlib"] == comp["zlib"]
+            assert roundtrip_dt["/set2/a"].encoding["complevel"] == comp["complevel"]
 
         enc["/not/a/group"] = {"foo": "bar"}
         with pytest.raises(ValueError, match="unexpected encoding group.*"):
@@ -46,8 +45,8 @@ class TestIO:
         original_dt = simple_datatree
         original_dt.to_netcdf(filepath, engine="h5netcdf")
 
-        roundtrip_dt = open_datatree(filepath)
-        assert_equal(original_dt, roundtrip_dt)
+        with open_datatree(filepath) as roundtrip_dt:
+            assert_equal(original_dt, roundtrip_dt)
 
     @requires_zarr
     def test_to_zarr(self, tmpdir, simple_datatree):
@@ -57,8 +56,8 @@ class TestIO:
         original_dt = simple_datatree
         original_dt.to_zarr(filepath)
 
-        roundtrip_dt = open_datatree(filepath, engine="zarr")
-        assert_equal(original_dt, roundtrip_dt)
+        with open_datatree(filepath, engine="zarr") as roundtrip_dt:
+            assert_equal(original_dt, roundtrip_dt)
 
     @requires_zarr
     def test_zarr_encoding(self, tmpdir, simple_datatree):
@@ -72,10 +71,9 @@ class TestIO:
         comp = {"compressor": zarr.Blosc(cname="zstd", clevel=3, shuffle=2)}
         enc = {"/set2": {var: comp for var in original_dt["/set2"].ds.data_vars}}
         original_dt.to_zarr(filepath, encoding=enc)
-        roundtrip_dt = open_datatree(filepath, engine="zarr")
 
-        print(roundtrip_dt["/set2/a"].encoding)
-        assert roundtrip_dt["/set2/a"].encoding["compressor"] == comp["compressor"]
+        with open_datatree(filepath, engine="zarr") as roundtrip_dt:
+            assert roundtrip_dt["/set2/a"].encoding["compressor"] == comp["compressor"]
 
         enc["/not/a/group"] = {"foo": "bar"}
         with pytest.raises(ValueError, match="unexpected encoding group.*"):
@@ -92,8 +90,8 @@ class TestIO:
         store = ZipStore(filepath)
         original_dt.to_zarr(store)
 
-        roundtrip_dt = open_datatree(store, engine="zarr")
-        assert_equal(original_dt, roundtrip_dt)
+        with open_datatree(store, engine="zarr") as roundtrip_dt:
+            assert_equal(original_dt, roundtrip_dt)
 
     @requires_zarr
     def test_to_zarr_not_consolidated(self, tmpdir, simple_datatree):
@@ -107,5 +105,5 @@ class TestIO:
         assert not s1zmetadata.exists()
 
         with pytest.warns(RuntimeWarning, match="consolidated"):
-            roundtrip_dt = open_datatree(filepath, engine="zarr")
-        assert_equal(original_dt, roundtrip_dt)
+            with open_datatree(filepath, engine="zarr") as roundtrip_dt:
+                assert_equal(original_dt, roundtrip_dt)

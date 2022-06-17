@@ -341,7 +341,29 @@ class DataTree(
             attrs=ds._attrs,
             encoding=ds._encoding,
         )
-        self._close = ds._close
+        self._close = None if data is None else data._close
+
+    def close(self) -> None:
+        """Release any resources linked to this object."""
+        if self._close is not None:
+            self._close()
+        self._close = None
+
+        if self._parent is not None:
+            if self._parent._close is not None:
+                self._parent._close()
+            self._parent._close = None
+
+        for child in self._children.values():
+            if child._close is not None:
+                child._close()
+            child._close = None
+
+    def __enter__(self: DataTree) -> DataTree:
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.close()
 
     @property
     def name(self) -> str | None:
