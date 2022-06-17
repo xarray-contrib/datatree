@@ -523,6 +523,11 @@ class NamedNode(TreeNode, Generic[Tree]):
     def __str__(self) -> str:
         return f"NamedNode({self.name})" if self.name else "NamedNode()"
 
+    def _post_attach(self: NamedNode, parent: NamedNode) -> None:
+        """Ensures child has name attribute corresponding to key under which it has been stored."""
+        key = next(k for k, v in parent.children.items() if v is self)
+        self.name = key
+
     @property
     def path(self) -> str:
         """Return the file-like path from the root to this node."""
