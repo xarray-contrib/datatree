@@ -230,6 +230,12 @@ class TestNames:
         mary = NamedNode(children={"Sue": sue})  # noqa
         assert sue.name == "Sue"
 
+    @pytest.mark.xfail(reason="requires refactoring to retain name")
+    def test_grafted_subtree_retains_name(self):
+        subtree = NamedNode("original")
+        root = NamedNode(children={"new_name": subtree})  # noqa
+        assert subtree.name == "original"
+
 
 class TestPaths:
     def test_path_property(self):
