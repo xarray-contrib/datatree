@@ -18,6 +18,20 @@ class TestIO:
             assert_equal(original_dt, roundtrip_dt)
 
     @requires_netCDF4
+    def test_close(self, tmpdir, simple_datatree):
+        filepath = str(
+            tmpdir / "test.nc"
+        )  # casting to str avoids a pathlib bug in xarray
+        dt = simple_datatree
+        dt.to_netcdf(filepath, engine="netcdf4")
+
+        roundtrip_dt = open_datatree(filepath)
+        assert all([node._close is not None for node in roundtrip_dt.subtree])
+
+        roundtrip_dt.close()
+        assert all([node._close is None for node in roundtrip_dt.subtree])
+
+    @requires_netCDF4
     def test_netcdf_encoding(self, tmpdir, simple_datatree):
         filepath = str(
             tmpdir / "test.nc"
