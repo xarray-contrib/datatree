@@ -345,12 +345,10 @@ class DataTree(
 
     def close(self) -> None:
         """Release any resources linked to this object."""
-        if self._close is not None:
-            self._close()
-        self._close = None
-
-        for child in self._children.values():
-            child.close()
+        for node in self.subtree:
+            if node._close is not None:
+                node._close()
+            node._close = None
 
     def __enter__(self: DataTree) -> DataTree:
         return self
