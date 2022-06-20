@@ -26,10 +26,10 @@ class TestIO:
         dt.to_netcdf(filepath, engine="netcdf4")
 
         roundtrip_dt = open_datatree(filepath)
-        assert all([node._close is not None for node in roundtrip_dt.subtree])
+        assert all(node._close is not None for node in roundtrip_dt.subtree)
 
         roundtrip_dt.close()
-        assert all([node._close is None for node in roundtrip_dt.subtree])
+        assert all(node._close is None for node in roundtrip_dt.subtree)
 
     @requires_netCDF4
     def test_netcdf_encoding(self, tmpdir, simple_datatree):

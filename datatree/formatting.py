@@ -74,8 +74,9 @@ def datatree_repr(dt):
     # Tack on info about whether or not root node has a parent at the start
     first_line = lines[0]
     parent = f'"{dt.parent.name}"' if dt.parent is not None else "None"
-    first_line_with_parent = first_line[:-1] + f", parent={parent})"
-    lines[0] = first_line_with_parent
+    open = dt._close is not None
+    first_line_with_extras = first_line[:-1] + f", parent={parent}, open={open})"
+    lines[0] = first_line_with_extras
 
     return "\n".join(lines)
 

@@ -10,7 +10,7 @@ class TestRepr:
     def test_print_empty_node(self):
         dt = DataTree(name="root")
         printout = dt.__str__()
-        assert printout == "DataTree('root', parent=None)"
+        assert printout == "DataTree('root', parent=None, open=False)"
 
     def test_print_empty_node_with_attrs(self):
         dat = Dataset(attrs={"note": "has attrs"})
@@ -18,7 +18,7 @@ class TestRepr:
         printout = dt.__str__()
         assert printout == dedent(
             """\
-            DataTree('root', parent=None)
+            DataTree('root', parent=None, open=False)
                 Dimensions:  ()
                 Data variables:
                     *empty*
@@ -31,7 +31,7 @@ class TestRepr:
         dt = DataTree(name="root", data=dat)
         printout = dt.__str__()
         expected = [
-            "DataTree('root', parent=None)",
+            "DataTree('root', parent=None, open=False)",
             "Dimensions",
             "Coordinates",
             "a",
