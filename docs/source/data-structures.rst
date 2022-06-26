@@ -124,6 +124,8 @@ The second way is to build the tree from a dictionary of filesystem-like paths a
 
 This relies on a syntax inspired by unix-like filesystems, where the "path" to a node is specified by the keys of each intermediate node in sequence,
 separated by forward slashes. The root node is referred to by ``"/"``, so the path from our current root node to its grand-child would be ``"/Oak/Bonsai"``.
+A path specified from the root (as opposed to being specified relative to an arbitrary node in the tree) is sometimes also referred to as a
+`"fully qualified name" <https://www.unidata.ucar.edu/blogs/developer/en/entry/netcdf-zarr-data-model-specification#nczarr_fqn>`_.
 
 If we have a dictionary where each key is a valid path, and each value is either valid data or ``None``,
 we can construct a complex tree quickly using the alternative constructor ``:py:func::DataTree.from_dict``:
