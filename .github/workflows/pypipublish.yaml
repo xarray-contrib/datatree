@@ -4,6 +4,11 @@ on:
     types:
       - published
   push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-artifacts:
