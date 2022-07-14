@@ -12,8 +12,8 @@ dependencies:
   - sphinx-autosummary-accessors
   - ipython
   - h5netcdf
-  - pangeo-sphinx-book-theme
   - zarr
   - pip:
+      - pangeo-sphinx-book-theme
       - git+https://github.com/xarray-contrib/datatree
       - xarray>=2022.05.0.dev0
