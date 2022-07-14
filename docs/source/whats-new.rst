@@ -15,8 +15,30 @@ What's New
 
     np.random.seed(123456)
 
+.. _whats-new.v0.0.10:
 
-.. _whats-new.v0.0.8:
+v0.0.10 (unreleased)
+-------------------
+
+New Features
+~~~~~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Bug fixes
+~~~~~~~~~
+
+Documentation
+~~~~~~~~~~~~~
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
+.. _whats-new.v0.0.9:
 
 v0.0.9 (07/14/2022)
 -------------------
