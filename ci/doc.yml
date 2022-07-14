@@ -12,6 +12,7 @@ dependencies:
   - sphinx-autosummary-accessors
   - ipython
   - h5netcdf
+  - pangeo-sphinx-book-theme
   - zarr
   - pip:
       - git+https://github.com/xarray-contrib/datatree
