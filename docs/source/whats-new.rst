@@ -18,7 +18,7 @@ What's New
 
 .. _whats-new.v0.0.8:
 
-v0.0.8 (unreleased)
+v0.0.9 (07/14/2022)
 -------------------
 
 New Features
@@ -35,6 +35,8 @@ Bug fixes
 
 Documentation
 ~~~~~~~~~~~~~
+- Switch docs theme (:pull:`123`).
+  By `JuliusBusecke <https://github.com/jbusecke>`_.
 
 Internal Changes
 ~~~~~~~~~~~~~~~~
