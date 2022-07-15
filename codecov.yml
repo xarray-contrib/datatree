@@ -5,7 +5,7 @@ codecov:
 comment: false
 
 ignore:
-  - 'datatree/tests/*.py'
+  - '**/tests/*.py'
   - 'setup.py'
 
 coverage:
