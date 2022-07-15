@@ -1,11 +1,11 @@
 codecov:
-  require_ci_to_pass: no
+  require_ci_to_pass: false
   max_report_age: off
 
 comment: false
 
 ignore:
-  - 'tests/*.py'
+  - 'datatree/tests/*.py'
   - 'setup.py'
 
 coverage:
@@ -17,4 +17,4 @@ coverage:
         target: 95
         informational: true
     patch: off
-    changes: off
+    changes: false
