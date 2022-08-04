@@ -23,6 +23,9 @@ v0.0.10 (unreleased)
 New Features
 ~~~~~~~~~~~~
 
+- Add `tutorial` module for accessing sample datasets (:pull:`142`).
+  By `Anderson Banihirwe <https://github.com/andersy005>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 

@@ -287,6 +287,12 @@ Create or
 Tutorial
 ========
 
+.. autosummary::
+   :toctree: generated/
+
+   tutorial.open_datatree
+
+
 Testing
 =======
 
