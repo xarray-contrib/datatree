@@ -1,3 +1,5 @@
+from . import tutorial
+
 # import public API
 from .datatree import DataTree
 from .io import open_datatree
@@ -17,4 +19,5 @@ __all__ = (
     "TreeIsomorphismError",
     "map_over_subtree",
     "__version__",
+    "tutorial",
 )

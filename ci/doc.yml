@@ -2,18 +2,19 @@ name: datatree-doc
 channels:
   - conda-forge
 dependencies:
-  - pip
-  - python>=3.8
+  - h5netcdf
+  - ipython
   - netcdf4
+  - numpydoc
+  - pip
+  - pooch
+  - python>=3.8
   - scipy
   - sphinx
-  - sphinx-copybutton
-  - numpydoc
   - sphinx-autosummary-accessors
-  - ipython
-  - h5netcdf
+  - sphinx-copybutton
+  - xarray >= 2022.6.0
   - zarr
   - pip:
-      - git+https://github.com/xarray-contrib/datatree
       - pangeo-sphinx-book-theme
-      - xarray>=2022.05.0.dev0
+      - -e ..
