@@ -3,14 +3,14 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python>=3.8
-  - netcdf4
-  - pytest
-  - flake8
   - black
   - codecov
-  - pytest-cov
+  - flake8
   - h5netcdf
+  - netcdf4
+  - pooch
+  - pytest
+  - pytest-cov
+  - python>=3.8
+  - xarray>=2022.6.0
   - zarr
-  - pip:
-      - xarray>=2022.05.0.dev0
