@@ -46,13 +46,18 @@ def open_datatree(
          * ``'cesm2-lens'``
          * ``'cmip6'``
 
-
     cache_dir : str | pathlib.Path
         The directory to cache the datatree in. If None, the default cache directory is used.
     engine : str
         The engine to use for the datatree.
     kwargs : dict
         Additional keyword arguments to pass to the xarray.open_dataset function.
+
+    Returns
+    -------
+    datatree : DataTree
+        The datatree.
+
     """
     try:
         import pooch
