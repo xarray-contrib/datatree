@@ -16,14 +16,14 @@ class TestAccessor:
             def foo(self):
                 return "bar"
 
-        dt = DataTree()
-        assert dt.demo.foo == "bar"
+        dt: DataTree = DataTree()
+        assert dt.demo.foo == "bar"  # type: ignore
 
         # accessor is cached
-        assert dt.demo is dt.demo
+        assert dt.demo is dt.demo  # type: ignore
 
         # check descriptor
-        assert dt.demo.__doc__ == "Demo accessor."
+        assert dt.demo.__doc__ == "Demo accessor."  # type: ignore
         # TODO: typing doesn't seem to work with accessors
         assert DataTree.demo.__doc__ == "Demo accessor."  # type: ignore
         assert isinstance(dt.demo, DemoAccessor)  # type: ignore
