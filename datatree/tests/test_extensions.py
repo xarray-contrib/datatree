@@ -29,15 +29,12 @@ class TestAccessor:
         assert isinstance(dt.demo, DemoAccessor)  # type: ignore
         assert DataTree.demo is DemoAccessor  # type: ignore
 
-        # ensure we can remove it
-        del DataTree.demo  # type: ignore
-        assert not hasattr(DataTree, "demo")
-
         with pytest.warns(Warning, match="overriding a preexisting attribute"):
 
             @register_datatree_accessor("demo")
             class Foo:
                 pass
 
-        # it didn't get registered again
+        # ensure we can remove it
+        del DataTree.demo  # type: ignore
         assert not hasattr(DataTree, "demo")
