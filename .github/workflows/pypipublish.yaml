@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'xarray-contrib/datatree'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v4
@@ -77,7 +77,7 @@ jobs:
           name: releases
           path: dist
       - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.0
+        uses: pypa/gh-action-pypi-publish@v1.5.1
         with:
           user: ${{ secrets.PYPI_USERNAME }}
           password: ${{ secrets.PYPI_PASSWORD }}
