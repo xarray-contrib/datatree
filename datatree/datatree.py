@@ -1014,6 +1014,9 @@ class DataTree(
             if node.has_data:
                 node.ds = func(node.ds, *args, **kwargs)
 
+    def pipe(self, func, *args, **kwargs):
+        return func(self, *args, **kwargs)
+
     def render(self):
         """Print tree structure, including any data stored at each node."""
         for pre, fill, node in RenderTree(self):
