@@ -4,7 +4,7 @@ from typing import Any, Mapping
 
 from xarray.core.formatting_html import (
     _mapping_section,
-    _obj_repr,
+    _load_static_files,
     attr_section,
     coord_section,
     datavar_section,
@@ -13,6 +13,42 @@ from xarray.core.formatting_html import (
 from xarray.core.options import OPTIONS
 
 OPTIONS["display_expand_groups"] = "default"
+
+additional_css_style = """
+.xr-tree {
+  display: inline-grid;
+  grid-template-columns: 100%;
+}
+
+.xr-tree-item {
+  display: inline-grid;
+}
+.xr-tree-item-mid {
+  height: 100%;
+}
+.xr-tree-item-end {
+  height: 1.2em;
+}
+
+.xr-tree-item-connection-vertical {
+  grid-column-start: 1;
+  border-right: 0.2em solid;
+  border-color: var(--xr-border-color);
+  width: 0px;
+}
+.xr-tree-item-connection-horizontal {
+  grid-column-start: 2;
+  grid-row-start: 1;
+  height: 1em;
+  width: 20px;
+  border-bottom: 0.2em solid;
+  border-color: var(--xr-border-color);
+}
+
+.xr-tree-item-data {
+  grid-column-start: 3;
+}
+"""
 
 
 def summarize_children(children: Mapping[str, Any]) -> str:
@@ -28,13 +64,7 @@ def summarize_children(children: Mapping[str, Any]) -> str:
         for i, (n, c) in enumerate(children.items())
     )
 
-    return "".join(
-        [
-            "<div style='display: inline-grid; grid-template-columns: 100%'>",
-            children_html,
-            "</div>",
-        ]
-    )
+    return f"<div class='xr-tree'>{children_html}</div>"
 
 
 children_section = partial(
@@ -44,6 +74,30 @@ children_section = partial(
     max_items_collapse=1,
     expand_option_name="display_expand_groups",
 )
+
+
+def _obj_repr(obj, header_components, sections):
+    """Return HTML repr of a datatree object.
+
+    If CSS is not injected (untrusted notebook), fallback to the plain text repr.
+
+    """
+    header = f"<div class='xr-header'>{''.join(h for h in header_components)}</div>"
+    sections = "".join(f"<li class='xr-section-item'>{s}</li>" for s in sections)
+
+    icons_svg, css_style = _load_static_files()
+    return (
+        "<div>"
+        f"{icons_svg}"
+        f"<style>{css_style}</style>"
+        f"<style>{additional_css_style}</style>"
+        f"<pre class='xr-text-repr-fallback'>{escape(repr(obj))}</pre>"
+        "<div class='xr-wrap' style='display:none'>"
+        f"{header}"
+        f"<ul class='xr-sections'>{sections}</ul>"
+        "</div>"
+        "</div>"
+    )
 
 
 def node_repr(group_title: str, dt: Any) -> str:
@@ -102,34 +156,13 @@ def _wrap_repr(r: str, end: bool = False) -> str:
     # height of line
     end = bool(end)
     height = "100%" if end is False else "1.2em"
-    return "".join(
-        [
-            "<div style='display: inline-grid;'>",
-            "<div style='",
-            "grid-column-start: 1;",
-            "border-right: 0.2em solid;",
-            "border-color: var(--xr-border-color);",
-            f"height: {height};",
-            "width: 0px;",
-            "'>",
-            "</div>",
-            "<div style='",
-            "grid-column-start: 2;",
-            "grid-row-start: 1;",
-            "height: 1em;",
-            "width: 20px;",
-            "border-bottom: 0.2em solid;",
-            "border-color: var(--xr-border-color);",
-            "'>",
-            "</div>",
-            "<div style='",
-            "grid-column-start: 3;",
-            "'>",
-            "<ul class='xr-sections'>",
-            r,
-            "</ul>" "</div>",
-            "</div>",
-        ]
+    item_class = "xr-tree-item-mid" if not end else "xr-tree-item-end"
+    return (
+        "<div class='xr-tree-item'>"
+        f"<div class='xr-tree-item-connection-vertical {item_class}'></div>"
+        "<div class='xr-tree-item-connection-horizontal'></div>"
+        f"<div class='xr-tree-item-data'><ul class='xr-sections'>{r}</ul></div>"
+        "</div>"
     )
 
 
