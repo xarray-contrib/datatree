@@ -153,9 +153,6 @@ def _wrap_repr(r: str, end: bool = False) -> str:
 
         Tee color is set to the variable :code:`--xr-border-color`.
     """
-    # height of line
-    end = bool(end)
-    height = "100%" if end is False else "1.2em"
     item_class = "xr-tree-item-mid" if not end else "xr-tree-item-end"
     return (
         "<div class='xr-tree-item'>"
