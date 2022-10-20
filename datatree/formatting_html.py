@@ -50,6 +50,9 @@ additional_css_style = """
 .xr-tree-item-data {
   grid-column-start: 3;
 }
+.xr-tree-item-data-sections {
+  margin-left: 0.6em;
+}
 """
 
 
@@ -89,7 +92,7 @@ def summarize_data(node):
         datavar_section(ds.data_vars),
         attr_section(ds.attrs),
     ]
-    return "".join(sections)
+    return f"<div class='xr-tree-item-data-sections'>{''.join(sections)}</div>"
 
 
 def data_section(node):
@@ -121,7 +124,7 @@ def join_sections(sections, header_components):
     return (
         "<div class='xr-wrap' style='display:none'>"
         f"{header}"
-        f"<ul class='xr-sections' style='display: inline-grid;'>{combined_sections}</ul>"
+        f"<ul class='xr-sections'>{combined_sections}</ul>"
         "</div>"
     )
 
