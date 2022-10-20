@@ -6,13 +6,15 @@ from xarray.core.formatting_html import (
     _load_static_files,
     _mapping_section,
     attr_section,
+    collapsible_section,
     coord_section,
     datavar_section,
     dim_section,
 )
-from xarray.core.options import OPTIONS
+from xarray.core.options import OPTIONS, _get_boolean_with_default
 
 OPTIONS["display_expand_groups"] = "default"
+OPTIONS["display_expand_group_data"] = "default"
 
 additional_css_style = """
 .xr-tree {
@@ -79,6 +81,38 @@ children_section = partial(
 )
 
 
+def summarize_data(node):
+    ds = node.ds
+    sections = [
+        dim_section(ds),
+        coord_section(ds.coords),
+        datavar_section(ds.data_vars),
+        attr_section(ds.attrs),
+    ]
+    return "".join(sections)
+
+
+def data_section(node):
+    name = "Data"
+
+    details = summarize_data(node)
+
+    n_items = 5
+    expanded = _get_boolean_with_default(
+        "display_expand_group_data",
+        True,
+    )
+    collapsed = not expanded
+
+    return collapsible_section(
+        name=name,
+        details=details,
+        n_items=n_items,
+        enabled=True,
+        collapsed=collapsed,
+    )
+
+
 def join_sections(sections, header_components):
     combined_sections = "".join(
         f"<li class='xr-section-item'>{s}</li>" for s in sections
@@ -95,15 +129,7 @@ def join_sections(sections, header_components):
 def node_repr(group_title: str, dt: Any) -> str:
     header_components = [f"<div class='xr-obj-type'>{escape(group_title)}</div>"]
 
-    ds = dt.ds
-
-    sections = [
-        children_section(dt.children),
-        dim_section(ds),
-        coord_section(ds.coords),
-        datavar_section(ds.data_vars),
-        attr_section(ds.attrs),
-    ]
+    sections = [children_section(dt.children), data_section(dt)]
 
     return join_sections(sections, header_components)
 
