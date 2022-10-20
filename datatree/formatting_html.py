@@ -113,7 +113,7 @@ def node_repr(group_title: str, dt: Any) -> str:
         attr_section(ds.attrs),
     ]
 
-    return _obj_repr(ds, header_components, sections)
+    return _obj_repr(dt, header_components, sections)
 
 
 def _wrap_repr(r: str, end: bool = False) -> str:
