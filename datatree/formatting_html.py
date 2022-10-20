@@ -79,26 +79,15 @@ children_section = partial(
 )
 
 
-def _obj_repr(obj, header_components, sections):
-    """Return HTML repr of a datatree object.
-
-    If CSS is not injected (untrusted notebook), fallback to the plain text repr.
-
-    """
-    header = f"<div class='xr-header'>{''.join(h for h in header_components)}</div>"
-    sections = "".join(f"<li class='xr-section-item'>{s}</li>" for s in sections)
-
-    icons_svg, css_style = _load_static_files()
+def join_sections(sections, header_components):
+    combined_sections = "".join(
+        f"<li class='xr-section-item'>{s}</li>" for s in sections
+    )
+    header = f"<div class='xr-header'>{''.join(header_components)}</div>"
     return (
-        "<div>"
-        f"{icons_svg}"
-        f"<style>{css_style}</style>"
-        f"<style>{additional_css_style}</style>"
-        f"<pre class='xr-text-repr-fallback'>{escape(repr(obj))}</pre>"
         "<div class='xr-wrap' style='display:none'>"
         f"{header}"
-        f"<ul class='xr-sections'>{sections}</ul>"
-        "</div>"
+        f"<ul class='xr-sections' style='display: inline-grid;'>{combined_sections}</ul>"
         "</div>"
     )
 
@@ -116,7 +105,7 @@ def node_repr(group_title: str, dt: Any) -> str:
         attr_section(ds.attrs),
     ]
 
-    return _obj_repr(dt, header_components, sections)
+    return join_sections(sections, header_components)
 
 
 def _wrap_repr(r: str, end: bool = False) -> str:
@@ -168,4 +157,15 @@ def _wrap_repr(r: str, end: bool = False) -> str:
 
 def datatree_repr(dt: Any) -> str:
     obj_type = f"datatree.{type(dt).__name__}"
-    return node_repr(obj_type, dt)
+
+    icons_svg, css_style = _load_static_files()
+
+    return (
+        "<div>"
+        f"{icons_svg}"
+        f"<style>{css_style}</style>"
+        f"<style>{additional_css_style}</style>"
+        f"<pre class='xr-text-repr-fallback'>{escape(repr(dt))}</pre>"
+        f"{node_repr(obj_type, dt)}"
+        "</div>"
+    )
