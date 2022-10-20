@@ -3,8 +3,8 @@ from html import escape
 from typing import Any, Mapping
 
 from xarray.core.formatting_html import (
-    _mapping_section,
     _load_static_files,
+    _mapping_section,
     attr_section,
     coord_section,
     datavar_section,
@@ -52,16 +52,19 @@ additional_css_style = """
 
 
 def summarize_children(children: Mapping[str, Any]) -> str:
-    N_CHILDREN = len(children) - 1
+    def is_last_item(index, n_total):
+        return index >= n_total - 1
 
-    # Get result from node_repr and wrap it
-    lines_callback = lambda n, c, end: _wrap_repr(node_repr(n, c), end=end)
+    def format_child(name, child, end):
+        """format node and wrap it into a tree"""
+        formatted = node_repr(name, child)
+        return _wrap_repr(formatted, end=end)
+
+    n_children = len(children)
 
     children_html = "".join(
-        lines_callback(n, c, end=False)  # Long lines
-        if i < N_CHILDREN
-        else lines_callback(n, c, end=True)  # Short lines
-        for i, (n, c) in enumerate(children.items())
+        format_child(name, child, end=is_last_item(index, n_children))
+        for index, (name, child) in enumerate(children.items())
     )
 
     return f"<div class='xr-tree'>{children_html}</div>"
