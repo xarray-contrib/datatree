@@ -120,10 +120,10 @@ def join_sections(sections, header_components):
     combined_sections = "".join(
         f"<li class='xr-section-item'>{s}</li>" for s in sections
     )
-    header = f"<div class='xr-header'>{''.join(header_components)}</div>"
+    header = "".join(header_components)
     return (
         "<div class='xr-wrap' style='display:none'>"
-        f"{header}"
+        f"<div class='xr-header'>{header}</div>"
         f"<ul class='xr-sections'>{combined_sections}</ul>"
         "</div>"
     )
