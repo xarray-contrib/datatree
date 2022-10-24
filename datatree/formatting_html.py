@@ -92,7 +92,11 @@ def summarize_data(node):
         datavar_section(ds.data_vars),
         attr_section(ds.attrs),
     ]
-    return f"<div class='xr-tree-item-data-sections'>{''.join(sections)}</div>"
+
+    sections_li = "".join(
+        f"<li class='xr-section-item'>{section}</li>" for section in sections
+    )
+    return f"<ul class='xr-sections'>{sections_li}</ul>"
 
 
 def data_section(node):
@@ -122,7 +126,7 @@ def join_sections(sections, header_components):
     )
     header = "".join(header_components)
     return (
-        "<div class='xr-wrap' style='display:none'>"
+        "<div class='xr-wrap' style='display: none'>"
         f"<div class='xr-header'>{header}</div>"
         f"<ul class='xr-sections'>{combined_sections}</ul>"
         "</div>"
