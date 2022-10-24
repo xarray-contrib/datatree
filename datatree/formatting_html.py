@@ -96,7 +96,11 @@ def summarize_data(node):
     sections_li = "".join(
         f"<li class='xr-section-item'>{section}</li>" for section in sections
     )
-    return f"<ul class='xr-sections'>{sections_li}</ul>"
+    return (
+        "<div class='xr-tree-item-data-sections'>"
+        f"<ul class='xr-sections' style='width: 1200px;'>{sections_li}</ul>"
+        "</div>"
+    )
 
 
 def data_section(node):
