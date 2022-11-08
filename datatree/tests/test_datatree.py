@@ -87,7 +87,7 @@ class TestPaths:
         sue = DataTree()
         mary = DataTree(children={"Sue": sue})
         john = DataTree(children={"Mary": mary})  # noqa
-        assert john._get_item(sue.path) == sue
+        assert john[sue.path] is sue
 
     def test_same_tree(self):
         mary = DataTree()
@@ -101,7 +101,8 @@ class TestPaths:
         annie = DataTree()
         john = DataTree(children={"Mary": mary, "Annie": annie})
 
-        assert sue.relative_to(john) == "Mary/Sue"
+        result = sue.relative_to(john)
+        assert result == "Mary/Sue"
         assert john.relative_to(sue) == "../.."
         assert annie.relative_to(sue) == "../../Annie"
         assert sue.relative_to(annie) == "../Mary/Sue"
