@@ -31,7 +31,7 @@ To save a DataTree object as a netCDF file containing many groups, use the ``:py
     In particular in the netCDF data model dimensions are entities that can exist regardless of whether any variable possesses them.
     This is in contrast to `xarray's data model`_ (and hence `datatree's data model`_) in which the dimensions of a (Dataset/Tree)
     object are simply the set of dimensions present across all variables in that dataset.
-    This means that if a netCDF file contains dimensions but variables which possess those dimensions,
+    This means that if a netCDF file contains dimensions but no variables which possess those dimensions,
     these dimensions will not be present when that file is opened as a DataTree object.
     Saving this DataTree object to file will therefore not preserve these "unused" dimensions.
 
