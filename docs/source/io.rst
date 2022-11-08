@@ -1,7 +1,7 @@
 .. _data structures:
 
 Reading and Writing Files
-========================
+=========================
 
 .. note::
 
@@ -11,10 +11,10 @@ Reading and Writing Files
 
 
 netCDF
-======
+------
 
 Groups
-------
+~~~~~~
 
 Whilst netCDF groups can only be loaded individually as Dataset objects, a whole file of many nested groups can be loaded
 as a single ``:py:class::DataTree`` object.
@@ -22,7 +22,7 @@ To open a whole netCDF file as a tree of groups use the ``:py:func::open_datatre
 To save a DataTree object as a netCDF file containing many groups, use the ``:py:meth::DataTree.to_netcdf()`` method.
 
 
-.. _netcdf datatree group warning
+.. _netcdf.group.warning:
 
 .. warning::
     ``DataTree`` objects do not follow the exact same data model as netCDF files, which means that perfect round-tripping
@@ -36,15 +36,15 @@ To save a DataTree object as a netCDF file containing many groups, use the ``:py
     Saving this DataTree object to file will therefore not preserve these "unused" dimensions.
 
 Zarr
-====
+----
 
 Groups
-------
+~~~~~~
 
 Nested groups in zarr stores can be represented by loading the store as a ``:py:class::DataTree`` object, similarly to netCDF.
 To open a whole zarr store as a tree of groups use the ``:py:func::open_datatree()`` function.
 To save a DataTree object as a zarr store containing many groups, use the ``:py:meth::DataTree.to_zarr()`` method.
 
 .. note::
-    Note that perfect round-tripping should always be possible with a zarr store (:ref:`unlike for netCDF files<netcdf datatree group warning>`),
+    Note that perfect round-tripping should always be possible with a zarr store (:ref:`unlike for netCDF files<netcdf.group.warning>`),
     as zarr does not support "unused" dimensions.
