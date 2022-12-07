@@ -791,7 +791,8 @@ class DataTree(
                 # Create and set new node
                 node_name = NodePath(path).name
                 if isinstance(data, cls):
-                    new_node = data.copy()
+                    # TODO ignoring type error only needed whilst .copy() method is copied from Dataset.copy().
+                    new_node = data.copy()  # type: ignore[attr-defined]
                     new_node.orphan()
                 else:
                     new_node = cls(name=node_name, data=data)
