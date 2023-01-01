@@ -1,4 +1,4 @@
-.. _hierarchical data:
+.. _hierarchical-data:
 
 Working With Hierarchical Data
 ==============================
