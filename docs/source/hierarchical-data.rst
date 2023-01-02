@@ -35,10 +35,15 @@ For this purpose we provide the ``DataTree`` class.
 
 This page explains in detail how to understand and use the different features of the ``DataTree`` class for your own heirarchical data needs.
 
+.. _node relationships:
+
+Node Relationships
+------------------
+
 .. _creating a family tree:
 
 Creating a Family Tree
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 The three main ways of creating a ``DataTree`` object are described briefly in :ref:`creating a datatree`.
 Here we go into more detail about how to create a tree node-by-node, using a famous family tree from the Simpsons cartoon as an example.
@@ -136,26 +141,78 @@ If we try similar time-travelling hijinks with Homer, we get a ``InvalidTreeErro
 
     abe.parent = homer
 
+.. _evolutionary tree:
+
+Ancestry in an Evolutionary Tree
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Let's use a different example of a tree to discuss more complex relationships between nodes - the phylogenetic tree, or tree of life.
+
+.. ipython:: python
+
+    vertebrates = DataTree.from_dict(
+        name="Vertebrae",
+        d={
+            "/Sharks": None,
+            "/Bony Skeleton/Ray-finned Fish": None,
+            "/Bony Skeleton/Four Limbs/Amphibians": None,
+            "/Bony Skeleton/Four Limbs/Amniotic Egg/Hair/Primates": None,
+            "/Bony Skeleton/Four Limbs/Amniotic Egg/Hair/Rodents & Rabbits": None,
+            "/Bony Skeleton/Four Limbs/Amniotic Egg/Two Fenestrae/Crocodiles": None,
+            "/Bony Skeleton/Four Limbs/Amniotic Egg/Two Fenestrae/Dinosaurs": None,
+            "/Bony Skeleton/Four Limbs/Amniotic Egg/Two Fenestrae/Birds": None,
+        },
+    )
+
+    primates = vertebrates["/Bony Skeleton/Four Limbs/Amniotic Egg/Hair/Primates"]
+    dinosaurs = vertebrates[
+        "/Bony Skeleton/Four Limbs/Amniotic Egg/Two Fenestrae/Dinosaurs"
+    ]
+
+We have used the ``.from_dict`` constructor method as an alternate way to quickly create a whole tree,
+and file-like syntax (to be explained shortly) to select two nodes of interest.
+
+This tree shows various families of species, grouped by their common features (making it technically a `"Cladogram" <https://en.wikipedia.org/wiki/Cladogram>`_,
+rather than an evolutionary tree).
+
+Here both the species and the features used to group them are represented by ``DataTree`` node objects - there is no distinction in types of node.
+We can however get a list of only the nodes we used to represent species by using the fact that all those nodes have no children - they are "leaf nodes".
+We can check if a node is a leaf with ``.is_leaf``, and get a list of all leaves with the ``.leaves`` property:
+
+.. ipython:: python
+    :okexcept
+
+    primates.is_leaf
+    [node.name for node in vertebrates.leaves]
+
+Pretending that this is a true evolutionary tree for a moment, we can find the features of the evolutionary ancestors (so-called "ancestor" nodes),
+the distinguishing feature of the common ancestor of all vertebrate life (the root node),
+and even the distinguishing feature of the common ancestor of any two species (the common ancestor of two nodes):
+
+.. ipython:: python
+
+    [node.name for node in primates.ancestors]
+    primates.root.name
+    primates.find_common_ancestor(dinosaurs).name
+
+We can only find a common ancestor between two nodes that lie in the same tree.
+If we try to find the common evolutionary ancestor between primates and an Alien species that has no relationship to Earth's evolutionary tree,
+an error will be raised.
+
+.. ipython:: python
+    :okexcept:
+
+    alien = DataTree(name="Xenomorph")
+    primates.find_common_ancestor(alien)
+
 
 .. _navigating trees:
 
 Navigating Trees
 ----------------
 
-Node Relationships
-~~~~~~~~~~~~~~~~~~
+Can move around trees using properties, but there are also neater ways to access nodes.
 
-Root, ancestors, parent, children, leaves
-
-Tree of life?
-
-leaves are either currently living or died out with no descendants
-Root is beginning of life
-ancestors are evolutionary history
-
-find common ancestor
-
-Alien life not in same tree?
 
 Filesystem-like Paths
 ~~~~~~~~~~~~~~~~~~~~~
@@ -163,6 +220,12 @@ Filesystem-like Paths
 file-like access via paths
 
 see relative to of bart to herbert
+
+
+Attribute-like access
+~~~~~~~~~~~~~~~~~~~~~
+
+# TODO attribute-like access is not yet implemented, see issue #98
 
 
 .. _manipulating trees:
@@ -192,6 +255,7 @@ Filter the Simpsons by age?
 
 Need to first recreate tree with age data in it
 
+leaves are either currently living or died out with no descendants
 Subset only the living leaves of the evolutionary tree?
 
 
@@ -209,6 +273,8 @@ Arithmetic
 
 cause all Simpsons to age simultaneously
 
+Find total number of species
+Find total biomass
 
 Mapping Custom Functions Over Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
