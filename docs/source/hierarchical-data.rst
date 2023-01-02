@@ -170,7 +170,7 @@ Let's use a different example of a tree to discuss more complex relationships be
     ]
 
 We have used the ``.from_dict`` constructor method as an alternate way to quickly create a whole tree,
-and file-like syntax (to be explained shortly) to select two nodes of interest.
+and :ref:`filesystem-like syntax <filesystem paths>`_ (to be explained shortly) to select two nodes of interest.
 
 This tree shows various families of species, grouped by their common features (making it technically a `"Cladogram" <https://en.wikipedia.org/wiki/Cladogram>`_,
 rather than an evolutionary tree).
@@ -180,7 +180,7 @@ We can however get a list of only the nodes we used to represent species by usin
 We can check if a node is a leaf with ``.is_leaf``, and get a list of all leaves with the ``.leaves`` property:
 
 .. ipython:: python
-    :okexcept
+    :okexcept:
 
     primates.is_leaf
     [node.name for node in vertebrates.leaves]
@@ -211,21 +211,99 @@ an error will be raised.
 Navigating Trees
 ----------------
 
-Can move around trees using properties, but there are also neater ways to access nodes.
+There are various ways to access the different nodes in a tree.
 
+Properties
+~~~~~~~~~~
 
-Filesystem-like Paths
-~~~~~~~~~~~~~~~~~~~~~
+We can navigate trees using the ``.parent`` and ``.children`` properties of each node, for example:
 
-file-like access via paths
+.. ipython:: python
 
-see relative to of bart to herbert
+    lisa.parent.children["Bart"].name
 
+but there are also more convenient ways to access nodes.
+
+Dictionary-like interface
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Children are stored on each node as a key-value mapping from name to child node or variable.
+They can be accessed and altered via the ``__getitem__`` and ``__setitem__`` syntax.
+In general ``DataTree`` objects support almost the entire set of dict-like methods,
+including ``keys``, ``values``, ``items``, ``__delitem__`` and ``update``.
+
+Note that the dict-like interface combines access to child ``DataTree`` nodes and stored ``DataArray``s,
+so if we have a node that contains both children and data, calling ``.keys()`` will list both names of child nodes and
+names of data variables:
+
+.. ipython:: python
+
+    dt = DataTree.from_dict(
+        {"/": xr.Dataset({"foo": 0, "bar": 1}), "/a": None, "/b": None}
+    )
+    print(dt)
+    list(dt.keys())
+
+This means that the names of variables and of child nodes must be different to one another.
 
 Attribute-like access
 ~~~~~~~~~~~~~~~~~~~~~
 
 # TODO attribute-like access is not yet implemented, see issue #98
+
+.. _filesystem paths:
+
+Filesystem-like Paths
+~~~~~~~~~~~~~~~~~~~~~
+
+Hierarchical trees can be thought of as analogous to file systems.
+Each node is like a directory, and each directory can contain both more sub-directories and data.
+
+Datatree objects support a syntax inspired by unix-like filesystems,
+where the "path" to a node is specified by the keys of each intermediate node in sequence,
+separated by forward slashes.
+
+.. ipython:: python
+
+    abe["Homer/Bart"].name
+
+The root node is referred to by ``"/"``, so the path from the root node to its grand-child would be ``"/child/grandchild"``, e.g.
+
+EXAMPLE of path from root
+
+A path specified from the root (as opposed to being specified relative to an arbitrary node in the tree) is sometimes also referred to as a
+`"fully qualified name" <https://www.unidata.ucar.edu/blogs/developer/en/entry/netcdf-zarr-data-model-specification#nczarr_fqn>`_.
+
+file-like access via paths
+
+set something using a relative path
+
+example of finding relative path, from bart to herbert?
+
+
+Create a node with intermediates via ``__setitem__``
+
+You can use this feature to build a nested tree from a dictionary of filesystem-like paths and corresponding ``xarray.Dataset`` objects in a single step.
+If we have a dictionary where each key is a valid path, and each value is either valid data or ``None``,
+we can construct a complex tree quickly using the alternative constructor ``:py:func::DataTree.from_dict``:
+
+.. ipython:: python
+
+    d = {
+        "/": xr.Dataset({"foo": "orange"}),
+        "/a": xr.Dataset({"bar": 0}, coords={"y": ("y", [0, 1, 2])}),
+        "/a/b": xr.Dataset({"zed": np.NaN}),
+        "a/c/d": None,
+    }
+    dt = DataTree.from_dict(d)
+    dt
+
+Notice that this method will also create any intermediate empty node necessary to reach the end of the specified path
+(i.e. the node labelled `"c"` in this case.)
+
+.. note::
+
+    You can even make the filesystem analogy concrete by using ``open_mfdatatree`` or ``save_mfdatatree`` # TODO not yet implemented - see GH issue 51
 
 
 .. _manipulating trees:

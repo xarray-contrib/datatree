@@ -71,7 +71,10 @@ Again these are not normally used unless explicitly accessed by the user.
 Creating a DataTree
 ~~~~~~~~~~~~~~~~~~~
 
-There are three ways to create a ``DataTree`` from scratch. The first is to create each node individually,
+There are three ways to create a ``DataTree`` from scratch.
+
+
+One way to create a create a ``DataTree`` from scratch is to create each node individually,
 specifying the nodes' relationship to one another as you create each one.
 
 The ``DataTree`` constructor takes:
@@ -122,36 +125,17 @@ Is is at tree construction time that consistency checks are enforced. For instan
 
     node0.parent = node2
 
-The second way is to build the tree from a dictionary of filesystem-like paths and corresponding ``xarray.Dataset`` objects.
+Alternatively you can also create a ``DataTree`` object from
 
-This relies on a syntax inspired by unix-like filesystems, where the "path" to a node is specified by the keys of each intermediate node in sequence,
-separated by forward slashes. The root node is referred to by ``"/"``, so the path from our current root node to its grand-child would be ``"/Oak/Bonsai"``.
-A path specified from the root (as opposed to being specified relative to an arbitrary node in the tree) is sometimes also referred to as a
-`"fully qualified name" <https://www.unidata.ucar.edu/blogs/developer/en/entry/netcdf-zarr-data-model-specification#nczarr_fqn>`_.
-
-If we have a dictionary where each key is a valid path, and each value is either valid data or ``None``,
-we can construct a complex tree quickly using the alternative constructor ``:py:func::DataTree.from_dict``:
-
-.. ipython:: python
-
-    d = {
-        "/": xr.Dataset({"foo": "orange"}),
-        "/a": xr.Dataset({"bar": 0}, coords={"y": ("y", [0, 1, 2])}),
-        "/a/b": xr.Dataset({"zed": np.NaN}),
-        "a/c/d": None,
-    }
-    dt = DataTree.from_dict(d)
-    dt
-
-Notice that this method will also create any intermediate empty node necessary to reach the end of the specified path
-(i.e. the node labelled `"c"` in this case.)
-
-Finally the third way is from a file. if you have a file containing data on disk (such as a netCDF file or a Zarr Store), you can also create a datatree by opening the
-file using ``:py:func::~datatree.open_datatree``. See the page on :ref:`reading and writing files <io>` for more details.
+- An ``xarray.Dataset`` using ``Dataset.to_node()`` (not yet implemented),
+- A dictionary mapping directory-like paths to either ``DataTree`` nodes or data, using ``DataTree.from_dict()``,
+- A netCDF or Zarr file on disk with ``open_datatree()``. See :ref:`reading and writing files <io>`.
 
 
 DataTree Contents
 ~~~~~~~~~~~~~~~~~
+
+TODO create this example datatree but without using ``from_dict``
 
 Like ``xarray.Dataset``, ``DataTree`` implements the python mapping interface, but with values given by either ``xarray.DataArray`` objects or other ``DataTree`` objects.
 
@@ -186,8 +170,6 @@ Like with ``Dataset``, you can access the data and coordinate variables of a nod
 
 Dictionary-like methods
 ~~~~~~~~~~~~~~~~~~~~~~~
-
-We can update the contents of the tree in-place using a dictionary-like syntax.
 
 We can update a datatree in-place using Python's standard dictionary syntax, similar to how we can for Dataset objects.
 For example, to create this example datatree from scratch, we could have written:
