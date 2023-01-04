@@ -108,7 +108,7 @@ or by dynamically updating the attributes of one node to refer to another:
 
     # add a second child by first creating a new node ...
     ds3 = xr.Dataset({"zed": np.NaN})
-    node3 = DataTree(name='b', data=ds3)
+    node3 = DataTree(name="b", data=ds3)
     # ... then updating its .parent property
     node3.parent = dt
 
