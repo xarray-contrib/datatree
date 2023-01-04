@@ -124,13 +124,13 @@ We can add Herbert to the family tree without displacing Homer by :py:meth:`~Dat
 
 .. ipython:: python
 
-    herb = DataTree(name="Herb")
-    abe.assign({"Herbert": herb})
+    herbert = DataTree(name="Herb")
+    abe.assign({"Herbert": herbert})
 
 .. note::
    This example shows a minor subtlety - the returned tree has Homer's brother listed as ``"Herbert"``,
    but the original node was named "Herbert". Not only are names overriden when stored as keys like this,
-   but the new node is a copy, so that the original node that was reference is unchanged (i.e. ``herb.name == "Herb"`` still).
+   but the new node is a copy, so that the original node that was reference is unchanged (i.e. ``herbert.name == "Herb"`` still).
    In other words, nodes are copied into trees, not inserted into them.
    This is intentional, and mirrors the behaviour when storing named ``xarray.DataArray`` objects inside datasets.
 
@@ -304,16 +304,15 @@ We can use this with ``__setitem__`` to add a missing entry to our evolutionary 
     primates["../../Two Fenestrae/Crocodiles"] = DataTree()
     print(vertebrates)
 
-Given two nodes in a tree, we can find their relative path:
+Given two nodes in a tree, we can also find their relative path:
 
 .. ipython:: python
-    :okexcept:
 
-    bart.find_relative_path(herbert)
+    bart.relative_to(lisa)
 
-You can use this feature to build a nested tree from a dictionary of filesystem-like paths and corresponding ``xarray.Dataset`` objects in a single step.
+You can use this filepath feature to build a nested tree from a dictionary of filesystem-like paths and corresponding ``xarray.Dataset`` objects in a single step.
 If we have a dictionary where each key is a valid path, and each value is either valid data or ``None``,
-we can construct a complex tree quickly using the alternative constructor :py:meth:`DataTree.from_dict`:
+we can construct a complex tree quickly using the alternative constructor :py:meth:`DataTree.from_dict()`:
 
 .. ipython:: python
 
