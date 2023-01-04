@@ -328,3 +328,76 @@ we can construct a complex tree quickly using the alternative constructor ``:py:
     Notice that using the path-like syntax will also create any intermediate empty nodes necessary to reach the end of the specified path
     (i.e. the node labelled `"c"` in this case.)
     This is to help avoid lots of redundant entries when creating deeply-nested trees using ``.from_dict``.
+
+.. _manipulating trees:
+
+Manipulating Trees
+------------------
+
+Altering Tree Branches
+~~~~~~~~~~~~~~~~~~~~~~
+
+pruning, grafting
+
+Tree of life?
+
+Graft new discoveries onto the tree?
+
+Prune when we realise something is in the wrong place?
+
+Save our updated tree out with ``to_dict``
+
+Subsetting Tree Nodes
+~~~~~~~~~~~~~~~~~~~~~
+
+subset, filter
+
+Filter the Simpsons by age?
+
+Need to first recreate tree with age data in it
+
+.. ipython::
+
+    simpsons.filter(node.age > 18)
+
+leaves are either currently living or died out with no descendants
+Subset only the living leaves of the evolutionary tree?
+
+
+.. _tree computation:
+
+Computation
+-----------
+
+Operations on Trees
+~~~~~~~~~~~~~~~~~~~
+
+Mapping of methods
+
+Arithmetic
+
+cause all Simpsons to age simultaneously
+
+Find total number of species
+Find total biomass
+
+Mapping Custom Functions Over Trees
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.subtree, map_over_subtree
+
+
+.. _multiple trees:
+
+Operating on Multiple Trees
+---------------------------
+
+Comparing trees
+~~~~~~~~~~~~~~~
+
+isomorphism
+
+Mapping over Multiple Trees
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+map_over_subtree with binary function
