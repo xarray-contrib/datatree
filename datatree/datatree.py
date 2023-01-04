@@ -817,7 +817,6 @@ class DataTree(
         vars_merge_result = dataset_update_method(self.to_dataset(), new_variables)
         # TODO are there any subtleties with preserving order of children like this?
         merged_children = OrderedDict(**self.children, **new_children)
-        print(merged_children)
         self._replace(
             inplace=True, children=merged_children, **vars_merge_result._asdict()
         )
@@ -849,8 +848,8 @@ class DataTree(
         Notes
         -----
         Since ``kwargs`` is a dictionary, the order of your arguments may not
-        be preserved, and so the order of the new variables is not well
-        defined. Assigning multiple items within the same ``assign`` is
+        be preserved, and so the order of the new variables is not well-defined.
+        Assigning multiple items within the same ``assign`` is
         possible, but you cannot reference other variables created within the
         same ``assign`` call.
 
@@ -861,10 +860,7 @@ class DataTree(
         """
         items = either_dict_or_kwargs(items, items_kwargs, "assign")
         dt = self.copy()
-        print(dt)
-        print(items)
         dt.update(items)
-        print(dt)
         return dt
 
     def drop_nodes(

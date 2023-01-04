@@ -213,7 +213,7 @@ class TestUpdate:
         print(dt)
         print(dt.children)
         print(dt._children)
-        print(dt['a'])
+        print(dt["a"])
         print(expected)
         dtt.assert_equal(dt, expected)
 
@@ -559,8 +559,6 @@ class TestRestructuring:
 
         # kwargs form
         result = dt.assign(foo=xr.DataArray(0), a=DataTree())
-        print(result)
-        print(expected)
         dtt.assert_equal(result, expected)
 
         # dict form
