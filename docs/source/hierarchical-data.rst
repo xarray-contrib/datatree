@@ -122,15 +122,17 @@ We can see that Homer is aware of his parentage, and we say that Homer and his c
 In episode 28, Abe Simpson reveals that he had another son, Herbert "Herb" Simpson.
 We can add Herbert to the family tree without displacing Homer by ``.assign``-ing another child to Abe:
 
-# TODO write the ``assign`` or ``assign_nodes`` method on ``DataTree`` so that this example works
-
 .. ipython:: python
-    :okexcept:
 
     herb = DataTree(name="Herb")
     abe.assign({"Herbert": herb})
 
-# TODO Name permanence of herb versus herbert (or abe versus abraham)
+.. note::
+   This example shows a minor subtlety - the returned tree has Homer's brother listed as ``"Herbert"``,
+   but the original node was named "Herbert". Not only are names overriden when stored as keys like this,
+   but the new node is a copy, so that the original node that was reference is unchanged (i.e. ``herb.name == "Herb"`` still).
+   In other words, nodes are copied into trees, not inserted into them.
+   This is intentional, and mirrors the behaviour when storing named ``xarray.DataArray`` objects inside datasets.
 
 Certain manipulations of our tree are forbidden, if they would create an inconsistent result.
 In episode 51 of the show Futurama, Philip J. Fry travels back in time and accidentally becomes his own Grandfather.
