@@ -31,9 +31,9 @@ or even any combination of the above.
 
 Often datasets like this cannot easily fit into a single ``xarray.Dataset`` object,
 or are more usefully thought of as groups of related ``xarray.Dataset`` objects.
-For this purpose we provide the ``DataTree`` class.
+For this purpose we provide the :py:class:`DataTree` class.
 
-This page explains in detail how to understand and use the different features of the ``DataTree`` class for your own heirarchical data needs.
+This page explains in detail how to understand and use the different features of the :py:class:`DataTree` class for your own heirarchical data needs.
 
 .. _node relationships:
 
@@ -55,7 +55,7 @@ Let's start by defining nodes representing the two siblings, Bart and Lisa Simps
     bart = DataTree(name="Bart")
     lisa = DataTree(name="Lisa")
 
-Each of these node objects knows their own ``.name``, but they currently have no relationship to one another.
+Each of these node objects knows their own :py:class:`~DataTree.name`, but they currently have no relationship to one another.
 We can connect them by creating another node representing a common parent, Homer Simpson:
 
 .. ipython:: python
@@ -70,13 +70,13 @@ We now have a small family tree
     homer
 
 where we can see how these individual Simpson family members are related to one another.
-The nodes representing Bart and Lisa are now connected - we can confirm their sibling rivalry by examining the ``.siblings`` property:
+The nodes representing Bart and Lisa are now connected - we can confirm their sibling rivalry by examining the :py:class:`~DataTree.siblings` property:
 
 .. ipython:: python
 
     list(bart.siblings)
 
-But oops, we forgot Homer's third daughter, Maggie! Let's add her by updating Homer's ``.children`` property to include her:
+But oops, we forgot Homer's third daughter, Maggie! Let's add her by updating Homer's :py:class:`~DataTree.children` property to include her:
 
 .. ipython:: python
 
@@ -97,14 +97,14 @@ That's good - updating the properties of our nodes does not break the internal c
     the fact that distant relatives can mate makes it a directed acyclic graph.
     Trees of ``DataTree`` objects cannot represent this.
 
-Homer is currently listed as having no parent (the so-called "root node" of this tree), but we can update his ``.parent`` property:
+Homer is currently listed as having no parent (the so-called "root node" of this tree), but we can update his :py:class:`~DataTree.parent` property:
 
 .. ipython:: python
 
     abe = DataTree(name="Abe")
     homer.parent = abe
 
-Abe is now the "root" of this tree, which we can see by examining the ``.root`` property of any node in the tree
+Abe is now the "root" of this tree, which we can see by examining the :py:class:`~DataTree.root` property of any node in the tree
 
 .. ipython:: python
 
@@ -120,7 +120,7 @@ We can see the whole tree by printing Abe's node or just part of the tree by pri
 We can see that Homer is aware of his parentage, and we say that Homer and his children form a "subtree" of the larger Simpson family tree.
 
 In episode 28, Abe Simpson reveals that he had another son, Herbert "Herb" Simpson.
-We can add Herbert to the family tree without displacing Homer by ``.assign``-ing another child to Abe:
+We can add Herbert to the family tree without displacing Homer by :py:meth:`~DataTree.assign`-ing another child to Abe:
 
 .. ipython:: python
 
@@ -136,7 +136,7 @@ We can add Herbert to the family tree without displacing Homer by ``.assign``-in
 
 Certain manipulations of our tree are forbidden, if they would create an inconsistent result.
 In episode 51 of the show Futurama, Philip J. Fry travels back in time and accidentally becomes his own Grandfather.
-If we try similar time-travelling hijinks with Homer, we get a ``InvalidTreeError`` raised:
+If we try similar time-travelling hijinks with Homer, we get a :py:class:`InvalidTreeError` raised:
 
 .. ipython:: python
     :okexcept:
@@ -170,7 +170,7 @@ Let's use a different example of a tree to discuss more complex relationships be
         "/Bony Skeleton/Four Limbs/Amniotic Egg/Two Fenestrae/Dinosaurs"
     ]
 
-We have used the ``.from_dict`` constructor method as an alternate way to quickly create a whole tree,
+We have used the :py:meth:`~DataTree.from_dict` constructor method as an alternate way to quickly create a whole tree,
 and :ref:`filesystem-like syntax <filesystem paths>`_ (to be explained shortly) to select two nodes of interest.
 
 .. ipython:: python
@@ -182,7 +182,7 @@ rather than an evolutionary tree).
 
 Here both the species and the features used to group them are represented by ``DataTree`` node objects - there is no distinction in types of node.
 We can however get a list of only the nodes we used to represent species by using the fact that all those nodes have no children - they are "leaf nodes".
-We can check if a node is a leaf with ``.is_leaf``, and get a list of all leaves with the ``.leaves`` property:
+We can check if a node is a leaf with :py:meth:`~DataTree.is_leaf`, and get a list of all leaves with the :py:class:`~DataTree.leaves` property:
 
 .. ipython:: python
 
@@ -220,7 +220,7 @@ There are various ways to access the different nodes in a tree.
 Properties
 ~~~~~~~~~~
 
-We can navigate trees using the ``.parent`` and ``.children`` properties of each node, for example:
+We can navigate trees using the :py:class:`~DataTree.parent` and :py:class:`~DataTree.children` properties of each node, for example:
 
 .. ipython:: python
 
@@ -232,16 +232,17 @@ Dictionary-like interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Children are stored on each node as a key-value mapping from name to child node.
-They can be accessed and altered via the ``__getitem__`` and ``__setitem__`` syntax.
-In general ``DataTree`` objects support almost the entire set of dict-like methods,
-including ``keys``, ``values``, ``items``, ``__delitem__`` and ``update``.
+They can be accessed and altered via the :py:class:`~DataTree.__getitem__` and :py:class:`~DataTree.__setitem__` syntax.
+In general :py:class:`~DataTree.DataTree` objects support almost the entire set of dict-like methods,
+including :py:meth:`~DataTree.keys`, :py:class:`~DataTree.values`, :py:class:`~DataTree.items`,
+:py:meth:`~DataTree.__delitem__` and :py:meth:`~DataTree.update`.
 
 .. ipython:: python
 
     vertebrates["Bony Skeleton"]["Ray-finned Fish"]
 
 Note that the dict-like interface combines access to child ``DataTree`` nodes and stored ``DataArrays``,
-so if we have a node that contains both children and data, calling ``.keys()`` will list both names of child nodes and
+so if we have a node that contains both children and data, calling :py:meth:`~DataTree.keys` will list both names of child nodes and
 names of data variables:
 
 .. ipython:: python
@@ -270,7 +271,7 @@ Each node is like a directory, and each directory can contain both more sub-dire
 
 .. note::
 
-    You can even make the filesystem analogy concrete by using ``open_mfdatatree`` or ``save_mfdatatree`` # TODO not yet implemented - see GH issue 51
+    You can even make the filesystem analogy concrete by using :py:func:`~DataTree.open_mfdatatree` or :py:func:`~DataTree.save_mfdatatree` # TODO not yet implemented - see GH issue 51
 
 Datatree objects support a syntax inspired by unix-like filesystems,
 where the "path" to a node is specified by the keys of each intermediate node in sequence,
@@ -312,7 +313,7 @@ Given two nodes in a tree, we can find their relative path:
 
 You can use this feature to build a nested tree from a dictionary of filesystem-like paths and corresponding ``xarray.Dataset`` objects in a single step.
 If we have a dictionary where each key is a valid path, and each value is either valid data or ``None``,
-we can construct a complex tree quickly using the alternative constructor ``:py:func::DataTree.from_dict``:
+we can construct a complex tree quickly using the alternative constructor :py:meth:`DataTree.from_dict`:
 
 .. ipython:: python
 
@@ -329,4 +330,4 @@ we can construct a complex tree quickly using the alternative constructor ``:py:
 
     Notice that using the path-like syntax will also create any intermediate empty nodes necessary to reach the end of the specified path
     (i.e. the node labelled `"c"` in this case.)
-    This is to help avoid lots of redundant entries when creating deeply-nested trees using ``.from_dict``.
+    This is to help avoid lots of redundant entries when creating deeply-nested trees using :py:meth:`DataTree.from_dict`.
