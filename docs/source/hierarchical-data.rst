@@ -158,7 +158,6 @@ Let's use a different example of a tree to discuss more complex relationships be
             "/Bony Skeleton/Four Limbs/Amphibians": None,
             "/Bony Skeleton/Four Limbs/Amniotic Egg/Hair/Primates": None,
             "/Bony Skeleton/Four Limbs/Amniotic Egg/Hair/Rodents & Rabbits": None,
-            "/Bony Skeleton/Four Limbs/Amniotic Egg/Two Fenestrae/Crocodiles": None,
             "/Bony Skeleton/Four Limbs/Amniotic Egg/Two Fenestrae/Dinosaurs": None,
             "/Bony Skeleton/Four Limbs/Amniotic Egg/Two Fenestrae/Birds": None,
         },
@@ -267,29 +266,47 @@ Filesystem-like Paths
 Hierarchical trees can be thought of as analogous to file systems.
 Each node is like a directory, and each directory can contain both more sub-directories and data.
 
+.. note::
+
+    You can even make the filesystem analogy concrete by using ``open_mfdatatree`` or ``save_mfdatatree`` # TODO not yet implemented - see GH issue 51
+
 Datatree objects support a syntax inspired by unix-like filesystems,
 where the "path" to a node is specified by the keys of each intermediate node in sequence,
 separated by forward slashes.
+This is an extension of the conventional dictionary ``__getitem__`` syntax to allow navigation across multiple levels of the tree.
+
+Like with filepaths, paths within the tree can either be relative to the current node, e.g.
 
 .. ipython:: python
 
     abe["Homer/Bart"].name
+    abe["./Homer/Bart"].name  # alternative syntax
 
+or relative to the root node.
+A path specified from the root (as opposed to being specified relative to an arbitrary node in the tree) is sometimes also referred to as a
+`"fully qualified name" <https://www.unidata.ucar.edu/blogs/developer/en/entry/netcdf-zarr-data-model-specification#nczarr_fqn>`_,
+or as an "absolute path".
 The root node is referred to by ``"/"``, so the path from the root node to its grand-child would be ``"/child/grandchild"``, e.g.
 
-EXAMPLE of path from root
+.. ipython:: python
 
-A path specified from the root (as opposed to being specified relative to an arbitrary node in the tree) is sometimes also referred to as a
-`"fully qualified name" <https://www.unidata.ucar.edu/blogs/developer/en/entry/netcdf-zarr-data-model-specification#nczarr_fqn>`_.
+    # absolute path will start from root node
+    lisa["/Homer/Bart"].name
 
-file-like access via paths
+Relative paths between nodes also support the ``"../"`` syntax to mean the parent of the current node.
+We can use this with ``__setitem__`` to add a missing entry to our evolutionary tree, but add it relative to a more familiar node of interest:
 
-set something using a relative path
+.. ipython:: python
 
-example of finding relative path, from bart to herbert?
+    primates["../../Two Fenestrae/Crocodiles"] = DataTree()
+    print(vertebrates)
 
+Given two nodes in a tree, we can find their relative path:
 
-Create a node with intermediates via ``__setitem__``
+.. ipython:: python
+    :okexcept:
+
+    bart.find_relative_path(herbert)
 
 You can use this feature to build a nested tree from a dictionary of filesystem-like paths and corresponding ``xarray.Dataset`` objects in a single step.
 If we have a dictionary where each key is a valid path, and each value is either valid data or ``None``,
@@ -306,13 +323,11 @@ we can construct a complex tree quickly using the alternative constructor ``:py:
     dt = DataTree.from_dict(d)
     dt
 
-Notice that this method will also create any intermediate empty node necessary to reach the end of the specified path
-(i.e. the node labelled `"c"` in this case.)
-
 .. note::
 
-    You can even make the filesystem analogy concrete by using ``open_mfdatatree`` or ``save_mfdatatree`` # TODO not yet implemented - see GH issue 51
-
+    Notice that using the path-like syntax will also create any intermediate empty nodes necessary to reach the end of the specified path
+    (i.e. the node labelled `"c"` in this case.)
+    This is to help avoid lots of redundant entries when creating deeply-nested trees using ``.from_dict``.
 
 .. _manipulating trees:
 
@@ -340,6 +355,10 @@ subset, filter
 Filter the Simpsons by age?
 
 Need to first recreate tree with age data in it
+
+.. ipython::
+
+    simpsons.filter(node.age > 18)
 
 leaves are either currently living or died out with no descendants
 Subset only the living leaves of the evolutionary tree?
