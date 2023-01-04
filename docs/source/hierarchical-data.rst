@@ -172,6 +172,10 @@ Let's use a different example of a tree to discuss more complex relationships be
 We have used the ``.from_dict`` constructor method as an alternate way to quickly create a whole tree,
 and :ref:`filesystem-like syntax <filesystem paths>`_ (to be explained shortly) to select two nodes of interest.
 
+.. ipython:: python
+
+    vertebrates
+
 This tree shows various families of species, grouped by their common features (making it technically a `"Cladogram" <https://en.wikipedia.org/wiki/Cladogram>`_,
 rather than an evolutionary tree).
 
@@ -180,7 +184,6 @@ We can however get a list of only the nodes we used to represent species by usin
 We can check if a node is a leaf with ``.is_leaf``, and get a list of all leaves with the ``.leaves`` property:
 
 .. ipython:: python
-    :okexcept:
 
     primates.is_leaf
     [node.name for node in vertebrates.leaves]
@@ -227,24 +230,29 @@ but there are also more convenient ways to access nodes.
 Dictionary-like interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Children are stored on each node as a key-value mapping from name to child node or variable.
+Children are stored on each node as a key-value mapping from name to child node.
 They can be accessed and altered via the ``__getitem__`` and ``__setitem__`` syntax.
 In general ``DataTree`` objects support almost the entire set of dict-like methods,
 including ``keys``, ``values``, ``items``, ``__delitem__`` and ``update``.
 
-Note that the dict-like interface combines access to child ``DataTree`` nodes and stored ``DataArray``s,
+.. ipython:: python
+
+   vertebrates["Bony Skeleton"]["Ray-finned Fish"]
+
+Note that the dict-like interface combines access to child ``DataTree`` nodes and stored ``DataArrays``,
 so if we have a node that contains both children and data, calling ``.keys()`` will list both names of child nodes and
 names of data variables:
 
 .. ipython:: python
 
-    dt = DataTree.from_dict(
-        {"/": xr.Dataset({"foo": 0, "bar": 1}), "/a": None, "/b": None}
+    dt = DataTree(
+        data=xr.Dataset({"foo": 0, "bar": 1}),
+        children={"a": DataTree(), "b": DataTree()}
     )
     print(dt)
     list(dt.keys())
 
-This means that the names of variables and of child nodes must be different to one another.
+This also means that the names of variables and of child nodes must be different to one another.
 
 Attribute-like access
 ~~~~~~~~~~~~~~~~~~~~~
