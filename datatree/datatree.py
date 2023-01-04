@@ -769,7 +769,6 @@ class DataTree(
 
             self.update({key: val})
 
-
     def __setitem__(
         self,
         key: str,
