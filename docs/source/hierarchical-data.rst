@@ -236,7 +236,7 @@ including ``keys``, ``values``, ``items``, ``__delitem__`` and ``update``.
 
 .. ipython:: python
 
-   vertebrates["Bony Skeleton"]["Ray-finned Fish"]
+    vertebrates["Bony Skeleton"]["Ray-finned Fish"]
 
 Note that the dict-like interface combines access to child ``DataTree`` nodes and stored ``DataArrays``,
 so if we have a node that contains both children and data, calling ``.keys()`` will list both names of child nodes and
@@ -246,7 +246,7 @@ names of data variables:
 
     dt = DataTree(
         data=xr.Dataset({"foo": 0, "bar": 1}),
-        children={"a": DataTree(), "b": DataTree()}
+        children={"a": DataTree(), "b": DataTree()},
     )
     print(dt)
     list(dt.keys())
