@@ -118,7 +118,7 @@ Our tree now has three nodes within it:
 
     dt
 
-Is is at tree construction time that consistency checks are enforced. For instance, if we try to create a `cycle` the constructor will raise an error:
+It is at tree construction time that consistency checks are enforced. For instance, if we try to create a `cycle` the constructor will raise an error:
 
 .. ipython:: python
     :okexcept:

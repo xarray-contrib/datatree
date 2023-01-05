@@ -39,6 +39,8 @@ Breaking changes
   By `Tom Nicholas <https://github.com/TomNicholas>`_.
 - Grafting a subtree onto another tree now leaves name of original subtree object unchanged (:issue:`116`, :pull:`172`, :pull:`178`).
   By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Changed the :py:meth:`DataTree.assign` method to just work on the local node (:pull:`181`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 
 Deprecations
 ~~~~~~~~~~~~
@@ -55,6 +57,8 @@ Documentation
 - Changed docs theme to match xarray's main documentation. (:pull:`173`)
   By `Tom Nicholas <https://github.com/TomNicholas>`_.
 - Added ``Terminology`` page. (:pull:`174`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Added page on ``Working with Hierarchical Data`` (:pull:`179`)
   By `Tom Nicholas <https://github.com/TomNicholas>`_.
 
 Internal Changes
