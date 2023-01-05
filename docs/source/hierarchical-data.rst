@@ -359,9 +359,9 @@ Filter the Simpsons by age?
 Need to first recreate tree with age data in it
 
 .. ipython:: python
-   :okexcept:
+    :okexcept:
 
-   simpsons.filter(node.age > 18)
+    simpsons.filter(node.age > 18)
 
 leaves are either currently living or died out with no descendants
 Subset only the living leaves of the evolutionary tree?
