@@ -361,9 +361,32 @@ Filter the Simpsons by age?
 Need to first recreate tree with age data in it
 
 .. ipython:: python
-    :okexcept:
 
-    simpsons.filter(node.age > 18)
+    simpsons = DataTree.from_dict(
+        d={
+            "/": xr.Dataset({"age": 83}),
+            "/Herbert": xr.Dataset({"age": 40}),
+            "/Homer": xr.Dataset({"age": 39}),
+            "/Homer/Bart": xr.Dataset({"age": 10}),
+            "/Homer/Lisa": xr.Dataset({"age": 8}),
+            "/Homer/Maggie": xr.Dataset({"age": 1}),
+        },
+        name="Abe",
+    )
+    simpsons
+
+.. ipython:: python
+
+    def filter(dt, filterfunc):
+        filtered_nodes = {node.path: node.ds for node in dt.subtree if filterfunc(node)}
+        return DataTree.from_dict(filtered_nodes, name=dt.root.name)
+
+.. ipython:: python
+
+    filter(simpsons, lambda node: node["age"] > 18)
+
+
+
 
 leaves are either currently living or died out with no descendants
 Subset only the living leaves of the evolutionary tree?
