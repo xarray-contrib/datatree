@@ -338,8 +338,8 @@ we can construct a complex tree quickly using the alternative constructor :py:me
 Manipulating Trees
 ------------------
 
-Altering Tree Branches
-~~~~~~~~~~~~~~~~~~~~~~
+Moving Tree Branches
+~~~~~~~~~~~~~~~~~~~~
 
 pruning, grafting
 
@@ -354,11 +354,11 @@ Save our updated tree out with ``to_dict``
 Subsetting Tree Nodes
 ~~~~~~~~~~~~~~~~~~~~~
 
-subset, filter
+We can subset our tree to select only nodes of interest in various ways.
 
-Filter the Simpsons by age?
-
-Need to first recreate tree with age data in it
+The :py:meth:`DataTree.filter` method can be used to retain only the nodes of a tree that meet a certain condition.
+For example, we could recreate the Simpson's family tree with the ages of each individual, then filter for only the adults:
+First lets recreate the tree but with an `age` data variable in every node:
 
 .. ipython:: python
 
@@ -375,13 +375,21 @@ Need to first recreate tree with age data in it
     )
     simpsons
 
+Now let's filter out the minors:
+
 .. ipython:: python
 
     simpsons.filter(lambda node: node["age"] > 18)
 
+The result is a new tree, containing only the nodes matching the condition.
 
 leaves are either currently living or died out with no descendants
 Subset only the living leaves of the evolutionary tree?
+
+Collapsing Subtrees
+~~~~~~~~~~~~~~~~~~~
+
+Merge all nodes in one subtree into a single dataset
 
 .. _tree computation:
 
