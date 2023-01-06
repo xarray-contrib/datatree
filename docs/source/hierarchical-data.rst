@@ -413,6 +413,17 @@ Mapping Custom Functions Over Trees
 
 .subtree, map_over_subtree
 
+.. ipython:: python
+
+    def fast_forward(ds: xr.Dataset, years: float) -> xr.Dataset:
+        """Add some years to the age"""
+        new_ds = ds.copy()
+        new_ds["age"] = ds["age"] + years
+        return new_ds
+
+.. ipython:: python
+
+    simpsons.map_over_subtree(fast_forward, years=10)
 
 .. _multiple trees:
 
