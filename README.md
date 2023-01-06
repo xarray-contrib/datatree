@@ -16,7 +16,6 @@ but `datatree.DataTree` objects have many other uses.
 
 ### Why Datatree?
 
-
 You might want to use datatree for:
 
 - Organising many related datasets, e.g. results of the same experiment with different parameters, or simulations of the same system using different models,
@@ -24,6 +23,7 @@ You might want to use datatree for:
 - Comparing heterogenous but related data, such as experimental and theoretical data,
 - I/O with nested data formats such as netCDF / Zarr groups.
 
+### Features
 
 The approach used here is based on benbovy's [`DatasetNode` example](https://gist.github.com/benbovy/92e7c76220af1aaa4b3a0b65374e233a) - the basic idea is that each tree node wraps a up to a single `xarray.Dataset`. The differences are that this effort:
 - Uses a node structure inspired by [anytree](https://github.com/xarray-contrib/datatree/issues/7) for the tree,
