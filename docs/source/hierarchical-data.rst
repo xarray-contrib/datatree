@@ -1,3 +1,5 @@
+.. currentmodule:: datatree
+
 .. _hierarchical-data:
 
 Working With Hierarchical Data
