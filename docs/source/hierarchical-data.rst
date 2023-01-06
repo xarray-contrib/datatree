@@ -377,15 +377,7 @@ Need to first recreate tree with age data in it
 
 .. ipython:: python
 
-    def filter(dt, filterfunc):
-        filtered_nodes = {node.path: node.ds for node in dt.subtree if filterfunc(node)}
-        return DataTree.from_dict(filtered_nodes, name=dt.root.name)
-
-.. ipython:: python
-
-    filter(simpsons, lambda node: node["age"] > 18)
-
-
+    simpsons.filter(lambda node: node["age"] > 18)
 
 
 leaves are either currently living or died out with no descendants
