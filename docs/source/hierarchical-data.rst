@@ -333,6 +333,13 @@ we can construct a complex tree quickly using the alternative constructor :py:me
     (i.e. the node labelled `"c"` in this case.)
     This is to help avoid lots of redundant entries when creating deeply-nested trees using :py:meth:`DataTree.from_dict`.
 
+Iterating over trees
+~~~~~~~~~~~~~~~~~~~~
+
+for loops over ``.subtree``
+rebuilding trees using ``.subtree``, ``.path``, and ``.from_dict``
+
+
 .. _manipulating trees:
 
 Manipulating Trees
