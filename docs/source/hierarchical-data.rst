@@ -175,7 +175,7 @@ Let's use a different example of a tree to discuss more complex relationships be
     ]
 
 We have used the :py:meth:`~DataTree.from_dict` constructor method as an alternate way to quickly create a whole tree,
-and :ref:`filesystem-like syntax <filesystem paths>`_ (to be explained shortly) to select two nodes of interest.
+and :ref:`filesystem paths` (to be explained shortly) to select two nodes of interest.
 
 .. ipython:: python
 
@@ -335,12 +335,34 @@ we can construct a complex tree quickly using the alternative constructor :py:me
     (i.e. the node labelled `"c"` in this case.)
     This is to help avoid lots of redundant entries when creating deeply-nested trees using :py:meth:`DataTree.from_dict`.
 
+.. _iterating over trees:
+
 Iterating over trees
 ~~~~~~~~~~~~~~~~~~~~
 
-for loops over ``.subtree``
-rebuilding trees using ``.subtree``, ``.path``, and ``.from_dict``
+You can iterate over every node in a tree using the subtree :py:class:`~DataTree.subtree` property.
+This returns an iterable of nodes, which yields them in depth-first order.
 
+.. ipython:: python
+
+    for node in vertebrates.subtree:
+        print(node.path)
+
+A very useful pattern is to use :py:class:`~DataTree.subtree` conjunction with the :py:class:`~DataTree.path` property to manipulate the nodes however you wish,
+then rebuild a new tree using :py:meth:`DataTree.from_dict()`.
+
+For example, we could keep only the nodes containing data by looping over all nodes,
+checking if they contain any data using :py:class:`~DataTree.has_data`,
+then rebuilding a new tree using only the paths of those nodes:
+
+.. ipython:: python
+
+    non_empty_nodes = {node.path: node.ds for node in dt.subtree if node.has_data}
+    DataTree.from_dict(non_empty_nodes)
+
+You can see this tree is similar to the ``dt`` object above, except that it is missing the empty nodes ``a/c`` and ``a/c/d``.
+
+(If you want to keep the name of the root node, you will need to add the ``name`` kwarg to :py:class:`from_dict`, i.e. ``DataTree.from_dict(non_empty_nodes, name=dt.root.name)``.)
 
 .. _manipulating trees:
 
@@ -359,6 +381,9 @@ Graft new discoveries onto the tree?
 Prune when we realise something is in the wrong place?
 
 Save our updated tree out with ``to_dict``
+
+leaves are either currently living or died out with no descendants
+Subset only the living leaves of the evolutionary tree?
 
 Subsetting Tree Nodes
 ~~~~~~~~~~~~~~~~~~~~~
@@ -392,8 +417,8 @@ Now let's filter out the minors:
 
 The result is a new tree, containing only the nodes matching the condition.
 
-leaves are either currently living or died out with no descendants
-Subset only the living leaves of the evolutionary tree?
+(Yes, under the hood :py:meth:`~DataTree.filter` is just syntactic sugar for the pattern we showed you in :ref:`iterating over trees` !)
+
 
 Collapsing Subtrees
 ~~~~~~~~~~~~~~~~~~~
@@ -420,7 +445,7 @@ Find total biomass
 Mapping Custom Functions Over Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.subtree, map_over_subtree
+map_over_subtree
 
 .. ipython:: python
 
