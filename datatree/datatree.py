@@ -1350,7 +1350,7 @@ class DataTree(
 
     def load(self: T_DataTree, **kwargs) -> T_DataTree:
         """Manually trigger loading of the data referenced by this collection.
-        
+
         End-users generally shouldn't need to call this method directly, since
         most operations should dispatch to the underlying xarray objects which
         this collection contains. There may be use cases where a user wants to
@@ -1366,24 +1366,21 @@ class DataTree(
         dask.compute
         """
         # new_tree = self._copy_node(deep=deep)
-        # for node in self.subtree: 
+        # for node in self.subtree:
         #     new_tree[node.path] = op(node)
-        
+
         # return new_tree
 
         # d = {node.path: op(node) for node in self.subtree}
         # return DataTree.from_dict(d, name=self.root.name)
 
-        new_datatree_dict = {
-            node.path: node.ds.load(**kwargs)
-            for node in self.subtree
-        }
+        new_datatree_dict = {node.path: node.ds.load(**kwargs) for node in self.subtree}
         return DataTree.from_dict(new_datatree_dict)
 
     def compute(self: T_DataTree, **kwargs) -> T_DataTree:
         """Manually trigger loading of the data referenced by this collection
         and return a new DataTree. The original is left unaltered.
-        
+
         End-users generally shouldn't need to call this method directly, since
         most operations should dispatch to the underlying xarray objects which
         this collection contains. There may be use cases where a user needs to
@@ -1403,7 +1400,7 @@ class DataTree(
 
     def persist(self: T_DataTree, **kwargs) -> T_DataTree:
         """Trigger computation in constituent dask arrays.
-        
+
         Force any data contained in dask arrays to be loaded into memory, where
         possible, but keep the data as dask arrays. This is useful when
         operating on data with a distributed cluster; if you're using a single
@@ -1420,8 +1417,7 @@ class DataTree(
         dask.persist
         """
         new_datatree_dict = {
-            node.path: node.ds.persist(**kwargs)
-            for node in self.subtree
+            node.path: node.ds.persist(**kwargs) for node in self.subtree
         }
         return DataTree.from_dict(new_datatree_dict)
 
@@ -1432,23 +1428,15 @@ class DataTree(
         # here. ``xarray.Dataset`` implements a method that accomplishes this,
         # and ``DataTree`` is just fundamentally defining relationships between
         # these ``Dataset``s. So here we re-use the ``Dataset`` tokenization and
-        # incorporate the ancestry as an additional component (encoded in the 
+        # incorporate the ancestry as an additional component (encoded in the
         # names of the datasets).
 
-        ds_tokens = {
-            node.path: node.ds.__dask_tokenize__()
-            for node in self.subtree
-        }
+        ds_tokens = {node.path: node.ds.__dask_tokenize__() for node in self.subtree}
 
-        return normalize_token(
-            (type(self), ds_tokens)
-        )
-    
+        return normalize_token((type(self), ds_tokens))
+
     def __dask_graph__(self):
-        graphs = {
-            node.path: node.ds.__dask_graph__()
-            for node in self.subtree
-        }
+        graphs = {node.path: node.ds.__dask_graph__() for node in self.subtree}
         graphs = {k: v for k, v in graphs.items() if v is not None}
 
         if not graphs:
@@ -1464,10 +1452,7 @@ class DataTree(
                 return sharedict.merge(*graphs.values())
 
     def __dask_keys__(self):
-        return [
-            node.ds.__dask_keys__()
-            for node in self.subtree
-        ]
+        return [node.ds.__dask_keys__() for node in self.subtree]
 
     def __dask_layers__(self):
         all_keys = self.__dask_keys__()
@@ -1489,9 +1474,10 @@ class DataTree(
         return self._dask_postcompute, ()
 
     def _dask_postcompute(
-        self: T_DataTree, results: Iterable[DatasetView]) -> T_DataTree:
+        self: T_DataTree, results: Iterable[DatasetView]
+    ) -> T_DataTree:
         from dask import is_dask_collection
-        
+
         datatree_nodes = {}
         results_iter = iter(results)
 
@@ -1499,12 +1485,12 @@ class DataTree(
             if is_dask_collection(node.ds):
                 finalize, args = node.ds.__dask_postcompute__()
                 # darothen: Are we sure that results_iter is ordered the same as
-                # self.subtree? 
+                # self.subtree?
                 ds = finalize(next(results_iter), *args)
             else:
                 ds = node.ds
             datatree_nodes[node.path] = ds
-        
+
         # We use this to avoid validation at time of object creation
         new_root = datatree_nodes[self.path]
         return type(self)._construct_direct(
@@ -1517,12 +1503,12 @@ class DataTree(
             new_root._name,
             new_root._parent,
             new_root._children,
-            new_root._close
+            new_root._close,
         )
 
     def __dask_postpersist__(self):
         return self._dask_postpersist, ()
-    
+
     def _dask_postpersist(
         self: T_DataTree, dsk: Mapping, *, rename: Mapping[str, str] | None = None
     ) -> T_DataTree:
@@ -1536,7 +1522,7 @@ class DataTree(
             if not is_dask_collection(node):
                 datatree_nodes[node.path] = node.ds
                 continue
-            
+
             if isinstance(dsk, HighLevelGraph):
                 # NOTE(darothen): Implementation based on xarray.Dataset._dask_postpersist(),
                 # so we preserve the implementation note for future refinement
@@ -1550,34 +1536,35 @@ class DataTree(
                 if rename:
                     layers = [rename.get(k, k) for k in layers]
                 dsk2 = dsk.cull_layers(layers)
-            elif rename: # pragma: nocover
+            elif rename:  # pragma: nocover
                 # NOTE(darothen): Similar to above we preserve the implementation
                 # note.
                 # replace_name_in_key requires dask >= 2021.3.
                 from dask.base import flatten, replace_name_in_key
 
                 keys = [
-                    replace_name_in_key(k, rename) for k in flatten(node.__dask_keys__())
+                    replace_name_in_key(k, rename)
+                    for k in flatten(node.__dask_keys__())
                 ]
                 dsk2, _ = cull(dsk, keys)
             else:
                 # __dask_postpersist__() was called by dask.{optimize,persist}
                 dsk2, _ = cull(dsk, node.__dask_keys__())
-            
+
             finalize, args = node.__dask_postpersist__()
             kwargs = {"rename": rename} if rename else {}
             datatree_nodes[node.path] = finalize(dsk2, *args, **kwargs)
 
         new_root = datatree_nodes[self.path]
         return type(self)._construct_direct(
-                    new_root.ds._variables,
-                    new_root.ds._coord_names,
-                    new_root.ds._dims,
-                    new_root.ds._attrs,
-                    new_root.ds._indexes,
-                    new_root.ds._encoding,
-                    new_root._name,
-                    new_root._parent,
-                    new_root._children,
-                    new_root._close
-                )
+            new_root.ds._variables,
+            new_root.ds._coord_names,
+            new_root.ds._dims,
+            new_root.ds._attrs,
+            new_root.ds._indexes,
+            new_root.ds._encoding,
+            new_root._name,
+            new_root._parent,
+            new_root._children,
+            new_root._close,
+        )
