@@ -1365,16 +1365,10 @@ class DataTree(
         --------
         dask.compute
         """
-        # new_tree = self._copy_node(deep=deep)
-        # for node in self.subtree:
-        #     new_tree[node.path] = op(node)
-
-        # return new_tree
-
-        # d = {node.path: op(node) for node in self.subtree}
-        # return DataTree.from_dict(d, name=self.root.name)
-
-        new_datatree_dict = {node.path: node.ds.load(**kwargs) for node in self.subtree}
+        new_datatree_dict = {
+            node.path: node.ds.load(**kwargs)
+            for node in self.subtree
+        }
         return DataTree.from_dict(new_datatree_dict)
 
     def compute(self: T_DataTree, **kwargs) -> T_DataTree:
