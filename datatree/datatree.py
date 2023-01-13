@@ -1410,7 +1410,6 @@ class DataTree(
         """
         new_datatree_dict = {
             node.path: node.ds.persist(**kwargs) for node in self.subtree
-            node.path: node.ds.persist(**kwargs) for node in self.subtree
         }
         return DataTree.from_dict(new_datatree_dict)
 
@@ -1475,7 +1474,6 @@ class DataTree(
     def _dask_postcompute(self: DataTree, results: Iterable[DatasetView]) -> DataTree:
         from dask import is_dask_collection
 
-
         datatree_nodes = {}
         results_iter = iter(results)
 
@@ -1490,7 +1488,6 @@ class DataTree(
                 ds = node.ds
             datatree_nodes[node.path] = ds
 
-
         # We use this to avoid validation at time of object creation
         new_root = datatree_nodes[self.path]
         return type(self)._construct_direct(
@@ -1504,12 +1501,10 @@ class DataTree(
             new_root._parent,
             new_root._children,
             new_root._close,
-            new_root._close,
         )
 
     def __dask_postpersist__(self):
         return self._dask_postpersist, ()
-
 
     def _dask_postpersist(
         self: DataTree, dsk: Mapping, *, rename: Mapping[str, str] | None = None
@@ -1525,7 +1520,6 @@ class DataTree(
                 datatree_nodes[node.path] = node.ds
                 continue
 
-
             if isinstance(dsk, HighLevelGraph):
                 # NOTE(darothen): Implementation based on xarray.Dataset._dask_postpersist(),
                 # so we preserve the implementation note for future refinement
@@ -1540,7 +1534,6 @@ class DataTree(
                     layers = [rename.get(k, k) for k in layers]
                 dsk2 = dsk.cull_layers(layers)
             elif rename:  # pragma: nocover
-            elif rename:  # pragma: nocover
                 # NOTE(darothen): Similar to above we preserve the implementation
                 # note.
                 # replace_name_in_key requires dask >= 2021.3.
@@ -1549,14 +1542,11 @@ class DataTree(
                 keys = [
                     replace_name_in_key(k, rename)
                     for k in flatten(node.__dask_keys__())
-                    replace_name_in_key(k, rename)
-                    for k in flatten(node.__dask_keys__())
                 ]
                 dsk2, _ = cull(dsk, keys)
             else:
                 # __dask_postpersist__() was called by dask.{optimize,persist}
                 dsk2, _ = cull(dsk, node.__dask_keys__())
-
 
             finalize, args = node.__dask_postpersist__()
             kwargs = {"rename": rename} if rename else {}
@@ -1564,18 +1554,6 @@ class DataTree(
 
         new_root = datatree_nodes[self.path]
         return type(self)._construct_direct(
-            new_root.ds._variables,
-            new_root.ds._coord_names,
-            new_root.ds._dims,
-            new_root.ds._attrs,
-            new_root.ds._indexes,
-            new_root.ds._encoding,
-            new_root._name,
-            new_root._parent,
-            new_root._children,
-            new_root._close,
-        )
-
             new_root.ds._variables,
             new_root.ds._coord_names,
             new_root.ds._dims,
