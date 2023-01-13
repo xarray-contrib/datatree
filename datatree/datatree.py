@@ -1348,7 +1348,6 @@ class DataTree(
     def plot(self):
         raise NotImplementedError
 
-
     def load(self: T_DataTree, **kwargs) -> T_DataTree:
         """Manually trigger loading of the data referenced by this collection.
         
@@ -1381,7 +1380,6 @@ class DataTree(
         }
         return DataTree.from_dict(new_datatree_dict)
 
-
     def compute(self: T_DataTree, **kwargs) -> T_DataTree:
         """Manually trigger loading of the data referenced by this collection
         and return a new DataTree. The original is left unaltered.
@@ -1402,7 +1400,6 @@ class DataTree(
         """
         new = self.copy(deep=False)
         return new.load(**kwargs)
-
 
     def persist(self: T_DataTree, **kwargs) -> T_DataTree:
         """Trigger computation in constituent dask arrays.
@@ -1427,6 +1424,33 @@ class DataTree(
             for node in self.subtree
         }
         return DataTree.from_dict(new_datatree_dict)
+
+    def __dask_tokenize__(self):
+        raise NotImplementedError
+
+    def __dask_graph__(self):
+        raise NotImplementedError
+
+    def __dask_keys__(self):
+        raise NotImplementedError
+
+    def __dask_layers__(self):
+        raise NotImplementedError
+
+    @property
+    def __dask_optimize__(self):
+        raise NotImplementedError
+
+    @property
+    def __dask_scheduler__(self):
+        raise NotImplementedError
+
+    def __dask_postcompute__(self):
+        raise NotImplementedError
+
+    def __dask_postpersist__(self):
+        raise NotImplementedError
+
 
 
         
