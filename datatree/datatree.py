@@ -18,6 +18,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    TypeVar,
     Union,
     overload,
 )
@@ -62,6 +63,7 @@ if TYPE_CHECKING:
 
 
 T_Path = Union[str, NodePath]
+T_DataTree = TypeVar("T_DataTree", bound="DataTree")
 
 
 def _coerce_to_dataset(data: Dataset | DataArray | None) -> Dataset:
@@ -1345,3 +1347,86 @@ class DataTree(
 
     def plot(self):
         raise NotImplementedError
+
+
+    def load(self: T_DataTree, **kwargs) -> T_DataTree:
+        """Manually trigger loading of the data referenced by this collection.
+        
+        End-users generally shouldn't need to call this method directly, since
+        most operations should dispatch to the underlying xarray objects which
+        this collection contains. There may be use cases where a user wants to
+        eagerly load data from disk into memory.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Additional keyword arguments passed on to ``dask.compute``.
+
+        See Also
+        --------
+        dask.compute
+        """
+        # new_tree = self._copy_node(deep=deep)
+        # for node in self.subtree: 
+        #     new_tree[node.path] = op(node)
+        
+        # return new_tree
+
+        # d = {node.path: op(node) for node in self.subtree}
+        # return DataTree.from_dict(d, name=self.root.name)
+
+        new_datatree_dict = {
+            node.path: node.ds.load(**kwargs)
+            for node in self.subtree
+        }
+        return DataTree.from_dict(new_datatree_dict)
+
+
+    def compute(self: T_DataTree, **kwargs) -> T_DataTree:
+        """Manually trigger loading of the data referenced by this collection
+        and return a new DataTree. The original is left unaltered.
+        
+        End-users generally shouldn't need to call this method directly, since
+        most operations should dispatch to the underlying xarray objects which
+        this collection contains. There may be use cases where a user needs to
+        work with many file objects on disk.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Additional keyword arguments passed on to ``dask.compute``.
+
+        See Also
+        --------
+        dask.compute
+        """
+        new = self.copy(deep=False)
+        return new.load(**kwargs)
+
+
+    def persist(self: T_DataTree, **kwargs) -> T_DataTree:
+        """Trigger computation in constituent dask arrays.
+        
+        Force any data contained in dask arrays to be loaded into memory, where
+        possible, but keep the data as dask arrays. This is useful when
+        operating on data with a distributed cluster; if you're using a single
+        machine with a single pool of memory, consider using ``.compute()``
+        instead.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Additional keyword arguments passed to ``dask.persist``.
+
+        See Also
+        --------
+        dask.persist
+        """
+        new_datatree_dict = {
+            node.path: node.ds.persist(**kwargs)
+            for node in self.subtree
+        }
+        return DataTree.from_dict(new_datatree_dict)
+
+
+        
