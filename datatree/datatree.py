@@ -1486,11 +1486,98 @@ class DataTree(
         return da.Array.__dask_scheduler__
 
     def __dask_postcompute__(self):
-        raise NotImplementedError
+        return self._dask_postcompute, ()
+
+    def _dask_postcompute(
+        self: T_DataTree, results: Iterable[DatasetView]) -> T_DataTree:
+        from dask import is_dask_collection
+        
+        datatree_nodes = {}
+        results_iter = iter(results)
+
+        for node in self.subtree:
+            if is_dask_collection(node.ds):
+                finalize, args = node.ds.__dask_postcompute__()
+                # darothen: Are we sure that results_iter is ordered the same as
+                # self.subtree? 
+                ds = finalize(next(results_iter), *args)
+            else:
+                ds = node.ds
+            datatree_nodes[node.path] = ds
+        
+        # We use this to avoid validation at time of object creation
+        new_root = datatree_nodes[self.path]
+        return type(self)._construct_direct(
+            new_root.ds._variables,
+            new_root.ds._coord_names,
+            new_root.ds._dims,
+            new_root.ds._attrs,
+            new_root.ds._indexes,
+            new_root.ds._encoding,
+            new_root._name,
+            new_root._parent,
+            new_root._children,
+            new_root._close
+        )
 
     def __dask_postpersist__(self):
-        raise NotImplementedError
+        return self._dask_postpersist, ()
+    
+    def _dask_postpersist(
+        self: T_DataTree, dsk: Mapping, *, rename: Mapping[str, str] | None = None
+    ) -> T_DataTree:
+        from dask import is_dask_collection
+        from dask.highlevelgraph import HighLevelGraph
+        from dask.optimization import cull
 
+        datatree_nodes = {}
 
+        for node in self.subtree:
+            if not is_dask_collection(node):
+                datatree_nodes[node.path] = node.ds
+                continue
+            
+            if isinstance(dsk, HighLevelGraph):
+                # NOTE(darothen): Implementation based on xarray.Dataset._dask_postpersist(),
+                # so we preserve the implementation note for future refinement
+                # TODO: Pin minimum dask version and ensure that can remove this
+                # note.
+                # dask >= 2021.3
+                # __dask_postpersist__() was called by dask.highlevelgraph.
+                # Don't use dsk.cull(), as we need to prevent partial layers:
+                # https://github.com/dask/dask/issues/7137
+                layers = node.__dask_layers__()
+                if rename:
+                    layers = [rename.get(k, k) for k in layers]
+                dsk2 = dsk.cull_layers(layers)
+            elif rename: # pragma: nocover
+                # NOTE(darothen): Similar to above we preserve the implementation
+                # note.
+                # replace_name_in_key requires dask >= 2021.3.
+                from dask.base import flatten, replace_name_in_key
 
-        
+                keys = [
+                    replace_name_in_key(k, rename) for k in flatten(node.__dask_keys__())
+                ]
+                dsk2, _ = cull(dsk, keys)
+            else:
+                # __dask_postpersist__() was called by dask.{optimize,persist}
+                dsk2, _ = cull(dsk, node.__dask_keys__())
+            
+            finalize, args = node.__dask_postpersist__()
+            kwargs = {"rename": rename} if rename else {}
+            datatree_nodes[node.path] = finalize(dsk2, *args, **kwargs)
+
+        new_root = datatree_nodes[self.path]
+        return type(self)._construct_direct(
+                    new_root.ds._variables,
+                    new_root.ds._coord_names,
+                    new_root.ds._dims,
+                    new_root.ds._attrs,
+                    new_root.ds._indexes,
+                    new_root.ds._encoding,
+                    new_root._name,
+                    new_root._parent,
+                    new_root._children,
+                    new_root._close
+                )
