@@ -1426,24 +1426,64 @@ class DataTree(
         return DataTree.from_dict(new_datatree_dict)
 
     def __dask_tokenize__(self):
-        raise NotImplementedError
+        from dask.base import normalize_token
 
+        # This method should return a value fully representative of the object
+        # here. ``xarray.Dataset`` implements a method that accomplishes this,
+        # and ``DataTree`` is just fundamentally defining relationships between
+        # these ``Dataset``s. So here we re-use the ``Dataset`` tokenization and
+        # incorporate the ancestry as an additional component (encoded in the 
+        # names of the datasets).
+
+        ds_tokens = {
+            node.path: node.ds.__dask_tokenize__()
+            for node in self.subtree
+        }
+
+        return normalize_token(
+            (type(self), ds_tokens)
+        )
+    
     def __dask_graph__(self):
-        raise NotImplementedError
+        graphs = {
+            node.path: node.ds.__dask_graph__()
+            for node in self.subtree
+        }
+        graphs = {k: v for k, v in graphs.items() if v is not None}
+
+        if not graphs:
+            return None
+        else:
+            try:
+                from dask.highlevelgraph import HighLevelGraph
+
+                return HighLevelGraph.merge(*graphs.values())
+            except ImportError:
+                from dask import sharedict
+
+                return sharedict.merge(*graphs.values())
 
     def __dask_keys__(self):
-        raise NotImplementedError
+        return [
+            node.ds.__dask_keys__()
+            for node in self.subtree
+        ]
 
     def __dask_layers__(self):
-        raise NotImplementedError
+        all_keys = self.__dask_keys__()
+        return sum((all_keys), ())
 
     @property
     def __dask_optimize__(self):
-        raise NotImplementedError
+        import dask.array as da
+
+        return da.Array.__dask_optimize__
 
     @property
     def __dask_scheduler__(self):
-        raise NotImplementedError
+        import dask.array as da
+
+        return da.Array.__dask_scheduler__
 
     def __dask_postcompute__(self):
         raise NotImplementedError
