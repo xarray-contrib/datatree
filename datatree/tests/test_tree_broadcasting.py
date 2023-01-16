@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from datatree.datatree import DataTree
 import datatree.testing as dtt
+from datatree.datatree import DataTree
 
 empty = xr.Dataset()
 
