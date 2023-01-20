@@ -45,6 +45,10 @@ class NodePath(PurePosixPath):
 
         return obj
 
+    @property
+    def str(self):
+        return str(self)
+
 
 Tree = TypeVar("Tree", bound="TreeNode")
 
@@ -586,17 +590,17 @@ class NamedNode(TreeNode, Generic[Tree]):
         self.name = key
 
     @property
-    def path(self) -> str:
+    def path(self) -> NodePath:
         """Return the file-like path from the root to this node."""
         if self.is_root:
-            return "/"
+            return NodePath("/")
         else:
             root, *ancestors = self.ancestors
             # don't include name of root because (a) root might not have a name & (b) we want path relative to root.
             names = [node.name for node in ancestors]
-            return "/" + "/".join(names)
+            return NodePath("/").joinpath(*names)
 
-    def relative_to(self: NamedNode, other: NamedNode) -> str:
+    def relative_to(self: NamedNode, other: NamedNode) -> NodePath:
         """
         Compute the relative path from this node to node `other`.
 
@@ -609,13 +613,11 @@ class NamedNode(TreeNode, Generic[Tree]):
 
         this_path = NodePath(self.path)
         if other.path in list(ancestor.path for ancestor in self.lineage):
-            return str(this_path.relative_to(other.path))
+            return this_path.relative_to(other.path)
         else:
             common_ancestor = self.find_common_ancestor(other)
             path_to_common_ancestor = other._path_to_ancestor(common_ancestor)
-            return str(
-                path_to_common_ancestor / this_path.relative_to(common_ancestor.path)
-            )
+            return path_to_common_ancestor / this_path.relative_to(common_ancestor.path)
 
     def find_common_ancestor(self, other: NamedNode) -> NamedNode:
         """
