@@ -102,16 +102,3 @@ class TreeAttrAccessMixin:
             if isinstance(item, str)
         }
         return sorted(set(dir(type(self))) | extra_attrs)
-
-    def _ipython_key_completions_(self) -> List[str]:
-        """Provide method for the key-autocompletions in IPython.
-        See http://ipython.readthedocs.io/en/stable/config/integrating.html#tab-completion
-        For the details.
-        """
-        items = {
-            item
-            for source in self._item_sources
-            for item in source
-            if isinstance(item, str)
-        }
-        return list(items)

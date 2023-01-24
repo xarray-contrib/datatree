@@ -13,6 +13,7 @@ from typing import (
     Hashable,
     Iterable,
     Iterator,
+    List,
     Mapping,
     MutableMapping,
     Optional,
@@ -513,7 +514,30 @@ class DataTree(
         # virtual coordinates
         yield HybridMappingProxy(keys=self.dims, mapping=self)
 
+        # immediate child nodes
         yield self.children
+
+    def _ipython_key_completions_(self) -> List[str]:
+        """Provide method for the key-autocompletions in IPython.
+        See http://ipython.readthedocs.io/en/stable/config/integrating.html#tab-completion
+        For the details.
+        """
+
+        items_on_this_node = self._item_sources
+        full_file_like_paths_to_all_nodes_in_subtree = [
+            {node.path[1:]: node for node in self.subtree}
+        ]
+        all_item_sources = itertools.chain(
+            items_on_this_node, full_file_like_paths_to_all_nodes_in_subtree
+        )
+
+        items = {
+            item
+            for source in all_item_sources
+            for item in source
+            if isinstance(item, str)
+        }
+        return list(items)
 
     def __contains__(self, key: object) -> bool:
         """The 'in' operator will return true or false depending on whether
