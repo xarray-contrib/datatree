@@ -22,7 +22,6 @@ from typing import (
     overload,
 )
 
-
 from xarray.core import utils
 from xarray.core.common import AttrAccessMixin
 from xarray.core.coordinates import DatasetCoordinates
@@ -31,7 +30,13 @@ from xarray.core.dataset import Dataset, DataVariables
 from xarray.core.indexes import Index, Indexes
 from xarray.core.merge import dataset_update_method
 from xarray.core.options import OPTIONS as XR_OPTS
-from xarray.core.utils import Default, Frozen, HybridMappingProxy, _default, either_dict_or_kwargs
+from xarray.core.utils import (
+    Default,
+    Frozen,
+    HybridMappingProxy,
+    _default,
+    either_dict_or_kwargs,
+)
 from xarray.core.variable import Variable, calculate_dimensions
 
 from . import formatting, formatting_html
@@ -46,7 +51,6 @@ from .treenode import NamedNode, NodePath, Tree
 
 if TYPE_CHECKING:
     import pandas as pd
-
     from xarray.core.merge import CoercibleValue
     from xarray.core.types import ErrorOptions
 

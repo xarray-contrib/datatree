@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 import xarray as xr
 import xarray.testing as xrt
-
 from xarray.tests import create_test_data, source_ndarray
 
 import datatree.testing as dtt
@@ -108,13 +107,13 @@ class TestPaths:
             NotFoundInTreeError, match="nodes do not lie within the same tree"
         ):
             sue.relative_to(evil_kate)
-            
+
 
 class TestStoreDatasets:
     def test_create_with_data(self):
         dat = xr.Dataset({"a": 0})
         john = DataTree(name="john", data=dat)
-        
+
         xrt.assert_identical(john.to_dataset(), dat)
 
         with pytest.raises(TypeError):
@@ -124,7 +123,7 @@ class TestStoreDatasets:
         john = DataTree(name="john")
         dat = xr.Dataset({"a": 0})
         john.ds = dat
-        
+
         xrt.assert_identical(john.to_dataset(), dat)
 
         with pytest.raises(TypeError):
@@ -551,8 +550,6 @@ class TestDatasetView:
             return ds.weighted(ds.area).mean(["x", "y"])
 
         weighted_mean(dt.ds)
-
-
 
 
 class TestAccess:
