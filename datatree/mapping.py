@@ -190,13 +190,14 @@ def map_over_subtree(func: Callable) -> Callable:
             *list(kwargs_as_tree_length_iterables.values()),
         ):
             node_args_as_datasets = [
-                a.ds if isinstance(a, DataTree) else a for a in all_node_args[:n_args]
+                a.to_dataset() if isinstance(a, DataTree) else a
+                for a in all_node_args[:n_args]
             ]
             node_kwargs_as_datasets = dict(
                 zip(
                     [k for k in kwargs_as_tree_length_iterables.keys()],
                     [
-                        v.ds if isinstance(v, DataTree) else v
+                        v.to_dataset() if isinstance(v, DataTree) else v
                         for v in all_node_args[n_args:]
                     ],
                 )

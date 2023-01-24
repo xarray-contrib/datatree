@@ -30,7 +30,12 @@ Attributes relating to the recursive tree-like structure of a ``DataTree``.
    DataTree.root
    DataTree.is_root
    DataTree.is_leaf
+   DataTree.leaves
+   DataTree.level
+   DataTree.depth
+   DataTree.width
    DataTree.subtree
+   DataTree.descendants
    DataTree.siblings
    DataTree.lineage
    DataTree.ancestors
@@ -78,13 +83,9 @@ Dictionary interface
    DataTree.__delitem__
    DataTree.update
    DataTree.get
-
-..
-
-   Missing:
-   ``DataTree.items``
-   ``DataTree.keys``
-   ``DataTree.values``
+   DataTree.items
+   DataTree.keys
+   DataTree.values
 
 Tree Manipulation
 -----------------
@@ -100,17 +101,18 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
    DataTree.iter_lineage
    DataTree.find_common_ancestor
    map_over_subtree
+   DataTree.pipe
+   DataTree.filter
 
 DataTree Contents
 -----------------
 
-Manipulate the contents of a single DataTree node.
+Manipulate the contents of all nodes in a tree simultaneously.
 
 .. autosummary::
    :toctree: generated/
 
    DataTree.copy
-   DataTree.assign
    DataTree.assign_coords
    DataTree.merge
    DataTree.rename
@@ -119,12 +121,20 @@ Manipulate the contents of a single DataTree node.
    DataTree.swap_dims
    DataTree.expand_dims
    DataTree.drop_vars
-   DataTree.drop_duplicates
    DataTree.drop_dims
    DataTree.set_coords
    DataTree.reset_coords
-   DataTree.convert_calendar
-   DataTree.interp_calendar
+
+DataTree Node Contents
+----------------------
+
+Manipulate the contents of a single DataTree node.
+
+.. autosummary::
+   :toctree: generated/
+
+   DataTree.assign
+   DataTree.drop_nodes
 
 Comparisons
 ===========
@@ -141,7 +151,7 @@ Compare one ``DataTree`` object to another.
 Indexing
 ========
 
-Index into each and every node of a tree.
+Index into all nodes in the subtree simultaneously.
 
 .. autosummary::
    :toctree: generated/
@@ -189,50 +199,50 @@ Missing Value Handling
 Computation
 ===========
 
-Apply a computation to the data in each and every node of a tree.
+Apply a computation to the data in all nodes in the subtree simultaneously.
 
 .. autosummary::
    :toctree: generated/
 
-   Dataset.map
-   Dataset.reduce
-   Dataset.diff
-   Dataset.quantile
-   Dataset.differentiate
-   Dataset.integrate
-   Dataset.map_blocks
-   Dataset.polyfit
-   Dataset.curvefit
+   DataTree.map
+   DataTree.reduce
+   DataTree.diff
+   DataTree.quantile
+   DataTree.differentiate
+   DataTree.integrate
+   DataTree.map_blocks
+   DataTree.polyfit
+   DataTree.curvefit
 
 Aggregation
 ===========
 
-Aggregate data in each and every node, creating a new tree.
+Aggregate data in all nodes in the subtree simultaneously.
 
 .. autosummary::
    :toctree: generated/
 
-   Dataset.all
-   Dataset.any
-   Dataset.argmax
-   Dataset.argmin
-   Dataset.idxmax
-   Dataset.idxmin
-   Dataset.max
-   Dataset.min
-   Dataset.mean
-   Dataset.median
-   Dataset.prod
-   Dataset.sum
-   Dataset.std
-   Dataset.var
-   Dataset.cumsum
-   Dataset.cumprod
+   DataTree.all
+   DataTree.any
+   DataTree.argmax
+   DataTree.argmin
+   DataTree.idxmax
+   DataTree.idxmin
+   DataTree.max
+   DataTree.min
+   DataTree.mean
+   DataTree.median
+   DataTree.prod
+   DataTree.sum
+   DataTree.std
+   DataTree.var
+   DataTree.cumsum
+   DataTree.cumprod
 
 ndarray methods
 ===============
 
-Methods copied from `np.ndarray` objects, here applying to the data in each and every node of the tree.
+Methods copied from :py:class:`numpy.ndarray` objects, here applying to the data in all nodes in the subtree.
 
 .. autosummary::
    :toctree: generated/
@@ -250,7 +260,7 @@ Methods copied from `np.ndarray` objects, here applying to the data in each and 
 Reshaping and reorganising
 ==========================
 
-Reshape or reorganise the data in each and every node of a tree.
+Reshape or reorganise the data in all nodes in the subtree.
 
 .. autosummary::
    :toctree: generated/
@@ -269,6 +279,8 @@ Plotting
 
 I/O
 ===
+
+Create or
 
 .. autosummary::
    :toctree: generated/
@@ -308,6 +320,8 @@ Exceptions raised when manipulating trees.
    :toctree: generated/
 
    TreeIsomorphismError
+   InvalidTreeError
+   NotFoundInTreeError
 
 Advanced API
 ============
@@ -318,9 +332,9 @@ Relatively advanced API for users or developers looking to understand the intern
    :toctree: generated/
 
    DataTree.variables
+   register_datatree_accessor
 
 ..
 
    Missing:
    ``DataTree.set_close``
-   ``register_datatree_accessor``

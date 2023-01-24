@@ -31,9 +31,6 @@ _DATASET_DASK_METHODS_TO_MAP = [
 ]
 _DATASET_METHODS_TO_MAP = [
     "as_numpy",
-    "copy",
-    "__copy__",
-    "__deepcopy__",
     "set_coords",
     "reset_coords",
     "info",
@@ -57,7 +54,6 @@ _DATASET_METHODS_TO_MAP = [
     "reorder_levels",
     "stack",
     "unstack",
-    "update",
     "merge",
     "drop_vars",
     "drop_sel",
@@ -72,7 +68,6 @@ _DATASET_METHODS_TO_MAP = [
     "combine_first",
     "reduce",
     "map",
-    "assign",
     "diff",
     "shift",
     "roll",
