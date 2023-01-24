@@ -7,7 +7,7 @@ The modifications are marked with # TODO comments.
 
 import warnings
 from contextlib import suppress
-from typing import Any, Hashable, Iterable, Mapping
+from typing import Any, Hashable, Iterable, List, Mapping
 
 
 class TreeAttrAccessMixin:
@@ -91,7 +91,7 @@ class TreeAttrAccessMixin:
                 "assignment (e.g., `ds['name'] = ...`) instead of assigning variables."
             ) from e
 
-    def __dir__(self) -> list[str]:
+    def __dir__(self) -> List[str]:
         """Provide method name lookup and completion. Only provide 'public'
         methods.
         """
@@ -103,7 +103,7 @@ class TreeAttrAccessMixin:
         }
         return sorted(set(dir(type(self))) | extra_attrs)
 
-    def _ipython_key_completions_(self) -> list[str]:
+    def _ipython_key_completions_(self) -> List[str]:
         """Provide method for the key-autocompletions in IPython.
         See http://ipython.readthedocs.io/en/stable/config/integrating.html#tab-completion
         For the details.
