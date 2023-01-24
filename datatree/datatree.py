@@ -37,7 +37,7 @@ from xarray.core.utils import (
     _default,
     either_dict_or_kwargs,
 )
-from xarray.core.variable import Variable, calculate_dimensions
+from xarray.core.variable import Variable
 
 from . import formatting, formatting_html
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree

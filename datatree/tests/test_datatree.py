@@ -553,7 +553,7 @@ class TestDatasetView:
 
 
 class TestAccess:
-    def test_attribute_access(self):
+    def test_attribute_access(self, create_test_datatree):
         dt = create_test_datatree()
 
         # vars / coords
@@ -571,8 +571,7 @@ class TestAccess:
             assert key in dir(dt)
 
         # attrs
-        print(dt._attrs)
-        print(dt.attrs)
+        dt.attrs["meta"] = "NASA"
         assert dt.attrs["meta"] == "NASA"
         assert "meta" in dir(dt)
 
