@@ -1,7 +1,7 @@
 import pytest
 
 from datatree.iterators import LevelOrderIter, PreOrderIter
-from datatree.treenode import TreeError, TreeNode
+from datatree.treenode import InvalidTreeError, NamedNode, TreeNode
 
 
 class TestFamilyTree:
@@ -17,6 +17,26 @@ class TestFamilyTree:
 
         assert mary.parent == john
         assert john.children["Mary"] is mary
+
+    def test_no_time_traveller_loops(self):
+        john = TreeNode()
+
+        with pytest.raises(InvalidTreeError, match="cannot be a parent of itself"):
+            john._set_parent(john, "John")
+
+        with pytest.raises(InvalidTreeError, match="cannot be a parent of itself"):
+            john.children = {"John": john}
+
+        mary = TreeNode()
+        rose = TreeNode()
+        mary._set_parent(john, "Mary")
+        rose._set_parent(mary, "Rose")
+
+        with pytest.raises(InvalidTreeError, match="is already a descendant"):
+            john._set_parent(rose, "John")
+
+        with pytest.raises(InvalidTreeError, match="is already a descendant"):
+            rose.children = {"John": john}
 
     def test_parent_swap(self):
         john = TreeNode()
@@ -53,7 +73,7 @@ class TestFamilyTree:
         with pytest.raises(TypeError):
             john.children = {"Kate": 666}
 
-        with pytest.raises(TreeError, match="Cannot add same node"):
+        with pytest.raises(InvalidTreeError, match="Cannot add same node"):
             john.children = {"Kate": kate, "Evil_Kate": kate}
 
         john = TreeNode(children={"Kate": kate})
@@ -121,43 +141,6 @@ class TestGetNodes:
         john = TreeNode(children={"Mary": mary})  # noqa
 
         assert sue._get_item("/Mary") is mary
-
-
-class TestPaths:
-    def test_path_property(self):
-        sue = TreeNode()
-        mary = TreeNode(children={"Sue": sue})
-        john = TreeNode(children={"Mary": mary})  # noqa
-        assert sue.path == "/Mary/Sue"
-        assert john.path == "/"
-
-    def test_path_roundtrip(self):
-        sue = TreeNode()
-        mary = TreeNode(children={"Sue": sue})
-        john = TreeNode(children={"Mary": mary})  # noqa
-        assert john._get_item(sue.path) == sue
-
-    def test_same_tree(self):
-        mary = TreeNode()
-        kate = TreeNode()
-        john = TreeNode(children={"Mary": mary, "Kate": kate})  # noqa
-        assert mary.same_tree(kate)
-
-    def test_relative_paths(self):
-        sue = TreeNode()
-        mary = TreeNode(children={"Sue": sue})
-        annie = TreeNode()
-        john = TreeNode(children={"Mary": mary, "Annie": annie})
-
-        assert sue.relative_to(john) == "Mary/Sue"
-        assert john.relative_to(sue) == "../.."
-        assert annie.relative_to(sue) == "../../Annie"
-        assert sue.relative_to(annie) == "../Mary/Sue"
-        assert sue.relative_to(sue) == "."
-
-        evil_kate = TreeNode()
-        with pytest.raises(ValueError, match="nodes do not lie within the same tree"):
-            sue.relative_to(evil_kate)
 
 
 class TestSetNodes:
@@ -242,74 +225,147 @@ class TestPruning:
 
 
 def create_test_tree():
-    f = TreeNode()
-    b = TreeNode()
-    a = TreeNode()
-    d = TreeNode()
-    c = TreeNode()
-    e = TreeNode()
-    g = TreeNode()
-    i = TreeNode()
-    h = TreeNode()
+    a = NamedNode(name="a")
+    b = NamedNode()
+    c = NamedNode()
+    d = NamedNode()
+    e = NamedNode()
+    f = NamedNode()
+    g = NamedNode()
+    h = NamedNode()
+    i = NamedNode()
 
-    f.children = {"b": b, "g": g}
-    b.children = {"a": a, "d": d}
-    d.children = {"c": c, "e": e}
-    g.children = {"i": i}
-    i.children = {"h": h}
+    a.children = {"b": b, "c": c}
+    b.children = {"d": d, "e": e}
+    e.children = {"f": f, "g": g}
+    c.children = {"h": h}
+    h.children = {"i": i}
 
-    return f
+    return a, f
 
 
 class TestIterators:
     def test_preorderiter(self):
-        tree = create_test_tree()
-        result = [node.name for node in PreOrderIter(tree)]
+        root, _ = create_test_tree()
+        result = [node.name for node in PreOrderIter(root)]
         expected = [
-            None,  # root TreeNode is unnamed
-            "b",
             "a",
+            "b",
             "d",
-            "c",
             "e",
+            "f",
             "g",
-            "i",
+            "c",
             "h",
+            "i",
         ]
         assert result == expected
 
     def test_levelorderiter(self):
-        tree = create_test_tree()
-        result = [node.name for node in LevelOrderIter(tree)]
+        root, _ = create_test_tree()
+        result = [node.name for node in LevelOrderIter(root)]
         expected = [
-            None,  # root TreeNode is unnamed
+            "a",  # root Node is unnamed
             "b",
-            "g",
-            "a",
-            "d",
-            "i",
             "c",
+            "d",
             "e",
             "h",
+            "f",
+            "g",
+            "i",
         ]
         assert result == expected
 
 
+class TestAncestry:
+    def test_lineage(self):
+        _, leaf = create_test_tree()
+        lineage = leaf.lineage
+        expected = ["f", "e", "b", "a"]
+        for node, expected_name in zip(lineage, expected):
+            assert node.name == expected_name
+
+    def test_ancestors(self):
+        _, leaf = create_test_tree()
+        ancestors = leaf.ancestors
+        expected = ["a", "b", "e", "f"]
+        for node, expected_name in zip(ancestors, expected):
+            assert node.name == expected_name
+
+    def test_subtree(self):
+        root, _ = create_test_tree()
+        subtree = root.subtree
+        expected = [
+            "a",
+            "b",
+            "d",
+            "e",
+            "f",
+            "g",
+            "c",
+            "h",
+            "i",
+        ]
+        for node, expected_name in zip(subtree, expected):
+            assert node.name == expected_name
+
+    def test_descendants(self):
+        root, _ = create_test_tree()
+        descendants = root.descendants
+        expected = [
+            "b",
+            "d",
+            "e",
+            "f",
+            "g",
+            "c",
+            "h",
+            "i",
+        ]
+        for node, expected_name in zip(descendants, expected):
+            assert node.name == expected_name
+
+    def test_leaves(self):
+        tree, _ = create_test_tree()
+        leaves = tree.leaves
+        expected = [
+            "d",
+            "f",
+            "g",
+            "i",
+        ]
+        for node, expected_name in zip(leaves, expected):
+            assert node.name == expected_name
+
+    def test_levels(self):
+        a, f = create_test_tree()
+
+        assert a.level == 0
+        assert f.level == 3
+
+        assert a.depth == 3
+        assert f.depth == 3
+
+        assert a.width == 1
+        assert f.width == 3
+
+
 class TestRenderTree:
     def test_render_nodetree(self):
-        sam = TreeNode()
-        ben = TreeNode()
-        mary = TreeNode(children={"Sam": sam, "Ben": ben})
-        kate = TreeNode()
-        john = TreeNode(children={"Mary": mary, "Kate": kate})
+        sam = NamedNode()
+        ben = NamedNode()
+        mary = NamedNode(children={"Sam": sam, "Ben": ben})
+        kate = NamedNode()
+        john = NamedNode(children={"Mary": mary, "Kate": kate})
 
         printout = john.__str__()
         expected_nodes = [
-            "TreeNode()",
-            "TreeNode('Mary')",
-            "TreeNode('Sam')",
-            "TreeNode('Ben')",
-            "TreeNode('Kate')",
+            "NamedNode()",
+            "NamedNode('Mary')",
+            "NamedNode('Sam')",
+            "NamedNode('Ben')",
+            "NamedNode('Kate')",
         ]
         for expected_node, printed_node in zip(expected_nodes, printout.splitlines()):
             assert expected_node in printed_node
