@@ -23,7 +23,6 @@ from typing import (
 )
 
 from xarray.core import utils
-from xarray.core.common import AttrAccessMixin
 from xarray.core.coordinates import DatasetCoordinates
 from xarray.core.dataarray import DataArray
 from xarray.core.dataset import Dataset, DataVariables
@@ -40,6 +39,7 @@ from xarray.core.utils import (
 from xarray.core.variable import Variable
 
 from . import formatting, formatting_html
+from .common import TreeAttrAccessMixin
 from .mapping import TreeIsomorphismError, check_isomorphic, map_over_subtree
 from .ops import (
     DataTreeArithmeticMixin,
@@ -240,7 +240,7 @@ class DataTree(
     MappedDatasetMethodsMixin,
     MappedDataWithCoords,
     DataTreeArithmeticMixin,
-    AttrAccessMixin,
+    TreeAttrAccessMixin,
     Generic[Tree],
     Mapping,
 ):
