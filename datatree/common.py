@@ -7,8 +7,7 @@ The modifications are marked with # TODO comments.
 
 import warnings
 from contextlib import suppress
-
-from typing import Iterable, Mapping, Hashable, Any
+from typing import Any, Hashable, Iterable, Mapping
 
 
 class TreeAttrAccessMixin:
@@ -23,7 +22,7 @@ class TreeAttrAccessMixin:
         """
         if not hasattr(object.__new__(cls), "__dict__"):
             pass
-        #elif cls.__module__.startswith("datatree."):  # TODO reinstate this once integrated upstream
+        # elif cls.__module__.startswith("datatree."):  # TODO reinstate this once integrated upstream
         #    raise AttributeError(f"{cls.__name__} must explicitly define __slots__")
         else:
             cls.__setattr__ = cls._setattr_dict
