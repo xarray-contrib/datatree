@@ -523,12 +523,17 @@ class DataTree(
         For the details.
         """
 
+        # TODO allow auto-completing relative string paths, e.g. `dt['path/to/../ <tab> node'`
+        # Would require changes to ipython's autocompleter, see https://github.com/ipython/ipython/issues/12420
+        # Instead for now we only list direct paths to all node in subtree explicitly
+
         items_on_this_node = self._item_sources
-        full_file_like_paths_to_all_nodes_in_subtree = [
-            {node.path[1:]: node for node in self.subtree}
-        ]
+        full_file_like_paths_to_all_nodes_in_subtree = {
+            node.path[1:]: node for node in self.subtree
+        }
+
         all_item_sources = itertools.chain(
-            items_on_this_node, full_file_like_paths_to_all_nodes_in_subtree
+            items_on_this_node, [full_file_like_paths_to_all_nodes_in_subtree]
         )
 
         items = {
