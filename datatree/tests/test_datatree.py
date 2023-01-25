@@ -575,8 +575,15 @@ class TestAccess:
         assert dt.attrs["meta"] == "NASA"
         assert "meta" in dir(dt)
 
-    def test_ipython_key_completions(self):
-        ...
+    def test_ipython_key_completions(self, create_test_datatree):
+        dt = create_test_datatree()
+        key_completions = dt._ipython_key_completions_()
+
+        node_keys = [node.path[1:] for node in dt.subtree]
+        assert all(node_key in key_completions for node_key in node_keys)
+
+        var_keys = list(dt.variables.keys())
+        assert all(var_key in key_completions for var_key in var_keys)
 
 
 class TestRestructuring:
