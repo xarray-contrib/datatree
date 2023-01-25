@@ -22,15 +22,16 @@ class TreeAttrAccessMixin:
         """
         if not hasattr(object.__new__(cls), "__dict__"):
             pass
-        # elif cls.__module__.startswith("datatree."):  # TODO reinstate this once integrated upstream
+        # TODO reinstate this once integrated upstream
+        # elif cls.__module__.startswith("datatree."):
         #    raise AttributeError(f"{cls.__name__} must explicitly define __slots__")
-        else:
-            cls.__setattr__ = cls._setattr_dict
-            warnings.warn(
-                f"xarray subclass {cls.__name__} should explicitly define __slots__",
-                FutureWarning,
-                stacklevel=2,
-            )
+        # else:
+        #    cls.__setattr__ = cls._setattr_dict
+        #    warnings.warn(
+        #        f"xarray subclass {cls.__name__} should explicitly define __slots__",
+        #        FutureWarning,
+        #        stacklevel=2,
+        #    )
         super().__init_subclass__(**kwargs)
 
     @property
