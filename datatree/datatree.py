@@ -517,28 +517,39 @@ class DataTree(
         # immediate child nodes
         yield self.children
 
-    def _ipython_key_completions_(self) -> List[str]:
-        """Provide method for the key-autocompletions in IPython.
+    # Argument `prefix` requires changes to ipython's autocompleter, see https://github.com/ipython/ipython/issues/12420
+    # TODO should I overload this method with the old signature too? Is that even possible?
+    def _ipython_key_completions_(self, prefix: str) -> List[str]:
+        """
+        Provide method for the key-autocompletions in IPython.
         See http://ipython.readthedocs.io/en/stable/config/integrating.html#tab-completion
-        For the details.
+        for the details.
+
+        Provides dynamic auto-completion based on path typed out so far, including
+        allowing auto-completing relative string paths, e.g. `dt['path/to/../ <tab> node'`
         """
 
-        # TODO allow auto-completing relative string paths, e.g. `dt['path/to/../ <tab> node'`
-        # Would require changes to ipython's autocompleter, see https://github.com/ipython/ipython/issues/12420
-        # Instead for now we only list direct paths to all node in subtree explicitly
+        # TODO allow for possiblity of error being raised here?
+        resolvable_path_prefix = NodePath(prefix).parent
 
-        items_on_this_node = self._item_sources
-        full_file_like_paths_to_all_nodes_in_subtree = {
-            node.path[1:]: node for node in self.subtree
-        }
+        try:
+            current_node = self[resolvable_path_prefix]
+        except KeyError:
+            # no matches
+            # TODO is it correct to return literally nothing here?
+            return []
 
-        all_item_sources = itertools.chain(
-            items_on_this_node, [full_file_like_paths_to_all_nodes_in_subtree]
-        )
+        # TODO ensure absolute paths are supported also
+        # suggest path-like syntax as autocompletion options too
+        path_syntax_sources = ["./"]
+        if current_node is not self.root:
+            # suggest pointing up to parent node
+            path_syntax_sources.append("../")
 
+        all_item_sources = itertools.chain(current_node._item_sources, path_syntax_sources)
         items = {
             item
-            for source in all_item_sources
+            for source in all_item_sources,
             for item in source
             if isinstance(item, str)
         }
