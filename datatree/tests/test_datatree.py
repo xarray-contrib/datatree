@@ -577,13 +577,32 @@ class TestAccess:
 
     def test_ipython_key_completions(self, create_test_datatree):
         dt = create_test_datatree()
-        key_completions = dt._ipython_key_completions_()
 
-        node_keys = [node.path[1:] for node in dt.subtree]
-        assert all(node_key in key_completions for node_key in node_keys)
-
+        # vars / coords
         var_keys = list(dt.variables.keys())
         assert all(var_key in key_completions for var_key in var_keys)
+
+        # dims
+        dim_keys = list(dt.dims.keys())
+
+        # immediate children
+        children_keys = dt.children.keys()
+        assert children_keys in dt._ipython_key_completions_(prefix='s')
+
+        # grandchildren
+        list_of_childrens_children = [list(gc.path for gc in c.children.values()) for c in dt.children.values()]
+        grandchild_keys = list(itertools.chain.from_iterable(list_of_childrens_children))
+        assert grandchild_keys in dt._ipython_key_completions_(prefix='set1/s')
+        assert grandchild_keys not in dt._ipython_key_completions_(prefix='set')
+
+        # relative paths
+        child = dt["set1"]
+        parent_keys = ["../set1", "../set2", ...]
+        assert parent_keys in child._ipython_key_completions_(prefix="../")
+
+        # TODO absolute paths
+
+        # TODO same directory (single dot)
 
 
 class TestRestructuring:
