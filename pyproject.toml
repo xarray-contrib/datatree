@@ -47,3 +47,14 @@ exclude = ["docs", "tests", "tests.*", "docs.*"]
 
 [tool.setuptools.package-data]
 datatree = ["py.typed"]
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true
+float_to_top = true
+default_section = "THIRDPARTY"
+known_first_party = "datatree"
+
+[mypy]
+files = "datatree/**/*.py"
+show_error_codes = true
