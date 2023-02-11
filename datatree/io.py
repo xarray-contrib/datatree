@@ -81,15 +81,15 @@ def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
     return tree_root
 
 
-def _open_datatree_zarr(store, **kwargs) -> DataTree:
+def _open_datatree_zarr(store, zarr_version=None, **kwargs) -> DataTree:
     import zarr  # type: ignore
 
-    zds = zarr.open_group(store, mode="r")
-    ds = open_dataset(store, engine="zarr", **kwargs)
+    zds = zarr.open_group(store, mode="r", zarr_version=zarr_version)
+    ds = open_dataset(store, engine="zarr", zarr_version=zarr_version, **kwargs)
     tree_root = DataTree.from_dict({"/": ds})
     for path in _iter_zarr_groups(zds):
         try:
-            subgroup_ds = open_dataset(store, engine="zarr", group=path, **kwargs)
+            subgroup_ds = open_dataset(store, engine="zarr", group=path, zarr_version=zarr_version, **kwargs)
         except zarr.errors.PathNotFoundError:
             subgroup_ds = Dataset()
 
@@ -167,11 +167,11 @@ def _datatree_to_netcdf(
         mode = "r+"
 
 
-def _create_empty_zarr_group(store, group, mode):
+def _create_empty_zarr_group(store, group, mode, zarr_version=None):
     import zarr  # type: ignore
 
-    root = zarr.open_group(store, mode=mode)
-    root.create_group(group, overwrite=True)
+    root = zarr.open_group(store, mode=mode, zarr_version=zarr_version)
+    root.create_group(group, overwrite=True, zarr_version=zarr_version)
 
 
 def _datatree_to_zarr(
@@ -180,6 +180,7 @@ def _datatree_to_zarr(
     mode: str = "w",
     encoding=None,
     consolidated: bool = True,
+    zarr_version=None,
     **kwargs,
 ):
 
@@ -208,7 +209,7 @@ def _datatree_to_zarr(
         ds = node.ds
         group_path = node.path
         if ds is None:
-            _create_empty_zarr_group(store, group_path, mode)
+            _create_empty_zarr_group(store, group_path, mode, zarr_version=zarr_version)
         else:
             ds.to_zarr(
                 store,
@@ -216,6 +217,7 @@ def _datatree_to_zarr(
                 mode=mode,
                 encoding=encoding.get(node.path),
                 consolidated=False,
+                zarr_version=zarr_version,
                 **kwargs,
             )
         if "w" in mode:
