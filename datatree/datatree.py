@@ -733,7 +733,8 @@ class DataTree(
         """Copy entire subtree"""
         new_tree = self._copy_node(deep=deep)
         for node in self.descendants:
-            new_tree[node.path] = node._copy_node(deep=deep)
+            path = node.relative_to(self)
+            new_tree[path] = node._copy_node(deep=deep)
         return new_tree
 
     def _copy_node(
@@ -875,7 +876,7 @@ class DataTree(
 
         vars_merge_result = dataset_update_method(self.to_dataset(), new_variables)
         # TODO are there any subtleties with preserving order of children like this?
-        merged_children = OrderedDict(**self.children, **new_children)
+        merged_children = OrderedDict({**self.children, **new_children})
         self._replace(
             inplace=True, children=merged_children, **vars_merge_result._asdict()
         )

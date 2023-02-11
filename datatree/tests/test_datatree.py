@@ -235,6 +235,17 @@ class TestUpdate:
         child = dt["a"]
         assert child.name == "a"
 
+    def test_update_overwrite(self):
+        actual = DataTree.from_dict({"a": DataTree(xr.Dataset({"x": 1}))})
+        actual.update({"a": DataTree(xr.Dataset({"x": 2}))})
+
+        expected = DataTree.from_dict({"a": DataTree(xr.Dataset({"x": 2}))})
+
+        print(actual)
+        print(expected)
+
+        dtt.assert_equal(actual, expected)
+
 
 class TestCopy:
     def test_copy(self, create_test_datatree):
@@ -261,6 +272,14 @@ class TestCopy:
                 copied_node.attrs["foo"] = "bar"
                 assert "foo" not in node.attrs
                 assert node.attrs["Test"] is copied_node.attrs["Test"]
+
+    def test_copy_subtree(self):
+        dt = DataTree.from_dict({"/level1/level2/level3": xr.Dataset()})
+
+        actual = dt["/level1/level2"].copy()
+        expected = DataTree.from_dict({"/level3": xr.Dataset()}, name="level2")
+
+        dtt.assert_identical(actual, expected)
 
     def test_deepcopy(self, create_test_datatree):
         dt = create_test_datatree()
