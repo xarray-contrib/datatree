@@ -15,6 +15,8 @@ jobs:
   test:
     name: ${{ matrix.python-version }}-build
     runs-on: ubuntu-latest
+    env:
+      ZARR_V3_EXPERIMENTAL_API: 1
     defaults:
       run:
         shell: bash -l {0}

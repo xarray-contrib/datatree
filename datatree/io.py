@@ -89,7 +89,9 @@ def _open_datatree_zarr(store, zarr_version=None, **kwargs) -> DataTree:
     tree_root = DataTree.from_dict({"/": ds})
     for path in _iter_zarr_groups(zds):
         try:
-            subgroup_ds = open_dataset(store, engine="zarr", group=path, zarr_version=zarr_version, **kwargs)
+            subgroup_ds = open_dataset(
+                store, engine="zarr", group=path, zarr_version=zarr_version, **kwargs
+            )
         except zarr.errors.PathNotFoundError:
             subgroup_ds = Dataset()
 
