@@ -991,7 +991,10 @@ class DataTree(
 
         # First create the root node
         root_data = d.pop("/", None)
-        obj = cls(name=name, data=root_data, parent=None, children=None)
+        if not isinstance(root_data, cls):
+            obj = cls(name=name, data=root_data, parent=None, children=None)
+        else:
+            obj = root_data.copy()
 
         if d:
             # Populate tree with children determined from data_objects mapping
