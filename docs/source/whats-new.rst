@@ -44,6 +44,8 @@ Bug fixes
   By `Tom Nicholas <https://github.com/TomNicholas>`_.
 - copy subtrees without creating ancestor nodes (:pull:`201`)
   By `Justus Magin <https://github.com/keewis>`_.
+- allow `DataTree` objects as root node in `from_dict` (:pull:`221`)
+  By `Justus Magin <https://github.com/keewis>`_.
 
 Documentation
 ~~~~~~~~~~~~~
