@@ -103,6 +103,7 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
    map_over_subtree
    DataTree.pipe
    DataTree.filter
+   DataTree.move
 
 DataTree Contents
 -----------------
