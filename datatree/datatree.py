@@ -854,10 +854,8 @@ class DataTree(
             raise ValueError("Invalid format for key")
 
     def move(self, original_path=str, to=str) -> DataTree:
-        print(original_path, " --- to --- ", to)
         target_node = self.__getitem__(original_path).copy()
         path_to_parent = "/".join(original_path.split("/")[:-1])
-        print(f"path parent = {path_to_parent}")
         target_parent = self.__getitem__(path_to_parent) 
         new_parent = target_parent.drop_nodes(target_node.name)
         self.__setitem__(path_to_parent, new_parent)
