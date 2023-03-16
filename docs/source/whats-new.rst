@@ -38,7 +38,8 @@ Documentation
 Internal Changes
 ~~~~~~~~~~~~~~~~
 
-.. _whats-new.v0.0.13
+.. _whats-new.v0.0.13:
+
 v0.0.12 (03/16/2023)
 --------------------
 

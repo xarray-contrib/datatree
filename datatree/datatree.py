@@ -864,7 +864,7 @@ class DataTree(
         if path_to_parent == "":
             new_tree = new_tree.drop_nodes(str(target_node.name))
         else:
-            target_parent = new_tree.__getitem__(path_to_parent) 
+            target_parent = new_tree.__getitem__(path_to_parent)
             new_parent = target_parent.drop_nodes(str(target_node.name))
             new_tree.__setitem__(path_to_parent, new_parent)
         return new_tree
