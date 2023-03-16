@@ -853,13 +853,21 @@ class DataTree(
         else:
             raise ValueError("Invalid format for key")
 
-    def move(self, original_path, to) -> None:
-        target_node = self.__getitem__(original_path).copy()
+    def move(self, original_path: str, to: str) -> DataTree:
+        new_tree = self.copy()
+        target_node = new_tree.__getitem__(original_path)
         path_to_parent = "/".join(original_path.split("/")[:-1])
-        target_parent = self.__getitem__(path_to_parent) 
-        new_parent = target_parent.drop_nodes(str(target_node.name))
-        self.__setitem__(path_to_parent, new_parent)
-        self.__setitem__(to, DataTree(target_node.to_dataset()))
+
+        new_tree.__setitem__(to, DataTree(target_node.to_dataset()))
+
+        # if empty str then it's likely the root node
+        if path_to_parent == "":
+            new_tree = new_tree.drop_nodes(str(target_node.name))
+        else:
+            target_parent = new_tree.__getitem__(path_to_parent) 
+            new_parent = target_parent.drop_nodes(str(target_node.name))
+            new_tree.__setitem__(path_to_parent, new_parent)
+        return new_tree
 
     def update(self, other: Dataset | Mapping[str, DataTree | DataArray]) -> None:
         """
