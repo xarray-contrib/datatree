@@ -441,10 +441,6 @@ class TestSetItem:
 
 
 class TestMoveNode:
-<<<<<<< HEAD
-=======
-
->>>>>>> 81a887e (update move node tests)
     def test_move_to_root(self):
         dt = DataTree.from_dict(
             d={
@@ -465,23 +461,6 @@ class TestMoveNode:
 
     def test_move_under_subnode(self):
         dt = DataTree.from_dict(
-<<<<<<< HEAD
-            d={
-                "/": xr.Dataset({"name": "Hobert"}),
-                "/Bragg": xr.Dataset({"name": "Bragg"}),
-                "/Kyle": xr.Dataset({"name": "Kyle"}),
-                "/Jake": xr.Dataset({"name": "Jake"}),
-            }
-        )
-        expected_dt = DataTree.from_dict(
-            d={
-                "/": xr.Dataset({"name": "Hobert"}),
-                "/Bragg": xr.Dataset({"name": "Bragg"}),
-                "/Bragg/Kyle": xr.Dataset({"name": "Kyle"}),
-                "/Bragg/Kyle/Jake": xr.Dataset({"name": "Jake"}),
-            }
-        )
-=======
         d={
             "/": xr.Dataset({"name": "Hobert"}),
             "/Bragg": xr.Dataset({ "name": "Bragg" }),
@@ -494,7 +473,6 @@ class TestMoveNode:
             "/Bragg/Kyle": xr.Dataset({ "name": "Kyle"}),
             "/Bragg/Kyle/Jake": xr.Dataset({ "name": "Jake"})
         })
->>>>>>> 81a887e (update move node tests)
         new_dt = dt.move("/Jake", "/Bragg/Kyle/Jake")
         dtt.assert_equal(expected_dt, new_dt)
 
