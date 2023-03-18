@@ -443,7 +443,7 @@ class TestSetItem:
 class TestMoveNode:
 <<<<<<< HEAD
 =======
-    
+
 >>>>>>> 81a887e (update move node tests)
     def test_move_to_root(self):
         dt = DataTree.from_dict(
