@@ -441,52 +441,59 @@ class TestSetItem:
 
 
 class TestMoveNode:
-    
-
     def test_move_to_root(self):
         dt = DataTree.from_dict(
-        d={
-            "/": xr.Dataset({"name": "Hobert"}),
-            "/Bragg": xr.Dataset({ "name": "Bragg" }),
-            "/Bragg/Kyle": xr.Dataset({"name": "Kyle"}),
-        })
-        expected_dt = DataTree.from_dict(d={
-            "/": xr.Dataset({ "name": "Hobert" }),
-            "/Bragg": xr.Dataset({ "name": "Bragg"}),
-            "/Kyle": xr.Dataset({ "name": "Kyle"})
-        })
+            d={
+                "/": xr.Dataset({"name": "Hobert"}),
+                "/Bragg": xr.Dataset({"name": "Bragg"}),
+                "/Bragg/Kyle": xr.Dataset({"name": "Kyle"}),
+            }
+        )
+        expected_dt = DataTree.from_dict(
+            d={
+                "/": xr.Dataset({"name": "Hobert"}),
+                "/Bragg": xr.Dataset({"name": "Bragg"}),
+                "/Kyle": xr.Dataset({"name": "Kyle"}),
+            }
+        )
         new_dt = dt.move("/Bragg/Kyle", "/Kyle")
         xrt.assert_equal(expected_dt.to_dataset(), new_dt.to_dataset())
 
     def test_move_under_subnode(self):
         dt = DataTree.from_dict(
-        d={
-            "/": xr.Dataset({"name": "Hobert"}),
-            "/Bragg": xr.Dataset({ "name": "Bragg" }),
-            "/Kyle": xr.Dataset({"name": "Kyle"}),
-            "/Jake": xr.Dataset({"name": "Jake"})
-        })
-        expected_dt = DataTree.from_dict(d={
-            "/": xr.Dataset({ "name": "Hobert" }),
-            "/Bragg": xr.Dataset({ "name": "Bragg"}),
-            "/Bragg/Kyle": xr.Dataset({ "name": "Kyle"}),
-            "/Bragg/Kyle/Jake": xr.Dataset({ "name": "Jake"})
-        })
+            d={
+                "/": xr.Dataset({"name": "Hobert"}),
+                "/Bragg": xr.Dataset({"name": "Bragg"}),
+                "/Kyle": xr.Dataset({"name": "Kyle"}),
+                "/Jake": xr.Dataset({"name": "Jake"}),
+            }
+        )
+        expected_dt = DataTree.from_dict(
+            d={
+                "/": xr.Dataset({"name": "Hobert"}),
+                "/Bragg": xr.Dataset({"name": "Bragg"}),
+                "/Bragg/Kyle": xr.Dataset({"name": "Kyle"}),
+                "/Bragg/Kyle/Jake": xr.Dataset({"name": "Jake"}),
+            }
+        )
         new_dt = dt.move("/Jake", "/Bragg/Kyle/Jake")
         xrt.assert_equal(expected_dt.to_dataset(), new_dt.to_dataset())
 
     def test_move_from_root_to_subnode(self):
         dt = DataTree.from_dict(
-        d={
-            "/": xr.Dataset({"name": "Hobert"}),
-            "/Bragg": xr.Dataset({ "name": "Bragg" }),
-            "/Kyle": xr.Dataset({"name": "Kyle"}),
-        })
-        expected_dt = DataTree.from_dict(d={
-            "/": xr.Dataset({ "name": "Hobert" }),
-            "/Bragg": xr.Dataset({ "name": "Bragg"}),
-            "/Bragg/Kyle": xr.Dataset({ "name": "Kyle"})
-        })
+            d={
+                "/": xr.Dataset({"name": "Hobert"}),
+                "/Bragg": xr.Dataset({"name": "Bragg"}),
+                "/Kyle": xr.Dataset({"name": "Kyle"}),
+            }
+        )
+        expected_dt = DataTree.from_dict(
+            d={
+                "/": xr.Dataset({"name": "Hobert"}),
+                "/Bragg": xr.Dataset({"name": "Bragg"}),
+                "/Bragg/Kyle": xr.Dataset({"name": "Kyle"}),
+            }
+        )
         new_dt = dt.move("/Kyle", "/Bragg/Kyle")
         xrt.assert_equal(expected_dt.to_dataset(), new_dt.to_dataset())
 
