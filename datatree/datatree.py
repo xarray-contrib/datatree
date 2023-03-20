@@ -1412,3 +1412,21 @@ class DataTree(
 
     def plot(self):
         raise NotImplementedError
+
+    def merge_subtrees(self, subtree_a, subtree_b) -> DataTree :
+        """Merge two node in an xarray DataTree object.
+
+        Args:
+            self(Datatree): The DataTree object on which the method is called.
+            subtree_a (hashable): The label for the first subtree to merge.
+            subtree_b (hashable): The label for the second subtree to merge.
+        
+        Returns:
+            DataTree: A new DataTree object containing the merged result.
+        """
+
+        target = [self[subtree_a], self[subtree_b]]
+        
+        merged_output = Dataset.merge(target)
+
+        return merged_output
