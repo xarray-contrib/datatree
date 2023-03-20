@@ -693,3 +693,42 @@ class TestSubset:
         )
         elders = simpsons.filter(lambda node: node["age"] > 18)
         dtt.assert_identical(elders, expected)
+
+
+class TestSubtreeMerge:
+    def test_merge_subtrees(self):
+        data_tree = xr.DataArray(
+            np.random.rand(3, 3, 3),
+            coords=[("x", [0, 1, 2]), ("y", [0, 1, 2]), ("z", [0, 1, 2])],
+            dims=["x", "y", "z"],
+        ).groupby("x")
+        merged_data_tree = data_tree.merge_subtrees(subtree_a=0, subtree_b=1)
+
+        self.assertEqual(merged_data_tree.dims, ("x", "y", "z"))
+        self.assertEqual(list(merged_data_tree.coords.keys()), ["x", "y", "z"])
+        self.assertListEqual(list(merged_data_tree.coords["x"].values), [0, 2])
+
+        expected_values = np.concatenate(
+            [data_tree.get_group(0), data_tree.get_group(1)], axis=0
+        )
+        np.testing.assert_array_equal(merged_data_tree.values, expected_values)
+
+    def test_merge_subtrees_same_subtree(self):
+        data_tree = xr.DataArray(
+            np.random.rand(3, 3, 3),
+            coords=[("x", [0, 1, 2]), ("y", [0, 1, 2]), ("z", [0, 1, 2])],
+            dims=["x", "y", "z"],
+        ).groupby("x")
+
+        with self.assertRaises(KeyError):
+            data_tree.merge_subtrees(subtree_a=0, subtree_b=0)
+
+    def test_merge_subtrees_nonexistent_subtree(self):
+        data_tree = xr.DataArray(
+            np.random.rand(3, 3, 3),
+            coords=[("x", [0, 1, 2]), ("y", [0, 1, 2]), ("z", [0, 1, 2])],
+            dims=["x", "y", "z"],
+        ).groupby("x")
+
+        with self.assertRaises(KeyError):
+            data_tree.merge_subtrees(subtree_a=0, subtree_b=2)
