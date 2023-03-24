@@ -48,7 +48,7 @@ from .ops import (
     MappedDataWithCoords,
 )
 from .render import RenderTree
-from .treenode import NamedNode, NodePath, TreeNode, Tree
+from .treenode import NamedNode, NodePath, Tree, TreeNode
 
 try:
     from xarray.core.variable import calculate_dimensions
@@ -1413,8 +1413,8 @@ class DataTree(
 
     def plot(self):
         raise NotImplementedError
-    
-    def move_to(self, new_parent : Tree|None ) -> DataTree:
+
+    def move_to(self, new_parent: Tree | None) -> DataTree:
         self._set_parent(new_parent, self.name)
         # would require us to complete some methods in the TreeNode Class for this to work
         return Tree
