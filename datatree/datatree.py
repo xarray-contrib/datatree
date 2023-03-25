@@ -861,17 +861,18 @@ class DataTree(
         """
         new_tree = self.copy()
         target_node = new_tree[original_path]
-        path_to_parent = "/".join(original_path.split("/")[:-1])
+        path_to_parent = str(NodePath(original_path).parent)
 
         new_tree[to] = DataTree(target_node.to_dataset())
 
         # if empty str then it's likely the root node
         # drop the node from it's original parent after copying
         # it to it's new location
-        if path_to_parent == "":
+        if path_to_parent == "/":
             new_tree = new_tree.drop_nodes(str(target_node.name))
         else:
             target_parent = new_tree[path_to_parent]
+            print(target_parent)
             new_parent = target_parent.drop_nodes(str(target_node.name))
             new_tree[path_to_parent] = new_parent
         return new_tree
