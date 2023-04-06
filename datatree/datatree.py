@@ -48,7 +48,7 @@ from .ops import (
     MappedDataWithCoords,
 )
 from .render import RenderTree
-from .treenode import NamedNode, NodePath, Tree, TreeNode
+from .treenode import NamedNode, NodePath, Tree
 
 try:
     from xarray.core.variable import calculate_dimensions
@@ -244,7 +244,6 @@ class DataTree(
     TreeAttrAccessMixin,
     Generic[Tree],
     Mapping,
-    TreeNode,
 ):
     """
     A tree-like hierarchical collection of xarray objects.
@@ -1415,6 +1414,7 @@ class DataTree(
         raise NotImplementedError
 
     def move_to(self, new_parent: Tree | None) -> DataTree:
-        self._set_parent(new_parent, self.name)
-        # would require us to complete some methods in the TreeNode Class for this to work
-        return Tree
+        self.parent = new_parent
+        # We take advantage of the parent setter implemented above.
+        # the parent setter also calls the _set_parent() method, thus no need to repeat it here.
+        return self
