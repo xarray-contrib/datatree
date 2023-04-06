@@ -135,6 +135,8 @@ class TreeNode(Generic[Tree]):
                     if child is not self
                 }
             )
+            # Deleting this detached node from the children dictionary of the old parent
+            parent._children[self.name] = None
             self._parent = None
             self._post_detach(parent)
 
