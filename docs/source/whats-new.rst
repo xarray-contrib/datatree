@@ -32,6 +32,8 @@ Deprecations
 Bug fixes
 ~~~~~~~~~
 
+* Fix unittests on i386.
+
 Documentation
 ~~~~~~~~~~~~~
 
