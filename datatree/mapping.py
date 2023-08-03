@@ -157,6 +157,14 @@ def map_over_subtree(func: Callable) -> Callable:
         """Internal function which maps func over every node in tree, returning a tree of the results."""
         from .datatree import DataTree
 
+        parallel = True
+        if parallel:
+            import dask
+
+            func_ = dask.delayed(func)
+        else:
+            func_ = func
+
         all_tree_inputs = [a for a in args if isinstance(a, DataTree)] + [
             a for a in kwargs.values() if isinstance(a, DataTree)
         ]
@@ -169,7 +177,10 @@ def map_over_subtree(func: Callable) -> Callable:
         for other_tree in other_trees:
             # isomorphism is transitive so this is enough to guarantee all trees are mutually isomorphic
             check_isomorphic(
-                first_tree, other_tree, require_names_equal=False, check_from_root=False
+                first_tree,
+                other_tree,
+                require_names_equal=False,
+                check_from_root=False,
             )
 
         # Walk all trees simultaneously, applying func to all nodes that lie in same position in different trees
@@ -205,13 +216,20 @@ def map_over_subtree(func: Callable) -> Callable:
 
             # Now we can call func on the data in this particular set of corresponding nodes
             results = (
-                func(*node_args_as_datasets, **node_kwargs_as_datasets)
+                func_(*node_args_as_datasets, **node_kwargs_as_datasets)
                 if not node_of_first_tree.is_empty
                 else None
             )
 
             # TODO implement mapping over multiple trees in-place using if conditions from here on?
             out_data_objects[node_of_first_tree.path] = results
+
+        if parallel:
+            keys, values = dask.compute(
+                [k for k in out_data_objects.keys()],
+                [v for v in out_data_objects.values()],
+            )
+            out_data_objects = {k: v for k, v in zip(keys, values)}
 
         # Find out how many return values we received
         num_return_values = _check_all_return_values(out_data_objects)
