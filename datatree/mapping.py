@@ -177,10 +177,7 @@ def map_over_subtree(func: Callable) -> Callable:
         for other_tree in other_trees:
             # isomorphism is transitive so this is enough to guarantee all trees are mutually isomorphic
             check_isomorphic(
-                first_tree,
-                other_tree,
-                require_names_equal=False,
-                check_from_root=False,
+                first_tree, other_tree, require_names_equal=False, check_from_root=False
             )
 
         # Walk all trees simultaneously, applying func to all nodes that lie in same position in different trees
