@@ -103,7 +103,10 @@ def diff_treestructure(a: DataTree, b: DataTree, require_names_equal: bool) -> s
     return ""
 
 
-def map_over_subtree(func: Callable) -> Callable:
+_map_over_subtree_kwargs = dict(parallel=False)
+
+
+def map_over_subtree(func: Callable, *, parallel: bool | None = None) -> Callable:
     """
     Decorator which turns a function which acts on (and returns) Datasets into one which acts on and returns DataTrees.
 
@@ -152,12 +155,19 @@ def map_over_subtree(func: Callable) -> Callable:
 
     # TODO inspect function to work out immediately if the wrong number of arguments were passed for it?
 
+    # TODO: _map_over_subtree_kwargs doesn't reset every function call:
+    if parallel is None:
+        _map_over_subtree_kwargs["parallel"] = False
+    else:
+        _map_over_subtree_kwargs["parallel"] = parallel
+
     @functools.wraps(func)
     def _map_over_subtree(*args, **kwargs) -> DataTree | Tuple[DataTree, ...]:
         """Internal function which maps func over every node in tree, returning a tree of the results."""
         from .datatree import DataTree
 
-        parallel = True
+        parallel = _map_over_subtree_kwargs["parallel"]
+
         if parallel:
             import dask
 
