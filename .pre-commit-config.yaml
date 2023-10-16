@@ -45,7 +45,7 @@ repos:
             types-pytz,
             # Dependencies that are typed
             numpy,
-            typing-extensions==3.10.0.0,
+            typing-extensions>=4.1.0,
           ]
   # run this occasionally, ref discussion https://github.com/pydata/xarray/pull/3194
   # - repo: https://github.com/asottile/pyupgrade
