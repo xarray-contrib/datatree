@@ -30,6 +30,7 @@ class NotFoundInTreeError(ValueError):
 
 class NodePath(PurePosixPath):
     """Represents a path from one node to another within a tree."""
+
     def __init__(self, *pathsegments):
         if sys.version_info >= (3, 12):
             super().__init__(*pathsegments)
@@ -43,6 +44,7 @@ class NodePath(PurePosixPath):
                 'Root of NodePath can only be either "/" or "", with "" meaning the path is relative.'
             )
         # TODO should we also forbid suffixes to avoid node names with dots in them?
+
 
 Tree = TypeVar("Tree", bound="TreeNode")
 
