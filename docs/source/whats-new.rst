@@ -20,6 +20,10 @@ What's New
 v0.0.13 (unreleased)
 --------------------
 
+- Added a :py:func:`DataTree.move`
+  By `JosiasAurel <ndjosiasaurel@gmail.com>`_.
+
+
 New Features
 ~~~~~~~~~~~~
 
@@ -41,6 +45,8 @@ Documentation
 Internal Changes
 ~~~~~~~~~~~~~~~~
 
+New Features
+~~~~~~~~~~~~
 .. _whats-new.v0.0.12:
 
 v0.0.12 (03/07/2023)
