@@ -450,11 +450,15 @@ let's first create a example scientific dataset.
 
     def time_stamps(n_samples, T):
         """Create an array of evenly-spaced time stamps"""
-        return xr.DataArray(data=np.linspace(0, 2 * np.pi * T, n_samples), dims=['time'])
+        return xr.DataArray(
+            data=np.linspace(0, 2 * np.pi * T, n_samples), dims=["time"]
+        )
+
 
     def signal_generator(t, f, A, phase):
         """Generate an example electrical-like waveform"""
         return A * np.sin(f * t.data + phase)
+
 
     time_stamps1 = time_stamps(n_samples=15, T=1.5)
     time_stamps2 = time_stamps(n_samples=10, T=1.0)
@@ -463,17 +467,29 @@ let's first create a example scientific dataset.
         {
             "/oscilloscope1": xr.Dataset(
                 {
-                    "potential": ('time', signal_generator(time_stamps1, f=2, A=1.2, phase=0.5)),
-                    "current": ('time', signal_generator(time_stamps1, f=2, A=1.2, phase=1)),
+                    "potential": (
+                        "time",
+                        signal_generator(time_stamps1, f=2, A=1.2, phase=0.5),
+                    ),
+                    "current": (
+                        "time",
+                        signal_generator(time_stamps1, f=2, A=1.2, phase=1),
+                    ),
                 },
-                coords={'time': time_stamps1},
+                coords={"time": time_stamps1},
             ),
             "/oscilloscope2": xr.Dataset(
                 {
-                    "potential": ('time', signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.2)),
-                    "current": ('time', signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.7)),
+                    "potential": (
+                        "time",
+                        signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.2),
+                    ),
+                    "current": (
+                        "time",
+                        signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.7),
+                    ),
                 },
-                coords={'time': time_stamps2},
+                coords={"time": time_stamps2},
             ),
         }
     )
@@ -484,7 +500,7 @@ so you can for example take the mean value of these two timeseries at once:
 
 .. ipython:: python
 
-    voltages.mean(dim='time')
+    voltages.mean(dim="time")
 
 This works by mapping the standard :py:meth:`xarray.Dataset.mean()` method over the dataset stored in each node of the
 tree one-by-one.
