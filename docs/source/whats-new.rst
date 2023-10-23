@@ -15,10 +15,75 @@ What's New
 
     np.random.seed(123456)
 
+.. _whats-new.v0.0.13:
+
+v0.0.13 (unreleased)
+--------------------
+
+New Features
+~~~~~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Bug fixes
+~~~~~~~~~
+
+- Ensure nodepath class is compatible with python 3.12 (:pull:`260`)
+  By `Max Grover <https://github.com/mgrover1>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
+.. _whats-new.v0.0.12:
+
+v0.0.12 (03/07/2023)
+--------------------
+
+New Features
+~~~~~~~~~~~~
+
+- Added a :py:func:`DataTree.level`, :py:func:`DataTree.depth`, and :py:func:`DataTree.width` property (:pull:`208`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Allow dot-style (or "attribute-like") access to child nodes and variables, with ipython autocomplete. (:issue:`189`, :pull:`98`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+- Dropped support for python 3.8 (:issue:`212`, :pull:`214`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Bug fixes
+~~~~~~~~~
+
+- Allow for altering of given dataset inside function called by :py:func:`map_over_subtree` (:issue:`188`, :pull:`194`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- copy subtrees without creating ancestor nodes (:pull:`201`)
+  By `Justus Magin <https://github.com/keewis>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
 .. _whats-new.v0.0.11:
 
-v0.0.11 (unreleased)
+v0.0.11 (01/09/2023)
 --------------------
+
+Big update with entirely new pages in the docs,
+new methods (``.drop_nodes``, ``.filter``, ``.leaves``, ``.descendants``), and bug fixes!
 
 New Features
 ~~~~~~~~~~~~

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from collections import OrderedDict
 from pathlib import PurePosixPath
 from typing import (
@@ -30,20 +31,19 @@ class NotFoundInTreeError(ValueError):
 class NodePath(PurePosixPath):
     """Represents a path from one node to another within a tree."""
 
-    def __new__(cls, *args: str | "NodePath") -> "NodePath":
-        obj = super().__new__(cls, *args)
-
-        if obj.drive:
+    def __init__(self, *pathsegments):
+        if sys.version_info >= (3, 12):
+            super().__init__(*pathsegments)
+        else:
+            super().__new__(PurePosixPath, *pathsegments)
+        if self.drive:
             raise ValueError("NodePaths cannot have drives")
 
-        if obj.root not in ["/", ""]:
+        if self.root not in ["/", ""]:
             raise ValueError(
                 'Root of NodePath can only be either "/" or "", with "" meaning the path is relative.'
             )
-
         # TODO should we also forbid suffixes to avoid node names with dots in them?
-
-        return obj
 
 
 Tree = TypeVar("Tree", bound="TreeNode")
@@ -333,6 +333,61 @@ class TreeNode(Generic[Tree]):
         all_nodes = tuple(self.subtree)
         this_node, *descendants = all_nodes
         return tuple(descendants)
+
+    @property
+    def level(self: Tree) -> int:
+        """
+        Level of this node.
+
+        Level means number of parent nodes above this node before reaching the root.
+        The root node is at level 0.
+
+        Returns
+        -------
+        level : int
+
+        See Also
+        --------
+        depth
+        width
+        """
+        return len(self.ancestors) - 1
+
+    @property
+    def depth(self: Tree) -> int:
+        """
+        Maximum level of this tree.
+
+        Measured from the root, which has a depth of 0.
+
+        Returns
+        -------
+        depth : int
+
+        See Also
+        --------
+        level
+        width
+        """
+        return max(node.level for node in self.root.subtree)
+
+    @property
+    def width(self: Tree) -> int:
+        """
+        Number of nodes at this level in the tree.
+
+        Includes number of immediate siblings, but also "cousins" in other branches and so-on.
+
+        Returns
+        -------
+        depth : int
+
+        See Also
+        --------
+        level
+        depth
+        """
+        return len([node for node in self.root.subtree if node.level == self.level])
 
     def _pre_detach(self: Tree, parent: Tree) -> None:
         """Method call before detaching from `parent`."""

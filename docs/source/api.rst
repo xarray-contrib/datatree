@@ -31,6 +31,9 @@ Attributes relating to the recursive tree-like structure of a ``DataTree``.
    DataTree.is_root
    DataTree.is_leaf
    DataTree.leaves
+   DataTree.level
+   DataTree.depth
+   DataTree.width
    DataTree.subtree
    DataTree.descendants
    DataTree.siblings
@@ -110,7 +113,6 @@ Manipulate the contents of all nodes in a tree simultaneously.
    :toctree: generated/
 
    DataTree.copy
-
    DataTree.assign_coords
    DataTree.merge
    DataTree.rename

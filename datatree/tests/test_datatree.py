@@ -113,6 +113,7 @@ class TestStoreDatasets:
     def test_create_with_data(self):
         dat = xr.Dataset({"a": 0})
         john = DataTree(name="john", data=dat)
+
         xrt.assert_identical(john.to_dataset(), dat)
 
         with pytest.raises(TypeError):
@@ -122,7 +123,9 @@ class TestStoreDatasets:
         john = DataTree(name="john")
         dat = xr.Dataset({"a": 0})
         john.ds = dat
+
         xrt.assert_identical(john.to_dataset(), dat)
+
         with pytest.raises(TypeError):
             john.ds = "junk"
 
@@ -147,6 +150,7 @@ class TestVariablesChildrenNameCollisions:
             dt.ds = xr.Dataset({"a": 0})
 
         dt.ds = xr.Dataset()
+
         new_ds = dt.to_dataset().assign(a=xr.DataArray(0))
         with pytest.raises(KeyError, match="names would collide"):
             dt.ds = new_ds
@@ -231,6 +235,17 @@ class TestUpdate:
         child = dt["a"]
         assert child.name == "a"
 
+    def test_update_overwrite(self):
+        actual = DataTree.from_dict({"a": DataTree(xr.Dataset({"x": 1}))})
+        actual.update({"a": DataTree(xr.Dataset({"x": 2}))})
+
+        expected = DataTree.from_dict({"a": DataTree(xr.Dataset({"x": 2}))})
+
+        print(actual)
+        print(expected)
+
+        dtt.assert_equal(actual, expected)
+
 
 class TestCopy:
     def test_copy(self, create_test_datatree):
@@ -243,7 +258,6 @@ class TestCopy:
             dtt.assert_identical(dt, copied)
 
             for node, copied_node in zip(dt.root.subtree, copied.root.subtree):
-
                 assert node.encoding == copied_node.encoding
                 # Note: IndexVariable objects with string dtype are always
                 # copied because of xarray.core.util.safe_cast_to_index.
@@ -258,6 +272,14 @@ class TestCopy:
                 copied_node.attrs["foo"] = "bar"
                 assert "foo" not in node.attrs
                 assert node.attrs["Test"] is copied_node.attrs["Test"]
+
+    def test_copy_subtree(self):
+        dt = DataTree.from_dict({"/level1/level2/level3": xr.Dataset()})
+
+        actual = dt["/level1/level2"].copy()
+        expected = DataTree.from_dict({"/level3": xr.Dataset()}, name="level2")
+
+        dtt.assert_identical(actual, expected)
 
     def test_deepcopy(self, create_test_datatree):
         dt = create_test_datatree()
@@ -530,6 +552,56 @@ class TestDatasetView:
         expected = create_test_datatree(modify=lambda ds: 10.0 * ds)["set1"]
         result = 10.0 * dt["set1"].ds
         assert result.identical(expected)
+
+    def test_init_via_type(self):
+        # from datatree GH issue #188
+        # xarray's .weighted is unusual because it uses type() to create a Dataset/DataArray
+
+        a = xr.DataArray(
+            np.random.rand(3, 4, 10),
+            dims=["x", "y", "time"],
+            coords={"area": (["x", "y"], np.random.rand(3, 4))},
+        ).to_dataset(name="data")
+        dt = DataTree(data=a)
+
+        def weighted_mean(ds):
+            return ds.weighted(ds.area).mean(["x", "y"])
+
+        weighted_mean(dt.ds)
+
+
+class TestAccess:
+    def test_attribute_access(self, create_test_datatree):
+        dt = create_test_datatree()
+
+        # vars / coords
+        for key in ["a", "set0"]:
+            xrt.assert_equal(dt[key], getattr(dt, key))
+            assert key in dir(dt)
+
+        # dims
+        xrt.assert_equal(dt["a"]["y"], getattr(dt.a, "y"))
+        assert "y" in dir(dt["a"])
+
+        # children
+        for key in ["set1", "set2", "set3"]:
+            dtt.assert_equal(dt[key], getattr(dt, key))
+            assert key in dir(dt)
+
+        # attrs
+        dt.attrs["meta"] = "NASA"
+        assert dt.attrs["meta"] == "NASA"
+        assert "meta" in dir(dt)
+
+    def test_ipython_key_completions(self, create_test_datatree):
+        dt = create_test_datatree()
+        key_completions = dt._ipython_key_completions_()
+
+        node_keys = [node.path[1:] for node in dt.subtree]
+        assert all(node_key in key_completions for node_key in node_keys)
+
+        var_keys = list(dt.variables.keys())
+        assert all(var_key in key_completions for var_key in var_keys)
 
 
 class TestRestructuring:

@@ -14,6 +14,17 @@ that was more flexible than a single `xarray.Dataset` object.
 The initial motivation was to represent netCDF files / Zarr stores with multiple nested groups in a single in-memory object,
 but `datatree.DataTree` objects have many other uses.
 
+### Installation
+You can install datatree via pip:
+```shell
+pip install xarray-datatree
+```
+
+or via conda-forge
+```shell
+conda install -c conda-forge xarray-datatree
+```
+
 ### Why Datatree?
 
 You might want to use datatree for:
@@ -22,6 +33,8 @@ You might want to use datatree for:
 - Analysing similar data at multiple resolutions simultaneously, such as when doing a convergence study,
 - Comparing heterogenous but related data, such as experimental and theoretical data,
 - I/O with nested data formats such as netCDF / Zarr groups.
+
+[**Talk slides on Datatree from AMS-python 2023**](https://speakerdeck.com/tomnicholas/xarray-datatree-hierarchical-data-structures-for-multi-model-science)
 
 ### Features
 
@@ -60,7 +73,7 @@ At this point in development, user feedback is critical to help us create someth
 Please raise any thoughts, issues, suggestions or bugs, no matter how small or large, on the [github issue tracker](https://github.com/xarray-contrib/datatree/issues).
 
 
-[github-ci-badge]: https://img.shields.io/github/workflow/status/xarray-contrib/datatree/CI?label=CI&logo=github
+[github-ci-badge]: https://img.shields.io/github/actions/workflow/status/xarray-contrib/datatree/main.yaml?branch=main&label=CI&logo=github
 [github-ci-link]: https://github.com/xarray-contrib/datatree/actions?query=workflow%3ACI
 [codecov-badge]: https://img.shields.io/codecov/c/github/xarray-contrib/datatree.svg?logo=codecov
 [codecov-link]: https://codecov.io/gh/xarray-contrib/datatree
