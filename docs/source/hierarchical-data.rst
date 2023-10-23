@@ -504,6 +504,9 @@ For example, can calculate the Root Mean Square value of these signals:
     def rms(signal):
         return np.sqrt(np.mean(signal**2))
 
+
+.. ipython:: ipython
+
     rms(readings)
 
 .. _multiple trees:
