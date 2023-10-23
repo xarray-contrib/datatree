@@ -591,4 +591,3 @@ We could use this feature to quickly calculate the electrical power in our signa
 
     power = currents * voltages
     power
-
