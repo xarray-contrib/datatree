@@ -15,9 +15,35 @@ What's New
 
     np.random.seed(123456)
 
+.. _whats-new.v0.0.13:
+
+v0.0.13 (unreleased)
+--------------------
+
+New Features
+~~~~~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+Bug fixes
+~~~~~~~~~
+
+- Ensure nodepath class is compatible with python 3.12 (:pull:`260`)
+  By `Max Grover <https://github.com/mgrover1>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
 .. _whats-new.v0.0.12:
 
-v0.0.12 (unreleased)
+v0.0.12 (03/07/2023)
 --------------------
 
 New Features
