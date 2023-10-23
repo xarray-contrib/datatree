@@ -202,11 +202,15 @@ def map_over_subtree(func: Callable) -> Callable:
                     ],
                 )
             )
-            func_with_error_context = _handle_errors_with_path_context(node_of_first_tree.path)(func)
+            func_with_error_context = _handle_errors_with_path_context(
+                node_of_first_tree.path
+            )(func)
 
             # Now we can call func on the data in this particular set of corresponding nodes
             results = (
-                func_with_error_context(*node_args_as_datasets, **node_kwargs_as_datasets)
+                func_with_error_context(
+                    *node_args_as_datasets, **node_kwargs_as_datasets
+                )
                 if not node_of_first_tree.is_empty
                 else None
             )
@@ -254,6 +258,7 @@ def map_over_subtree(func: Callable) -> Callable:
 
 def _handle_errors_with_path_context(path):
     """Wraps given function so that if it fails it also raises path to node on which it failed."""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
