@@ -459,7 +459,7 @@ let's first create a example scientific dataset.
     time_stamps1 = time_stamps(n_samples=15, T=1.5)
     time_stamps2 = time_stamps(n_samples=10, T=1.0)
 
-    readings = DataTree.from_dict(
+    voltages = DataTree.from_dict(
         {
             "/oscilloscope1": xr.Dataset(
                 {
@@ -477,14 +477,14 @@ let's first create a example scientific dataset.
             ),
         }
     )
-    readings
+    voltages
 
 Most xarray computation methods also exist as methods on datatree objects,
 so you can for example take the mean value of these two timeseries at once:
 
 .. ipython:: python
 
-    readings.mean(dim='time')
+    voltages.mean(dim='time')
 
 This works by mapping the standard :py:meth:`xarray.Dataset.mean()` method over the dataset stored in each node of the
 tree one-by-one.
@@ -494,7 +494,7 @@ The arguments passed to the method are used for every node, so the values of the
 .. ipython:: python
     :okexcept:
 
-    readings.isel(time=12)
+    voltages.isel(time=12)
 
 Notice that the error raised helpfully indicates which node of the tree the operation failed on.
 
@@ -560,14 +560,44 @@ We can check if any two trees are isomorphic using the :py:meth:`DataTree.isomor
     dt4 = DataTree.from_dict({'A': None, 'A/B': xr.Dataset({'foo': 1})})
     dt1.isomorphic(dt4)
 
-
 If the trees are not isomorphic a :py:class:`~TreeIsomorphismError` will be raised.
 Notice that corresponding tree nodes do not need to have the same name or contain the same data in order to be considered isomorphic.
 
 Arithmetic Between Multiple Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-P = VI
+Arithmetic operations like multiplication are binary operations, so as long as we have wo isomorphic trees,
+we can do arithmetic between them.
+
+.. ipython:: ipython
+
+    currents = DataTree.from_dict(
+        {
+            "/oscilloscope1": xr.Dataset(
+                {
+                    "current": ('time', signal_generator(time_stamps1, f=2, A=1.2, phase=1)),
+                },
+                coords={'time': time_stamps1},
+            ),
+            "/oscilloscope2": xr.Dataset(
+                {
+                    "current": ('time', signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.7)),
+                },
+                coords={'time': time_stamps2},
+            ),
+        }
+    )
+    currents
+
+    currents.isomorphic(voltages)
+
+We could use this feature to quickly calculate the electrical power in our signal, P=IV.
+
+.. ipython:: ipython
+
+    power = currents * voltages
+    power
+
 
 Mapping over Multiple Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
