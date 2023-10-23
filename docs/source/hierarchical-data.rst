@@ -513,13 +513,14 @@ and returns one (or more) xarray datasets.
     Functions passed to :py:func:`map_over_subtree` cannot alter nodes in-place.
     Instead they must return new `xarray.Dataset` objects.
 
-For example, can calculate the Root Mean Square value of these signals:
+For example, we can define a function to calculate the Root Mean Square of a timeseries
 
 .. ipython:: ipython
 
     def rms(signal):
         return np.sqrt(np.mean(signal**2))
 
+Then calculate the RMS value of these signals:
 
 .. ipython:: ipython
 
