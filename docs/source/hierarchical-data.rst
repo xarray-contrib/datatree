@@ -513,7 +513,7 @@ See that the same change (fast-forwarding by adding 10 years to the age of each 
 Mapping Custom Functions Over Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can map custom computation over the nodes in a tree using :py:func:`map_over_subtree`.
+You can map custom computation over each node in a tree using :py:func:`map_over_subtree`.
 You can map any function, so long as it takes `xarray.Dataset` objects as one (or more) of the input arguments,
 and returns one (or more) xarray datasets.
 
@@ -522,21 +522,14 @@ and returns one (or more) xarray datasets.
     Functions passed to :py:func:`map_over_subtree` cannot alter nodes in-place.
     Instead they must return new `xarray.Dataset` objects.
 
-RMS voltage
+For example, can calculate the Root Mean Square value of these signals:
 
-For example, we could have altered the ages of the entire Simpson family at once using a custom function instead:
+.. ipython:: ipython
 
-.. ipython:: python
+    def rms(signal):
+        return np.sqrt(np.mean(signal**2))
 
-    def fast_forward(ds: xr.Dataset, years: float) -> xr.Dataset:
-        """Add some years to the age variable"""
-        new_ds = ds.copy()  # (necessary because we cannot alter dt.ds in-place)
-        new_ds["age"] = ds["age"] + years
-        return new_ds
-
-.. ipython:: python
-
-    simpsons.map_over_subtree(fast_forward, years=10)
+    rms(readings)
 
 .. _multiple trees:
 
