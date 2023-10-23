@@ -259,7 +259,8 @@ class TestMapOverSubTree:
 
         def check_for_data(ds):
             # fails if run on a node that has no data
-            assert len(ds.variables) == 0
+            assert len(ds.variables) != 0
+            return ds
 
         dt.map_over_subtree(check_for_data)
 
