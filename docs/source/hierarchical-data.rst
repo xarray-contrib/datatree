@@ -374,22 +374,6 @@ You can see this tree is similar to the ``dt`` object above, except that it is m
 Manipulating Trees
 ------------------
 
-Moving Tree Branches
-~~~~~~~~~~~~~~~~~~~~
-
-pruning, grafting
-
-Tree of life?
-
-Graft new discoveries onto the tree?
-
-Prune when we realise something is in the wrong place?
-
-Save our updated tree out with ``to_dict``
-
-leaves are either currently living or died out with no descendants
-Subset only the living leaves of the evolutionary tree?
-
 Subsetting Tree Nodes
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -423,15 +407,6 @@ Now let's filter out the minors:
 The result is a new tree, containing only the nodes matching the condition.
 
 (Yes, under the hood :py:meth:`~DataTree.filter` is just syntactic sugar for the pattern we showed you in :ref:`iterating over trees` !)
-
-
-Collapsing Subtrees
-~~~~~~~~~~~~~~~~~~~
-
-Merge all nodes in one subtree into a single dataset
-
-Find total number of species
-Find total biomass
 
 .. _tree computation:
 
@@ -597,11 +572,3 @@ We could use this feature to quickly calculate the electrical power in our signa
 
     power = currents * voltages
     power
-
-
-Mapping over Multiple Trees
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-map_over_subtree with binary function
-example?
-meter readings?
