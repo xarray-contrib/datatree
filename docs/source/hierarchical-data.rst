@@ -450,13 +450,22 @@ Find total biomass
 Mapping Custom Functions Over Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-map_over_subtree
+You can map custom computation over the nodes in a tree using :py:func:`map_over_subtree`.
+You can map any function, so long as it takes `xarray.Dataset` objects as one (or more) of the input arguments,
+and returns one (or more) xarray datasets.
+
+.. note::
+
+    Functions passed to :py:func:`map_over_subtree` cannot alter nodes in-place.
+    Instead they must return new `xarray.Dataset` objects.
+
+For example, we can alter the ages of the entire Simpson family at once 
 
 .. ipython:: python
 
     def fast_forward(ds: xr.Dataset, years: float) -> xr.Dataset:
-        """Add some years to the age"""
-        new_ds = ds.copy()
+        """Add some years to the age variable"""
+        new_ds = ds.copy()  # (necessary because we cannot alter dt.ds in-place)
         new_ds["age"] = ds["age"] + years
         return new_ds
 
