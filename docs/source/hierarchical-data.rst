@@ -430,22 +430,85 @@ Collapsing Subtrees
 
 Merge all nodes in one subtree into a single dataset
 
+Find total number of species
+Find total biomass
+
 .. _tree computation:
 
 Computation
 -----------
 
-Operations on Trees
-~~~~~~~~~~~~~~~~~~~
+`DataTree` objects are also useful for performing computations, not just for organizing data.
 
-Mapping of methods
+Operations and Methods on Trees
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Arithmetic
+To show how applying operations across a whole tree at once can be useful,
+let's first create a example scientific dataset.
 
-cause all Simpsons to age simultaneously
+.. ipython:: python
 
-Find total number of species
-Find total biomass
+    def time_stamps(n_samples, T):
+        """Create an array of evenly-spaced time stamps"""
+        return xr.DataArray(data=np.linspace(0, 2 * np.pi * T, n_samples), dims=['time'])
+
+    def signal_generator(t, f, A, phase):
+        """Generate an example electrical-like waveform"""
+        return A * np.sin(f * t.data + phase)
+
+    time_stamps1 = time_stamps(n_samples=15, T=1.5)
+    time_stamps2 = time_stamps(n_samples=10, T=1.0)
+
+    readings = DataTree.from_dict(
+        {
+            "/oscilloscope1": xr.Dataset(
+                {
+                    "potential": ('time', signal_generator(time_stamps1, f=2, A=1.2, phase=0.5)),
+                    "current": ('time', signal_generator(time_stamps1, f=2, A=1.2, phase=1)),
+                },
+                coords={'time': time_stamps1},
+            ),
+            "/oscilloscope2": xr.Dataset(
+                {
+                    "potential": ('time', signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.2)),
+                    "current": ('time', signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.7)),
+                },
+                coords={'time': time_stamps2},
+            ),
+        }
+    )
+    readings
+
+Most xarray computation methods also exist as methods on datatree objects,
+so you can for example take the mean value of these two timeseries at once:
+
+.. ipython:: python
+
+    readings.mean(dim='time')
+
+This works by mapping the standard :py:meth:`xarray.Dataset.mean()` method over the dataset stored in each node of the
+tree one-by-one.
+
+The arguments passed to the method are used for every node, so the values of the arguments you pass might be valid for one node and invalid for another
+
+.. ipython:: python
+    :okexcept
+
+    readings.isel(time=12)
+
+Notice that the error raised helpfully indicates which node of the tree the operation failed on.
+
+Arithmetic Methods on Trees
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Arithmetic methods are also implemented, so you can e.g. add a scalar to every dataset in the tree at once.
+For example, we can advance the timeline of the Simpsons by a decade just by
+
+.. ipython:: python
+
+    simpsons + 10
+
+See that the same change (fast-forwarding by adding 10 years to the age of each character) has been applied to every node.
 
 Mapping Custom Functions Over Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -459,7 +522,9 @@ and returns one (or more) xarray datasets.
     Functions passed to :py:func:`map_over_subtree` cannot alter nodes in-place.
     Instead they must return new `xarray.Dataset` objects.
 
-For example, we can alter the ages of the entire Simpson family at once 
+RMS voltage
+
+For example, we could have altered the ages of the entire Simpson family at once using a custom function instead:
 
 .. ipython:: python
 
@@ -482,8 +547,16 @@ Comparing trees
 ~~~~~~~~~~~~~~~
 
 isomorphism
+:py:class:`IsomorphismError`
+
+Arithmetic Between Multiple Trees
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+P = VI
 
 Mapping over Multiple Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 map_over_subtree with binary function
+example?
+meter readings?
