@@ -605,9 +605,9 @@ class TestAccess:
 
     def test_operation_with_attrs_but_no_data(self):
         # tests bug from xarray-datatree GH262
-        xs = xr.Dataset({'testvar': xr.DataArray(np.ones((2,3)))})
-        dt = DataTree.from_dict({'node1': xs, 'node2': xs})
-        dt.attrs['test_key'] = 1  # sel works fine without this line
+        xs = xr.Dataset({"testvar": xr.DataArray(np.ones((2, 3)))})
+        dt = DataTree.from_dict({"node1": xs, "node2": xs})
+        dt.attrs["test_key"] = 1  # sel works fine without this line
         dt.sel(dim_0=0)
 
 
