@@ -492,7 +492,7 @@ tree one-by-one.
 The arguments passed to the method are used for every node, so the values of the arguments you pass might be valid for one node and invalid for another
 
 .. ipython:: python
-    :okexcept
+    :okexcept:
 
     readings.isel(time=12)
 
@@ -536,11 +536,33 @@ For example, can calculate the Root Mean Square value of these signals:
 Operating on Multiple Trees
 ---------------------------
 
-Comparing trees
-~~~~~~~~~~~~~~~
+The examples so far have involved mapping functions or methods over the nodes of a single tree,
+but we can generalize this to mapping functions over multiple trees at once.
 
-isomorphism
-:py:class:`IsomorphismError`
+Comparing Trees for Isomorphism
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For it to make sense to map a single non-unary function over the nodes of multiple trees at once,
+each tree needs to have the same structure. Specifically two trees can only be considered similar, or "isomorphic",
+if they have the same number of nodes, and each corresponding node has the same number of children.
+We can check if any two trees are isomorphic using the :py:meth:`DataTree.isomorphic` method.
+
+.. ipython:: ipython
+    :okexcept:
+
+    dt1 = DataTree.from_dict({'a': None, 'a/b': None})
+    dt2 = DataTree.from_dict({'a': None})
+    dt1.isomorphic(dt2)
+
+    dt3 = DataTree.from_dict({'a': None, 'b': None})
+    dt1.isomorphic(dt3)
+
+    dt4 = DataTree.from_dict({'A': None, 'A/B': xr.Dataset({'foo': 1})})
+    dt1.isomorphic(dt4)
+
+
+If the trees are not isomorphic a :py:class:`~TreeIsomorphismError` will be raised.
+Notice that corresponding tree nodes do not need to have the same name or contain the same data in order to be considered isomorphic.
 
 Arithmetic Between Multiple Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
