@@ -545,14 +545,14 @@ We can check if any two trees are isomorphic using the :py:meth:`DataTree.isomor
 .. ipython:: python
     :okexcept:
 
-    dt1 = DataTree.from_dict({'a': None, 'a/b': None})
-    dt2 = DataTree.from_dict({'a': None})
+    dt1 = DataTree.from_dict({"a": None, "a/b": None})
+    dt2 = DataTree.from_dict({"a": None})
     dt1.isomorphic(dt2)
 
-    dt3 = DataTree.from_dict({'a': None, 'b': None})
+    dt3 = DataTree.from_dict({"a": None, "b": None})
     dt1.isomorphic(dt3)
 
-    dt4 = DataTree.from_dict({'A': None, 'A/B': xr.Dataset({'foo': 1})})
+    dt4 = DataTree.from_dict({"A": None, "A/B": xr.Dataset({"foo": 1})})
     dt1.isomorphic(dt4)
 
 If the trees are not isomorphic a :py:class:`~TreeIsomorphismError` will be raised.
@@ -570,15 +570,21 @@ we can do arithmetic between them.
         {
             "/oscilloscope1": xr.Dataset(
                 {
-                    "current": ('time', signal_generator(time_stamps1, f=2, A=1.2, phase=1)),
+                    "current": (
+                        "time",
+                        signal_generator(time_stamps1, f=2, A=1.2, phase=1),
+                    ),
                 },
-                coords={'time': time_stamps1},
+                coords={"time": time_stamps1},
             ),
             "/oscilloscope2": xr.Dataset(
                 {
-                    "current": ('time', signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.7)),
+                    "current": (
+                        "time",
+                        signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.7),
+                    ),
                 },
-                coords={'time': time_stamps2},
+                coords={"time": time_stamps2},
             ),
         }
     )
