@@ -155,14 +155,16 @@ class DatasetView(Dataset):
 
     def __setitem__(self, key, val) -> None:
         raise AttributeError(
-            "Mutation of the DatasetView is not allowed, please use __setitem__ on the wrapping DataTree node, "
-            "or use `DataTree.to_dataset()` if you want a mutable dataset"
+            "Mutation of the DatasetView is not allowed, please use `.__setitem__` on the wrapping DataTree node, "
+            "or use `dt.to_dataset()` if you want a mutable dataset. If calling this from within `map_over_subtree`,"
+            "use `.copy()` first to get a mutable version of the input dataset."
         )
 
     def update(self, other) -> None:
         raise AttributeError(
-            "Mutation of the DatasetView is not allowed, please use .update on the wrapping DataTree node, "
-            "or use `DataTree.to_dataset()` if you want a mutable dataset"
+            "Mutation of the DatasetView is not allowed, please use `.update` on the wrapping DataTree node, "
+            "or use `dt.to_dataset()` if you want a mutable dataset. If calling this from within `map_over_subtree`,"
+            "use `.copy()` first to get a mutable version of the input dataset."
         )
 
     # FIXME https://github.com/python/mypy/issues/7328
