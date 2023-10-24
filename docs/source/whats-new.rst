@@ -23,8 +23,19 @@ v0.0.13 (unreleased)
 New Features
 ~~~~~~~~~~~~
 
+- New :py:meth:`DataTree.match` method for glob-like pattern matching of node paths. (:pull:`267`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Indicate which node caused the problem if error encountered while applying user function using :py:func:`map_over_subtree`
+  (:issue:`190`, :pull:`264`). Only works when using python 3.11 or later.
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+- Nodes containing only attributes but no data are now ignored by :py:func:`map_over_subtree` (:issue:`262`, :pull:`263`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Disallow altering of given dataset inside function called by :py:func:`map_over_subtree` (:pull:`269`, reverts part of :pull:`194`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 
 Deprecations
 ~~~~~~~~~~~~
@@ -32,8 +43,16 @@ Deprecations
 Bug fixes
 ~~~~~~~~~
 
+- Fix unittests on i386. (:pull:`249`)
+  By `Antonio Valentino <https://github.com/avalentino>`_.
+- Ensure nodepath class is compatible with python 3.12 (:pull:`260`)
+  By `Max Grover <https://github.com/mgrover1>`_.
+
 Documentation
 ~~~~~~~~~~~~~
+
+- Added new sections to page on ``Working with Hierarchical Data`` (:pull:`180`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 
 Internal Changes
 ~~~~~~~~~~~~~~~~

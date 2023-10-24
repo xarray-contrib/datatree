@@ -14,6 +14,17 @@ that was more flexible than a single `xarray.Dataset` object.
 The initial motivation was to represent netCDF files / Zarr stores with multiple nested groups in a single in-memory object,
 but `datatree.DataTree` objects have many other uses.
 
+### Installation
+You can install datatree via pip:
+```shell
+pip install xarray-datatree
+```
+
+or via conda-forge
+```shell
+conda install -c conda-forge xarray-datatree
+```
+
 ### Why Datatree?
 
 You might want to use datatree for:
@@ -41,7 +52,7 @@ The approach used here is based on benbovy's [`DatasetNode` example](https://gis
 You can create a `DataTree` object in 3 ways:
 1) Load from a netCDF file (or Zarr store) that has groups via `open_datatree()`.
 2) Using the init method of `DataTree`, which creates an individual node.
-  You can then specify the nodes' relationships to one other, either by setting `.parent` and `.chlldren` attributes,
+  You can then specify the nodes' relationships to one other, either by setting `.parent` and `.children` attributes,
   or through `__get/setitem__` access, e.g. `dt['path/to/node'] = DataTree()`.
 3) Create a tree from a dictionary of paths to datasets using `DataTree.from_dict()`.
 
