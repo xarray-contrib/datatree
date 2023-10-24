@@ -389,7 +389,7 @@ We can use :py:meth:`DataTree.match` for this:
             "/a/A": None,
             "/a/B": None,
             "/b/A": None,
-            "/a/B": None,
+            "/b/B": None,
         }
     )
     result = dt.match("*/B")

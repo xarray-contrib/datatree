@@ -1175,6 +1175,10 @@ class DataTree(
         filterfunc: function
             A function which accepts only one DataTree - the node on which filterfunc will be called.
 
+        Returns
+        -------
+        DataTree
+
         See Also
         --------
         search
@@ -1197,11 +1201,33 @@ class DataTree(
         pattern: str
             A pattern to match each node path against.
 
+        Returns
+        -------
+        DataTree
+
         See Also
         --------
         filter
         pipe
         map_over_subtree
+
+        Examples
+        --------
+
+        >>> dt = DataTree.from_dict(
+        >>>     {
+        >>>         "/a/A": None,
+        >>>         "/a/B": None,
+        >>>         "/b/A": None,
+        >>>         "/b/B": None,
+        >>>     }
+        >>> )
+        >>> dt.match("*/B")
+        DataTree('None', parent=None)
+        ├── DataTree('a')
+        │   └── DataTree('B')
+        └── DataTree('b')
+            └── DataTree('B')
         """
         matching_nodes = {
             node.path: node.ds

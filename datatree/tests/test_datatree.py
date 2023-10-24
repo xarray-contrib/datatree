@@ -685,14 +685,14 @@ class TestSubset:
                 "/a/A": None,
                 "/a/B": None,
                 "/b/A": None,
-                "/a/B": None,
+                "/b/B": None,
             }
         )
         result = dt.match("*/B")
         expected = DataTree.from_dict(
             {
                 "/a/B": None,
-                "/a/B": None,
+                "/b/B": None,
             }
         )
         dtt.assert_identical(result, expected)
