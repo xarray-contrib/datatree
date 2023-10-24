@@ -209,7 +209,9 @@ def map_over_subtree(func: Callable) -> Callable:
 
             # Now we can call func on the data in this particular set of corresponding nodes
             results = (
-                func_with_error_context(*node_args_as_datasets, **node_kwargs_as_datasets)
+                func_with_error_context(
+                    *node_args_as_datasets, **node_kwargs_as_datasets
+                )
                 if node_of_first_tree.has_data
                 else None
             )
