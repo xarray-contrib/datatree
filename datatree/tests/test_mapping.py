@@ -322,7 +322,9 @@ class TestMutableOperations:
             ds["age"] = ds["age"] + years
             return ds
 
-        simpsons.map_over_subtree(fast_forward, years=10)
+        future_simpsons = simpsons.map_over_subtree(fast_forward, years=10)
+        # check that original tree has not been altered
+        assert simpsons['Homer']['age'] == 39
 
 
 @pytest.mark.xfail
