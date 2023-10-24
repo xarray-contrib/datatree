@@ -304,7 +304,7 @@ class TestMutableOperations:
 
         dt.map_over_subtree(weighted_mean)
 
-    def test_alter_inplace(self):
+    def test_alter_inplace_forbidden(self):
         simpsons = DataTree.from_dict(
             d={
                 "/": xr.Dataset({"age": 83}),
@@ -322,9 +322,8 @@ class TestMutableOperations:
             ds["age"] = ds["age"] + years
             return ds
 
-        future_simpsons = simpsons.map_over_subtree(fast_forward, years=10)
-        # check that original tree has not been altered
-        assert simpsons['Homer']['age'] == 39
+        with pytest.raises(AttributeError):
+            future_simpsons = simpsons.map_over_subtree(fast_forward, years=10)
 
 
 @pytest.mark.xfail
