@@ -32,7 +32,10 @@ Deprecations
 Bug fixes
 ~~~~~~~~~
 
-* Fix unittests on i386.
+- Fix unittests on i386. (:pull:`249`)
+  By `Antonio Valentino <https://github.com/avalentino>`_.
+- Ensure nodepath class is compatible with python 3.12 (:pull:`260`)
+  By `Max Grover <https://github.com/mgrover1>`_.
 
 Documentation
 ~~~~~~~~~~~~~

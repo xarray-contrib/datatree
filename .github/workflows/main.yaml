@@ -20,9 +20,9 @@ jobs:
         shell: bash -l {0}
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Create conda environment
         uses: mamba-org/provision-with-micromamba@main
@@ -48,7 +48,7 @@ jobs:
           python -m pytest --cov=./ --cov-report=xml --verbose
 
       - name: Upload code coverage to Codecov
-        uses: codecov/codecov-action@v3.1.1
+        uses: codecov/codecov-action@v3.1.4
         with:
           file: ./coverage.xml
           flags: unittests
@@ -65,9 +65,9 @@ jobs:
         shell: bash -l {0}
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Create conda environment
         uses: mamba-org/provision-with-micromamba@main
