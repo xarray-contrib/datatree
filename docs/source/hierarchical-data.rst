@@ -515,14 +515,14 @@ and returns one (or more) xarray datasets.
 
 For example, we can define a function to calculate the Root Mean Square of a timeseries
 
-.. ipython:: ipython
+.. ipython:: python
 
     def rms(signal):
         return np.sqrt(np.mean(signal**2))
 
 Then calculate the RMS value of these signals:
 
-.. ipython:: ipython
+.. ipython:: python
 
     rms(readings)
 
@@ -542,7 +542,7 @@ each tree needs to have the same structure. Specifically two trees can only be c
 if they have the same number of nodes, and each corresponding node has the same number of children.
 We can check if any two trees are isomorphic using the :py:meth:`DataTree.isomorphic` method.
 
-.. ipython:: ipython
+.. ipython:: python
     :okexcept:
 
     dt1 = DataTree.from_dict({'a': None, 'a/b': None})
@@ -564,7 +564,7 @@ Arithmetic Between Multiple Trees
 Arithmetic operations like multiplication are binary operations, so as long as we have wo isomorphic trees,
 we can do arithmetic between them.
 
-.. ipython:: ipython
+.. ipython:: python
 
     currents = DataTree.from_dict(
         {
@@ -588,7 +588,7 @@ we can do arithmetic between them.
 
 We could use this feature to quickly calculate the electrical power in our signal, P=IV.
 
-.. ipython:: ipython
+.. ipython:: python
 
     power = currents * voltages
     power
