@@ -252,6 +252,18 @@ class TestMapOverSubTree:
         result_tree = times_ten(subtree)
         assert_equal(result_tree, expected, from_root=False)
 
+    def test_skip_empty_nodes_with_attrs(self, create_test_datatree):
+        # inspired by xarray-datatree GH262
+        dt = create_test_datatree()
+        dt["set1/set2"].attrs["foo"] = "bar"
+
+        def check_for_data(ds):
+            # fails if run on a node that has no data
+            assert len(ds.variables) != 0
+            return ds
+
+        dt.map_over_subtree(check_for_data)
+
     @pytest.mark.xfail(
         reason="probably some bug in pytests handling of exception notes"
     )
@@ -265,7 +277,7 @@ class TestMapOverSubTree:
                 raise ValueError("Failed because 'bar_var' present in dataset")
 
         with pytest.raises(
-            ValueError, match="Raised whilst mapping function over node /set1"
+                ValueError, match="Raised whilst mapping function over node /set1"
         ):
             dt.map_over_subtree(fail_on_specific_node)
 
