@@ -237,11 +237,11 @@ class DatasetView(Dataset):
         )
 
     def map(
-            self,
-            func: Callable,
-            keep_attrs: bool | None = None,
-            args: Iterable[Any] = (),
-            **kwargs: Any,
+        self,
+        func: Callable,
+        keep_attrs: bool | None = None,
+        args: Iterable[Any] = (),
+        **kwargs: Any,
     ) -> Dataset:
         """Apply a function to each data variable in this dataset
 
@@ -292,7 +292,7 @@ class DatasetView(Dataset):
             k: maybe_wrap_array(v, func(v, *args, **kwargs))
             for k, v in self.data_vars.items()
         }
-        #return type(self)(variables, attrs=attrs)
+        # return type(self)(variables, attrs=attrs)
         return Dataset(variables)
 
 
