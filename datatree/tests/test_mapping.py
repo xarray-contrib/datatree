@@ -323,7 +323,7 @@ class TestMutableOperations:
             return ds
 
         with pytest.raises(AttributeError):
-            future_simpsons = simpsons.map_over_subtree(fast_forward, years=10)
+            simpsons.map_over_subtree(fast_forward, years=10)
 
 
 @pytest.mark.xfail
