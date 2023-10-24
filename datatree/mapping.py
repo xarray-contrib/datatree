@@ -1,4 +1,5 @@
 from __future__ import annotations
+import sys
 
 import functools
 from itertools import repeat
@@ -264,8 +265,10 @@ def _handle_errors_with_path_context(path):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                # Add the context information to the error message
-                e.add_note(f"Raised whilst mapping function over node with path {path}")
+                if sys.version_info >= (3, 11):
+                    # Add the context information to the error message
+                    e.add_note(f"Raised whilst mapping function over node with path {path}")
+
                 raise
 
         return wrapper
