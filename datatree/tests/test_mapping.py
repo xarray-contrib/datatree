@@ -277,7 +277,7 @@ class TestMapOverSubTree:
                 raise ValueError("Failed because 'bar_var' present in dataset")
 
         with pytest.raises(
-                ValueError, match="Raised whilst mapping function over node /set1"
+            ValueError, match="Raised whilst mapping function over node /set1"
         ):
             dt.map_over_subtree(fail_on_specific_node)
 
