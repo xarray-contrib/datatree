@@ -1213,7 +1213,6 @@ class DataTree(
 
         Examples
         --------
-
         >>> dt = DataTree.from_dict(
         >>>     {
         >>>         "/a/A": None,
