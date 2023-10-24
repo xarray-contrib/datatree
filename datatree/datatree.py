@@ -1181,7 +1181,7 @@ class DataTree(
 
         See Also
         --------
-        search
+        match
         pipe
         map_over_subtree
         """
