@@ -265,17 +265,11 @@ def _handle_errors_with_path_context(path):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-<<<<<<< HEAD
-                # Add the context information to the error message
-                add_note(e, f"Raised whilst mapping function over node with path {path}")
-=======
                 if sys.version_info >= (3, 11):
                     # Add the context information to the error message
                     e.add_note(
                         f"Raised whilst mapping function over node with path {path}"
                     )
->>>>>>> 1adc58afeb6d9f215ac4e95428718e6f5a01a04a
-
                 raise
 
         return wrapper
