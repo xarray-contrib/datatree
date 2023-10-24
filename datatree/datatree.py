@@ -1214,13 +1214,13 @@ class DataTree(
         Examples
         --------
         >>> dt = DataTree.from_dict(
-        >>>     {
-        >>>         "/a/A": None,
-        >>>         "/a/B": None,
-        >>>         "/b/A": None,
-        >>>         "/b/B": None,
-        >>>     }
-        >>> )
+        ...     {
+        ...         "/a/A": None,
+        ...         "/a/B": None,
+        ...         "/b/A": None,
+        ...         "/b/B": None,
+        ...     }
+        ... )
         >>> dt.match("*/B")
         DataTree('None', parent=None)
         ├── DataTree('a')
