@@ -128,10 +128,10 @@ class DatasetView(Dataset):
     )
 
     def __init__(
-            self,
-            data_vars: Optional[Mapping[Any, Any]] = None,
-            coords: Optional[Mapping[Any, Any]] = None,
-            attrs: Optional[Mapping[Any, Any]] = None,
+        self,
+        data_vars: Optional[Mapping[Any, Any]] = None,
+        coords: Optional[Mapping[Any, Any]] = None,
+        attrs: Optional[Mapping[Any, Any]] = None,
     ):
         raise AttributeError("DatasetView objects are not to be initialized directly")
 
