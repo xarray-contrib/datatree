@@ -265,15 +265,22 @@ def _handle_errors_with_path_context(path):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                if sys.version_info >= (3, 11):
-                    # Add the context information to the error message
-                    e.add_note(f"Raised whilst mapping function over node with path {path}")
+                # Add the context information to the error message
+                add_note(e, f"Raised whilst mapping function over node with path {path}")
 
                 raise
 
         return wrapper
 
     return decorator
+
+
+def add_note(err: BaseException, msg: str) -> None:
+    # TODO: remove once python 3.10 can be dropped
+    if sys.version_info < (3, 11):
+        err.__notes__ = getattr(err, "__notes__", []) + [msg]
+    else:
+        err.add_note(msg)
 
 
 def _check_single_set_return_values(path_to_node, obj):
