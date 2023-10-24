@@ -1204,7 +1204,9 @@ class DataTree(
         map_over_subtree
         """
         matching_nodes = {
-            node.path: node.ds for node in self.subtree if NodePath(node.path).match(pattern)
+            node.path: node.ds
+            for node in self.subtree
+            if NodePath(node.path).match(pattern)
         }
         return DataTree.from_dict(matching_nodes, name=self.root.name)
 
