@@ -1,7 +1,7 @@
 from __future__ import annotations
-import sys
 
 import functools
+import sys
 from itertools import repeat
 from textwrap import dedent
 from typing import TYPE_CHECKING, Callable, Tuple
@@ -267,7 +267,9 @@ def _handle_errors_with_path_context(path):
             except Exception as e:
                 if sys.version_info >= (3, 11):
                     # Add the context information to the error message
-                    e.add_note(f"Raised whilst mapping function over node with path {path}")
+                    e.add_note(
+                        f"Raised whilst mapping function over node with path {path}"
+                    )
 
                 raise
 
