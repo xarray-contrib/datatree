@@ -143,7 +143,7 @@ def _reorder_path(path: str, old_order: List[str], new_order: List[str]) -> str:
 
     new_order_indices = [new_order.index(el) for el in old_order]
     reordered_parts = [parts[i] for i in new_order_indices]
-    return str(NodePath(reordered_parts))
+    return str(NodePath(*reordered_parts))
 
 
 def _coerce_to_dataset(data: Dataset | DataArray | None) -> Dataset:

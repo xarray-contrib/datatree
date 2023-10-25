@@ -657,16 +657,18 @@ class TestRestructuring:
 
 class TestReorder:
     @pytest.mark.parametrize(
-        "in_dict, order, expected",
+        "in_dict, reordering, expected_dict",
         [
-            ({"a": None}, "a -> a", {"a": None}),
-            ({"a/b": None}, "a/b -> b/a", {"b/a": None}),
+            ({"A": xr.Dataset()}, "a->a", {"A": xr.Dataset()}),
+            ({"A/B": xr.Dataset()}, "a/b->b/a", {"B/A": xr.Dataset()}),
+            ({"A/B/C": xr.Dataset()}, "a/b/c->c/b/a", {"C/B/A": xr.Dataset()}),
         ],
     )
-    def test_reorder(self, in_dict, order, expected):
+    def test_reorder(self, in_dict, reordering, expected_dict):
         dt = DataTree.from_dict(in_dict)
-        out_dict = dt.reorder("a/b -> b/a").to_dict()
-        assert out_dict == expected
+        result = dt.reorder(reordering)
+        expected = DataTree.from_dict(expected_dict)
+        dtt.assert_equal(result, expected)
 
     def test_invalid_order(self):
         dt = DataTree.from_dict({"A/B/C": None})
