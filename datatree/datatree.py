@@ -85,16 +85,55 @@ _SYMBOLIC_NODEPATH = f"\/?{_SYMBOLIC_NODE_NAME}(\/{_SYMBOLIC_NODE_NAME})*\/?"
 _SYMBOLIC_REORDERING = f"^{_SYMBOLIC_NODEPATH}->{_SYMBOLIC_NODEPATH}$"
 
 
-def _parse_ordering(ordering: str) -> Tuple[List[str], List[str]]:
-    """Parse a reordering string of the form 'a/b -> b/a'."""
+def _parse_symbolic_ordering(ordering: str) -> Tuple[List[str], List[str]]:
+    """Parse a symbolic reordering string of the form 'a/b -> b/a'."""
     if not re.match(_SYMBOLIC_REORDERING, ordering):
-        raise ValueError(f"Not a valid symbolic ordering: {ordering}")
+        raise ValueError(f"Invalid symbolic reordering: {ordering}")
 
     in_txt, out_txt = ordering.split("->")
-    old_order = re.findall(_SYMBOLIC_NODE_NAME, in_txt)
-    new_order = re.findall(_SYMBOLIC_NODE_NAME, out_txt)
+    old_symbolic_order = re.findall(_SYMBOLIC_NODE_NAME, in_txt)
+    new_symbolic_order = re.findall(_SYMBOLIC_NODE_NAME, out_txt)
 
-    return old_order, new_order
+    # Check number of symbols is the same on both sides
+    if len(old_symbolic_order) != len(new_symbolic_order):
+        raise ValueError(
+            "Invalid symbolic reordering. The depth of the symbolic path on each side must be equal, "
+            f"but the left has {len(old_symbolic_order)} parts and the right has {len(new_symbolic_order)}"
+            f" parts."
+        )
+
+    # Check every symbol appears only once
+    if len(set(old_symbolic_order)) < len(old_symbolic_order):
+        # TODO
+        repeated_symbols = ...
+        raise ValueError(
+            "Invalid symbolic reordering. Each symbol must appear only once on each side, "
+            f"but the symbols {repeated_symbols} appear more than once in the left-hand side."
+        )
+    if len(set(new_symbolic_order)) < len(new_symbolic_order):
+        # TODO
+        repeated_symbols = ...
+        raise ValueError(
+            "Invalid symbolic reordering. Each symbol must appear only once on each side, "
+            f"but the symbols {repeated_symbols} appear more than once in the right-hand side."
+        )
+
+    # Check every symbol appears on both sides
+    all_symbols = set(old_symbolic_order).union(set(new_symbolic_order))
+    if len(set(old_symbolic_order)) < len(all_symbols):
+        unmatched_symbols = all_symbols - set(old_symbolic_order)
+        raise ValueError(
+            "Invalid symbolic reordering. Every symbol must be present on both sides, but"
+            f"the symbols {unmatched_symbols} are only present on the right-hand side."
+        )
+    if len(set(new_symbolic_order)) < len(all_symbols):
+        unmatched_symbols = all_symbols - set(new_symbolic_order)
+        raise ValueError(
+            "Invalid symbolic reordering. Every symbol must be present on both sides, but"
+            f"the symbols {unmatched_symbols} are only present on the left-hand side."
+        )
+
+    return old_symbolic_order, new_symbolic_order
 
 
 def _reorder_path(path: str, old_order: List[str], new_order: List[str]) -> str:
@@ -105,9 +144,7 @@ def _reorder_path(path: str, old_order: List[str], new_order: List[str]) -> str:
         raise ValueError(f"node {path} only has depth {len(parts)}")
 
     new_order_indices = [new_order.index(el) for el in old_order]
-
     reordered_parts = [parts[i] for i in new_order_indices]
-
     return str(NodePath(reordered_parts))
 
 
@@ -1368,11 +1405,13 @@ class DataTree(
         Examples
         --------
         """
-        old_order, new_order = _parse_ordering(ordering)
+        old_symbolic_order, new_symbolic_order = _parse_symbolic_ordering(ordering)
 
         # only re-order the subtree, and return a new copy, to avoid messing up parents of this node
         reordered_dict = {
-            _reorder_path(node.path.relative_to(self), old_order, new_order): node.ds
+            _reorder_path(
+                node.relative_to(self), old_symbolic_order, new_symbolic_order
+            ): node.ds
             for node in self.subtree
         }
 

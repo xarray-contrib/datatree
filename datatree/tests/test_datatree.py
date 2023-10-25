@@ -645,6 +645,44 @@ class TestRestructuring:
         dtt.assert_equal(result, expected)
 
 
+class TestReorder:
+    @pytest.mark.parametrize(
+        "in_dict, order, expected",
+        [
+            ({"a": None}, "a -> a", {"a": None}),
+            ({"a/b": None}, "a/b -> b/a", {"b/a": None}),
+        ],
+    )
+    def test_reorder(self, in_dict, order, expected):
+        dt = DataTree.from_dict(in_dict)
+        out_dict = dt.reorder("a/b -> b/a").to_dict()
+        assert out_dict == expected
+
+    def test_invalid_order(self):
+        dt = DataTree.from_dict({"A/B/C": None})
+
+        with pytest.raises(ValueError, match="Invalid symbolic reordering"):
+            dt.reorder("a")
+
+        with pytest.raises(ValueError, match="Invalid symbolic reordering"):
+            dt.reorder("a->")
+
+        with pytest.raises(ValueError, match="depth of the symbolic path on each side must be equal"):
+            dt.reorder("a->a/b")
+
+        with pytest.raises(ValueError, match="must be present on both sides"):
+            dt.reorder("a->b")
+
+        with pytest.raises(ValueError, match="must appear only once"):
+            dt.reorder("a/a/b->b/a/a")
+
+    def test_not_deep_enough(self):
+        dt = DataTree.from_dict({"A/B/C": None})
+
+        with pytest.raises(ValueError, match="node X only has depth Y"):
+            dt.reorder("a/b->b/a")
+
+
 class TestPipe:
     def test_noop(self, create_test_datatree):
         dt = create_test_datatree()
