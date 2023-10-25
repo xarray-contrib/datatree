@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import copy
 import itertools
+import re
 from collections import OrderedDict
 from html import escape
-import re
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -81,10 +81,34 @@ T_Path = Union[str, NodePath]
 
 
 _SYMBOLIC_NODE_NAME = r"\w+"
-_SYMBOLIC_NODEPATH = (
-    f"\/?{_SYMBOLIC_NODE_NAME}(\/{_SYMBOLIC_NODE_NAME})*\/?"
-)
+_SYMBOLIC_NODEPATH = f"\/?{_SYMBOLIC_NODE_NAME}(\/{_SYMBOLIC_NODE_NAME})*\/?"
 _SYMBOLIC_REORDERING = f"^{_SYMBOLIC_NODEPATH}->{_SYMBOLIC_NODEPATH}$"
+
+
+def _parse_ordering(ordering: str) -> Tuple[List[str], List[str]]:
+    """Parse a reordering string of the form 'a/b -> b/a'."""
+    if not re.match(_SYMBOLIC_REORDERING, ordering):
+        raise ValueError(f"Not a valid symbolic ordering: {ordering}")
+
+    in_txt, out_txt = ordering.split("->")
+    old_order = re.findall(_SYMBOLIC_NODE_NAME, in_txt)
+    new_order = re.findall(_SYMBOLIC_NODE_NAME, out_txt)
+
+    return old_order, new_order
+
+
+def _reorder_path(path: str, old_order: List[str], new_order: List[str]) -> str:
+    """Re-orders the parts of the given path from old_order to match new_order."""
+
+    parts = NodePath(path).parts
+    if len(old_order) > len(parts):
+        raise ValueError(f"node {path} only has depth {len(parts)}")
+
+    new_order_indices = [new_order.index(el) for el in old_order]
+
+    reordered_parts = [parts[i] for i in new_order_indices]
+
+    return str(NodePath(reordered_parts))
 
 
 def _coerce_to_dataset(data: Dataset | DataArray | None) -> Dataset:
@@ -1310,7 +1334,7 @@ class DataTree(
         }
         return DataTree.from_dict(matching_nodes, name=self.root.name)
 
-    def reorder(self, order: str) -> DataTree:
+    def reorder(self, ordering: str) -> DataTree:
         """
         Reorder levels of all nodes in this subtree by rearranging the parts of each of their paths.
 
@@ -1319,7 +1343,7 @@ class DataTree(
 
         Parameters
         ----------
-        order: str
+        ordering: str
             String specifying symbolically how to reorder levels of each path, for example:
                 'a/b/c -> b/c/a'
 
@@ -1344,11 +1368,13 @@ class DataTree(
         Examples
         --------
         """
-        old_order, new_order = _parse_order(order)
-        old_dict = self.to_dict()
+        old_order, new_order = _parse_ordering(ordering)
 
-        # TODO should we amputate the subtree then re-attach?
-        reordered_dict = {_reorder_path(node.path, old_order, new_order): node.ds for node in self.subtree}
+        # only re-order the subtree, and return a new copy, to avoid messing up parents of this node
+        reordered_dict = {
+            _reorder_path(node.path.relative_to(self), old_order, new_order): node.ds
+            for node in self.subtree
+        }
 
         return DataTree.from_dict(reordered_dict)
 
@@ -1579,28 +1605,3 @@ class DataTree(
 
     def plot(self):
         raise NotImplementedError
-
-
-def _parse_order(ordering: str) -> Tuple[List[str], List[str]]:
-    """Parse a reordering string of the form 'a/b -> b/a'."""
-    if not re.match(_SYMBOLIC_REORDERING, ordering):
-        raise ValueError(f"Not a valid symbolic ordering: {ordering}")
-
-    in_txt, out_txt = ordering.split("->")
-    old_order = re.findall(_SYMBOLIC_NODE_NAME, in_txt)
-    new_order = re.findall(_SYMBOLIC_NODE_NAME, out_txt)
-
-    return old_order, new_order
-
-def _reorder_path(path: str, old_order: List[str], new_order: List[str]) -> str:
-    """Re-orders the parts of the given path from old_order to match new_order."""
-
-    parts = NodePath(path).parts
-    if len(old_order) > len(parts):
-        raise ValueError(f"node {path} only has depth {len(parts)}")
-
-    new_order_indices = [new_order.index(el) for el in old_order]
-
-    reordered_parts = [parts[i] for i in new_order_indices]
-
-    return str(NodePath(reordered_parts))
