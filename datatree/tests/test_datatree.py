@@ -690,11 +690,16 @@ class TestReorder:
         with pytest.raises(ValueError, match="symbols {'a'} appear more than once"):
             dt.reorder("a/a/b->a/b/b")
 
-    def test_not_deep_enough(self):
+    def test_invalid_tree(self):
         dt = DataTree.from_dict({"A": None})
 
         with pytest.raises(ValueError, match="Node A only has depth 1"):
             dt.reorder("a/b/c->c/b/a")
+
+        dt = DataTree.from_dict({"A": xr.Dataset({'t': 1}), "A/B": None})
+
+        with pytest.raises(ValueError, match="Only hollow trees"):
+            dt.reorder("a/b->b/a")
 
 
 class TestPipe:
