@@ -23,6 +23,9 @@ v0.0.13 (unreleased)
 New Features
 ~~~~~~~~~~~~
 
+- New :py:meth:`DataTree.reorder` method for re-ordering levels of all nodes in the tree according to a
+  symbolic pattern such as ``a/b->b/a``. (:pull:`271`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 - New :py:meth:`DataTree.match` method for glob-like pattern matching of node paths. (:pull:`267`)
   By `Tom Nicholas <https://github.com/TomNicholas>`_.
 - Indicate which node caused the problem if error encountered while applying user function using :py:func:`map_over_subtree`
