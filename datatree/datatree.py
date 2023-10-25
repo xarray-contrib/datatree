@@ -1373,9 +1373,11 @@ class DataTree(
 
     def reorder(self, ordering: str) -> DataTree:
         """
-        Reorder levels of all nodes in this subtree by rearranging the parts of each of their paths.
+        Reorder levels of all leaf nodes in this subtree by rearranging the parts of each of their paths.
 
-        In general this operation will preserve the depth of every node (and hence depth of the whole subtree),
+        Raises an error on non-hollow trees.
+
+        In general this operation will preserve the depth of each leaf node (and hence depth of the whole subtree),
         but will not preserve the width at any level.
 
         Parameters
@@ -1405,6 +1407,10 @@ class DataTree(
         Examples
         --------
         """
+        if not self.is_hollow:
+            # TODO can we relax this restriction to only raising if a data-filled node would be moved?
+            raise ValueError("Only hollow trees can be unambiguously reordered.")
+
         old_symbolic_order, new_symbolic_order = _parse_symbolic_ordering(ordering)
 
         # only re-order the subtree, and return a new copy, to avoid messing up parents of this node
@@ -1412,7 +1418,7 @@ class DataTree(
             _reorder_path(
                 node.relative_to(self), old_symbolic_order, new_symbolic_order
             ): node.ds
-            for node in self.subtree
+            for node in self.leaves
         }
 
         return DataTree.from_dict(reordered_dict)
