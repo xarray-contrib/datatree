@@ -59,6 +59,8 @@ Documentation
 Internal Changes
 ~~~~~~~~~~~~~~~~
 
+* No longer use the deprecated `distutils` package.
+
 .. _whats-new.v0.0.12:
 
 v0.0.12 (03/07/2023)
