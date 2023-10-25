@@ -682,17 +682,17 @@ class TestReorder:
         ):
             dt.reorder("a->a/b")
 
-        with pytest.raises(ValueError, match="must be present on both sides"):
+        with pytest.raises(ValueError, match="only present on one side"):
             dt.reorder("a->b")
 
-        with pytest.raises(ValueError, match="must appear only once"):
-            dt.reorder("a/a/b->b/a/a")
+        with pytest.raises(ValueError, match="symbols {'a'} appear more than once"):
+            dt.reorder("a/a/b->a/b/b")
 
     def test_not_deep_enough(self):
-        dt = DataTree.from_dict({"A/B/C": None})
+        dt = DataTree.from_dict({"A": None})
 
-        with pytest.raises(ValueError, match="node X only has depth Y"):
-            dt.reorder("a/b->b/a")
+        with pytest.raises(ValueError, match="Node A only has depth 1"):
+            dt.reorder("a/b/c->c/b/a")
 
 
 class TestPipe:

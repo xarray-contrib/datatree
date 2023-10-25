@@ -102,35 +102,30 @@ def _parse_symbolic_ordering(ordering: str) -> Tuple[List[str], List[str]]:
             f" parts."
         )
 
-    # Check every symbol appears only once
-    if len(set(old_symbolic_order)) < len(old_symbolic_order):
-        # TODO
-        repeated_symbols = ...
+    # Check every symbol appears on both sides
+    unmatched_symbols = set(old_symbolic_order).symmetric_difference(new_symbolic_order)
+    if unmatched_symbols:
         raise ValueError(
-            "Invalid symbolic reordering. Each symbol must appear only once on each side, "
-            f"but the symbols {repeated_symbols} appear more than once in the left-hand side."
-        )
-    if len(set(new_symbolic_order)) < len(new_symbolic_order):
-        # TODO
-        repeated_symbols = ...
-        raise ValueError(
-            "Invalid symbolic reordering. Each symbol must appear only once on each side, "
-            f"but the symbols {repeated_symbols} appear more than once in the right-hand side."
+            "Invalid symbolic reordering. Every symbol must be present on both sides, but "
+            f"the symbols {unmatched_symbols} are only present on one side."
         )
 
-    # Check every symbol appears on both sides
-    all_symbols = set(old_symbolic_order).union(set(new_symbolic_order))
-    if len(set(old_symbolic_order)) < len(all_symbols):
-        unmatched_symbols = all_symbols - set(old_symbolic_order)
+    # Check each symbol appears only once on each side
+    repeated_symbols_in_old_order = set(
+        sym for sym in old_symbolic_order if old_symbolic_order.count(sym) > 1
+    )
+    if repeated_symbols_in_old_order:
         raise ValueError(
-            "Invalid symbolic reordering. Every symbol must be present on both sides, but"
-            f"the symbols {unmatched_symbols} are only present on the right-hand side."
+            "Invalid symbolic reordering. Each symbol must appear only once on each side, "
+            f"but the symbols {repeated_symbols_in_old_order} appear more than once in the left-hand side."
         )
-    if len(set(new_symbolic_order)) < len(all_symbols):
-        unmatched_symbols = all_symbols - set(new_symbolic_order)
+    repeated_symbols_in_new_order = set(
+        sym for sym in new_symbolic_order if new_symbolic_order.count(sym) > 1
+    )
+    if repeated_symbols_in_new_order:
         raise ValueError(
-            "Invalid symbolic reordering. Every symbol must be present on both sides, but"
-            f"the symbols {unmatched_symbols} are only present on the left-hand side."
+            "Invalid symbolic reordering. Each symbol must appear only once on each side, "
+            f"but the symbols {repeated_symbols_in_new_order} appear more than once in the right-hand side."
         )
 
     return old_symbolic_order, new_symbolic_order
@@ -141,7 +136,10 @@ def _reorder_path(path: str, old_order: List[str], new_order: List[str]) -> str:
 
     parts = NodePath(path).parts
     if len(old_order) > len(parts):
-        raise ValueError(f"node {path} only has depth {len(parts)}")
+        raise ValueError(
+            f"Node {path} only has depth {len(parts)}, "
+            f"but the reordering requires depth >= {len(old_order)}"
+        )
 
     new_order_indices = [new_order.index(el) for el in old_order]
     reordered_parts = [parts[i] for i in new_order_indices]
@@ -1415,6 +1413,8 @@ class DataTree(
         if not self.is_hollow:
             # TODO can we relax this restriction to only raising if a data-filled node would be moved?
             raise ValueError("Only hollow trees can be unambiguously reordered.")
+
+        # TODO do we require the root to have a name if we are to reorder from the root?
 
         old_symbolic_order, new_symbolic_order = _parse_symbolic_ordering(ordering)
 
