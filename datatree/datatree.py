@@ -4,6 +4,7 @@ import copy
 import itertools
 from collections import OrderedDict
 from html import escape
+import re
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -77,6 +78,13 @@ if TYPE_CHECKING:
 
 
 T_Path = Union[str, NodePath]
+
+
+_SYMBOLIC_NODE_NAME = r"\w+"
+_SYMBOLIC_NODEPATH = (
+    f"\/?{_SYMBOLIC_NODE_NAME}(\/{_SYMBOLIC_NODE_NAME})*\/?"
+)
+_SYMBOLIC_REORDERING = f"^{_SYMBOLIC_NODEPATH}->{_SYMBOLIC_NODEPATH}$"
 
 
 def _coerce_to_dataset(data: Dataset | DataArray | None) -> Dataset:
@@ -1302,6 +1310,48 @@ class DataTree(
         }
         return DataTree.from_dict(matching_nodes, name=self.root.name)
 
+    def reorder(self, order: str) -> DataTree:
+        """
+        Reorder levels of all nodes in this subtree by rearranging the parts of each of their paths.
+
+        In general this operation will preserve the depth of every node (and hence depth of the whole subtree),
+        but will not preserve the width at any level.
+
+        Parameters
+        ----------
+        order: str
+            String specifying symbolically how to reorder levels of each path, for example:
+                'a/b/c -> b/c/a'
+
+            Generally must be of the form:
+                '{OLD_ORDER} -> {NEW_ORDER}'
+            where OLD_ORDER = 'a/b/***/y/z', representing a symbolic ordering of the parts of the node path,
+            and NEW_ORDER = 'z/a/***/b/y', representing an arbitrary re-ordering of the same number of parts.
+            (Here the triple asterisk stands in for an arbitrary number of parts.)
+
+            Symbols must be unique, and each symbol in the old order must have a corresponding entry in the new order,
+            so the number of symbols must be the same in the new order as in the old order.
+
+            By default paths will be re-ordered starting at the root. To re-order at the leaves instead, an ellipsis can
+            be pre-prended, e.g. '.../a/b -> .../b/a'. The ellipsis can be present in the new order, old order, both,
+            or neither. (Ellipses will have no effect on a node which has a depth equal to the number of symbols.)
+
+        Returns
+        -------
+        reordered: DataTree
+            DataTree object where each node has the same depth as it did originally.
+
+        Examples
+        --------
+        """
+        old_order, new_order = _parse_order(order)
+        old_dict = self.to_dict()
+
+        # TODO should we amputate the subtree then re-attach?
+        reordered_dict = {_reorder_path(node.path, old_order, new_order): node.ds for node in self.subtree}
+
+        return DataTree.from_dict(reordered_dict)
+
     def map_over_subtree(
         self,
         func: Callable,
@@ -1477,7 +1527,7 @@ class DataTree(
             Note that unlimited_dims may also be set via
             ``dataset.encoding["unlimited_dims"]``.
         kwargs :
-            Addional keyword arguments to be passed to ``xarray.Dataset.to_netcdf``
+            Additional keyword arguments to be passed to ``xarray.Dataset.to_netcdf``
         """
         from .io import _datatree_to_netcdf
 
@@ -1529,3 +1579,28 @@ class DataTree(
 
     def plot(self):
         raise NotImplementedError
+
+
+def _parse_order(ordering: str) -> Tuple[List[str], List[str]]:
+    """Parse a reordering string of the form 'a/b -> b/a'."""
+    if not re.match(_SYMBOLIC_REORDERING, ordering):
+        raise ValueError(f"Not a valid symbolic ordering: {ordering}")
+
+    in_txt, out_txt = ordering.split("->")
+    old_order = re.findall(_SYMBOLIC_NODE_NAME, in_txt)
+    new_order = re.findall(_SYMBOLIC_NODE_NAME, out_txt)
+
+    return old_order, new_order
+
+def _reorder_path(path: str, old_order: List[str], new_order: List[str]) -> str:
+    """Re-orders the parts of the given path from old_order to match new_order."""
+
+    parts = NodePath(path).parts
+    if len(old_order) > len(parts):
+        raise ValueError(f"node {path} only has depth {len(parts)}")
+
+    new_order_indices = [new_order.index(el) for el in old_order]
+
+    reordered_parts = [parts[i] for i in new_order_indices]
+
+    return str(NodePath(reordered_parts))
