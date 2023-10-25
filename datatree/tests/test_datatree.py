@@ -667,7 +667,9 @@ class TestReorder:
         with pytest.raises(ValueError, match="Invalid symbolic reordering"):
             dt.reorder("a->")
 
-        with pytest.raises(ValueError, match="depth of the symbolic path on each side must be equal"):
+        with pytest.raises(
+            ValueError, match="depth of the symbolic path on each side must be equal"
+        ):
             dt.reorder("a->a/b")
 
         with pytest.raises(ValueError, match="must be present on both sides"):
