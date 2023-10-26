@@ -1409,6 +1409,32 @@ class DataTree(
 
         Examples
         --------
+        >>> dt = DataTree.from_dict(
+        ...     {"A/B1": xr.Dataset({"x": 1}), "A/B2": xr.Dataset({"x": 2})}
+        ... )
+        >>> dt
+        DataTree('None', parent=None)
+        └── DataTree('A')
+            ├── DataTree('B1')
+            │       Dimensions:  ()
+            │       Data variables:
+            │           x        int64 1
+            └── DataTree('B2')
+                    Dimensions:  ()
+                    Data variables:
+                        x        int64 2
+        >>> dt.reorder("a/b->b/a")
+        DataTree('None', parent=None)
+        ├── DataTree('B1')
+        │   └── DataTree('A')
+        │           Dimensions:  ()
+        │           Data variables:
+        │               x        int64 1
+        └── DataTree('B2')
+            └── DataTree('A')
+                    Dimensions:  ()
+                    Data variables:
+                        x        int64 2
         """
         if not self.is_hollow:
             # TODO can we relax this restriction to only raising if a data-filled node would be moved?
@@ -1423,8 +1449,12 @@ class DataTree(
             _reorder_path(
                 node.relative_to(self), old_symbolic_order, new_symbolic_order
             ): node.ds
-            for node in self.leaves
+            for node in self.leaves  # hollow trees are defined entirely by their leaves
         }
+
+        if self.depth > len(new_symbolic_order):
+            # TODO implement this
+            raise NotImplementedError()
 
         return DataTree.from_dict(reordered_dict)
 

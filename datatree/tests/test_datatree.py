@@ -662,6 +662,11 @@ class TestReorder:
             ({"A": xr.Dataset()}, "a->a", {"A": xr.Dataset()}),
             ({"A/B": xr.Dataset()}, "a/b->b/a", {"B/A": xr.Dataset()}),
             ({"A/B/C": xr.Dataset()}, "a/b/c->c/b/a", {"C/B/A": xr.Dataset()}),
+            (
+                {"A/B1": xr.Dataset({"x": 1}), "A/B2": xr.Dataset({"x": 2})},
+                "a/b->b/a",
+                {"B1/A": xr.Dataset({"x": 1}), "B2/A": xr.Dataset({"x": 2})},
+            ),
         ],
     )
     def test_reorder(self, in_dict, reordering, expected_dict):
