@@ -212,6 +212,8 @@ def map_over_subtree(func: Callable) -> Callable:
                     *node_args_as_datasetviews, **node_kwargs_as_datasetviews
                 )
                 if node_of_first_tree.has_data
+                else node_of_first_tree.ds
+                if node_of_first_tree.has_attrs
                 else None
             )
 
