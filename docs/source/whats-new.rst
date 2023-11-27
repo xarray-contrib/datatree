@@ -23,6 +23,9 @@ v0.0.14 (unreleased)
 New Features
 ~~~~~~~~~~~~
 
+- Allow passing :py:class:`os.PathLike` objects as paths to nodes in addition to strings. (:pull:`282`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
