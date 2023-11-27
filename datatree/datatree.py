@@ -62,6 +62,8 @@ if TYPE_CHECKING:
     from xarray.core.merge import CoercibleValue
     from xarray.core.types import ErrorOptions
 
+    from datatree.treenode import T_PathLike
+
 # """
 # DEVELOPERS' NOTE
 # ----------------
@@ -74,9 +76,6 @@ if TYPE_CHECKING:
 # (normally because they (a) only call dataset properties and (b) don't return a dataset that should be nested into a new
 # tree) and some will get overridden by the class definition of DataTree.
 # """
-
-
-T_Path = Union[str, NodePath]
 
 
 def _coerce_to_dataset(data: Dataset | DataArray | None) -> Dataset:
@@ -848,7 +847,7 @@ class DataTree(
         else:
             return default
 
-    def __getitem__(self: DataTree, key: str) -> DataTree | DataArray:
+    def __getitem__(self: DataTree, key: T_PathLike) -> DataTree | DataArray:
         """
         Access child nodes, variables, or coordinates stored anywhere in this tree.
 
@@ -903,7 +902,7 @@ class DataTree(
 
     def __setitem__(
         self,
-        key: str,
+        key: T_PathLike,
         value: Any,
     ) -> None:
         """
@@ -1034,7 +1033,7 @@ class DataTree(
     @classmethod
     def from_dict(
         cls,
-        d: MutableMapping[str, Dataset | DataArray | DataTree | None],
+        d: MutableMapping[T_PathLike, Dataset | DataArray | DataTree | None],
         name: Optional[str] = None,
     ) -> DataTree:
         """
@@ -1442,7 +1441,7 @@ class DataTree(
         """Merge all the leaves of a second DataTree into this one."""
         raise NotImplementedError
 
-    def merge_child_nodes(self, *paths, new_path: T_Path) -> DataTree:
+    def merge_child_nodes(self, *paths, new_path: T_PathLike) -> DataTree:
         """Merge a set of child nodes into a single new node."""
         raise NotImplementedError
 

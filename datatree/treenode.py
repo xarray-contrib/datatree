@@ -17,7 +17,11 @@ from typing import (
 from xarray.core.utils import Frozen, is_dict_like
 
 if TYPE_CHECKING:
+    from os import PathLike
+
     from xarray.core.types import T_DataArray
+
+    T_PathLike = Union[str, PathLike]
 
 
 class InvalidTreeError(Exception):
@@ -419,14 +423,13 @@ class TreeNode(Generic[Tree]):
 
     # TODO `._walk` method to be called by both `_get_item` and `_set_item`
 
-    def _get_item(self: Tree, path: str | NodePath) -> Union[Tree, T_DataArray]:
+    def _get_item(self: Tree, path: T_PathLike) -> Union[Tree, T_DataArray]:
         """
         Returns the object lying at the given path.
 
         Raises a KeyError if there is no object at the given path.
         """
-        if isinstance(path, str):
-            path = NodePath(path)
+        path = NodePath(path)
 
         if path.root:
             current_node = self.root
@@ -461,7 +464,7 @@ class TreeNode(Generic[Tree]):
 
     def _set_item(
         self: Tree,
-        path: str | NodePath,
+        path: T_PathLike,
         item: Union[Tree, T_DataArray],
         new_nodes_along_path: bool = False,
         allow_overwrite: bool = True,
@@ -487,8 +490,7 @@ class TreeNode(Generic[Tree]):
             If node cannot be reached, and new_nodes_along_path=False.
             Or if a node already exists at the specified path, and allow_overwrite=False.
         """
-        if isinstance(path, str):
-            path = NodePath(path)
+        path = NodePath(path)
 
         if not path.name:
             raise ValueError("Can't set an item under a path which has no name")

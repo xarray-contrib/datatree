@@ -4,7 +4,7 @@ import functools
 import sys
 from itertools import repeat
 from textwrap import dedent
-from typing import TYPE_CHECKING, Callable, Tuple
+from typing import TYPE_CHECKING, Callable, Tuple, Union
 
 from xarray import DataArray, Dataset
 
@@ -225,7 +225,7 @@ def map_over_subtree(func: Callable) -> Callable:
         original_root_path = first_tree.path
         result_trees = []
         for i in range(num_return_values):
-            out_tree_contents = {}
+            out_tree_contents: dict[str, Union[None, Dataset]] = {}
             for n in first_tree.subtree:
                 p = n.path
                 if p in out_data_objects.keys():
