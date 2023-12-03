@@ -292,7 +292,7 @@ class TestAncestry:
 
     def test_iter_lineage(self):
         _, leaf = create_test_tree()
-        assert tuple(leaf.iter_lineage()) == tuple(leaf.iter_parents())
+        assert tuple(leaf.iter_lineage()) == tuple(leaf.parents)
 
     def test_ancestors(self):
         _, leaf = create_test_tree()
