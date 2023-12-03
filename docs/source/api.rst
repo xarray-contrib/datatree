@@ -10,10 +10,13 @@ DataTree
 Creating a DataTree
 -------------------
 
+Methods of creating a datatree.
+
 .. autosummary::
    :toctree: generated/
 
    DataTree
+   DataTree.from_dict
 
 Tree Attributes
 ---------------
@@ -277,13 +280,12 @@ Plotting
 I/O
 ===
 
-Create or
+Open a datatree from an on-disk store or serialize the tree.
 
 .. autosummary::
    :toctree: generated/
 
    open_datatree
-   DataTree.from_dict
    DataTree.to_dict
    DataTree.to_netcdf
    DataTree.to_zarr
