@@ -243,10 +243,33 @@ class TreeNode(Generic[Tree]):
             yield node
             node = node.parent
 
+    def iter_lineage(self: Tree) -> Iterator[Tree]:
+        """Iterate up the tree, starting from the current node."""
+        from warnings import warn
+
+        warn(
+            "`iter_lineage` has been deprecated, and in the future will raise an error."
+            "Please use `iter_parents` from now on.",
+            DeprecationWarning,
+        )
+        yield from self.iter_parents()
+
     @property
     def parents(self: Tree) -> Tuple[Tree, ...]:
         """All parent nodes and their parent nodes, starting with the closest."""
         return tuple(self.iter_parents())
+
+    @property
+    def lineage(self: Tree) -> Tuple[Tree, ...]:
+        """All parent nodes and their parent nodes, starting with the closest."""
+        from warnings import warn
+
+        warn(
+            "`lineage` has been deprecated, and in the future will raise an error."
+            "Please use `parents` from now on.",
+            DeprecationWarning,
+        )
+        return self.parents
 
     @property
     def ancestors(self: Tree) -> Tuple[Tree, ...]:

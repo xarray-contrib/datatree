@@ -286,6 +286,14 @@ class TestAncestry:
         for node, expected_name in zip(parents, expected):
             assert node.name == expected_name
 
+    def test_lineage(self):
+        _, leaf = create_test_tree()
+        assert leaf.lineage == leaf.parents
+
+    def test_iter_lineage(self):
+        _, leaf = create_test_tree()
+        assert tuple(leaf.iter_lineage()) == tuple(leaf.iter_parents())
+
     def test_ancestors(self):
         _, leaf = create_test_tree()
         ancestors = leaf.ancestors
