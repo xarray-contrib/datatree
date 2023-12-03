@@ -37,7 +37,7 @@ Attributes relating to the recursive tree-like structure of a ``DataTree``.
    DataTree.subtree
    DataTree.descendants
    DataTree.siblings
-   DataTree.lineage
+   DataTree.parents
    DataTree.ancestors
    DataTree.groups
 
@@ -93,7 +93,7 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
    DataTree.orphan
    DataTree.same_tree
    DataTree.relative_to
-   DataTree.iter_lineage
+   DataTree.iter_parents
    DataTree.find_common_ancestor
    DataTree.map_over_subtree
    map_over_subtree
