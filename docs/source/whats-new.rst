@@ -41,6 +41,7 @@ Deprecations
 
 - Renamed `DataTree.lineage` to `DataTree.parents` to match `pathlib` vocabulary
   (:issue:`283`, :pull:`286`). `lineage` is now deprecated and use of `parents` is encouraged.
+  By `Etienne Schalk <https://github.com/etienneschalk>`_.
 
 Bug fixes
 ~~~~~~~~~
