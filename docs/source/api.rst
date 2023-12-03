@@ -112,9 +112,21 @@ Pathlib-like Interface
 .. autosummary::
    :toctree: generated/
 
+   DataTree.name
    DataTree.parent
    DataTree.parents
    DataTree.relative_to
+
+Missing:
+
+..
+
+   ``DataTree.glob``
+   ``DataTree.joinpath``
+   ``DataTree.with_name``
+   ``DataTree.walk``
+   ``DataTree.rename``
+   ``DataTree.replace``
 
 DataTree Contents
 -----------------
