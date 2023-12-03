@@ -68,7 +68,7 @@ This interface echoes that of ``xarray.Dataset``.
    DataTree.is_empty
    DataTree.is_hollow
 
-Dictionary interface
+Dictionary Interface
 --------------------
 
 ``DataTree`` objects also have a dict-like interface mapping keys to either ``xarray.DataArray``s or to child ``DataTree`` nodes.
@@ -103,6 +103,18 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
    DataTree.pipe
    DataTree.match
    DataTree.filter
+
+Pathlib-like Interface
+----------------------
+
+``DataTree`` objects deliberately echo some of the API of `pathlib.PurePath`.
+
+.. autosummary::
+   :toctree: generated/
+
+   DataTree.parent
+   DataTree.parents
+   DataTree.relative_to
 
 DataTree Contents
 -----------------
