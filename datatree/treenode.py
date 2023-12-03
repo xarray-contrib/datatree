@@ -121,8 +121,8 @@ class TreeNode(Generic[Tree]):
                 )
 
     def _is_descendant_of(self, node: Tree) -> bool:
-        _self, *lineage = list(node.lineage)
-        return any(n is self for n in lineage)
+        _self, *parents = list(node.parents)
+        return any(n is self for n in parents)
 
     def _detach(self, parent: Tree | None) -> None:
         if parent is not None:
@@ -236,7 +236,7 @@ class TreeNode(Generic[Tree]):
         """Method call after attaching `children`."""
         pass
 
-    def iter_lineage(self: Tree) -> Iterator[Tree]:
+    def iter_parents(self: Tree) -> Iterator[Tree]:
         """Iterate up the tree, starting from the current node."""
         node: Tree | None = self
         while node is not None:
@@ -244,9 +244,9 @@ class TreeNode(Generic[Tree]):
             node = node.parent
 
     @property
-    def lineage(self: Tree) -> Tuple[Tree, ...]:
+    def parents(self: Tree) -> Tuple[Tree, ...]:
         """All parent nodes and their parent nodes, starting with the closest."""
-        return tuple(self.iter_lineage())
+        return tuple(self.iter_parents())
 
     @property
     def ancestors(self: Tree) -> Tuple[Tree, ...]:
@@ -254,7 +254,7 @@ class TreeNode(Generic[Tree]):
         if self.parent is None:
             return (self,)
         else:
-            ancestors = tuple(reversed(list(self.lineage)))
+            ancestors = tuple(reversed(list(self.parents)))
             return ancestors
 
     @property
@@ -608,7 +608,7 @@ class NamedNode(TreeNode, Generic[Tree]):
             )
 
         this_path = NodePath(self.path)
-        if other.path in list(ancestor.path for ancestor in self.lineage):
+        if other.path in list(ancestor.path for ancestor in self.parents):
             return str(this_path.relative_to(other.path))
         else:
             common_ancestor = self.find_common_ancestor(other)
@@ -624,7 +624,7 @@ class NamedNode(TreeNode, Generic[Tree]):
         Raise ValueError if they are not in the same tree.
         """
         common_ancestor = None
-        for node in other.iter_lineage():
+        for node in other.iter_parents():
             if node.path in [ancestor.path for ancestor in self.ancestors]:
                 common_ancestor = node
                 break
@@ -648,7 +648,7 @@ class NamedNode(TreeNode, Generic[Tree]):
                 "Cannot find relative path to ancestor because given node is not an ancestor of this node"
             )
 
-        lineage_paths = list(ancestor.path for ancestor in self.lineage)
-        generation_gap = list(lineage_paths).index(ancestor.path)
+        parents_paths = list(ancestor.path for ancestor in self.parents)
+        generation_gap = list(parents_paths).index(ancestor.path)
         path_upwards = "../" * generation_gap if generation_gap > 0 else "/"
         return NodePath(path_upwards)
