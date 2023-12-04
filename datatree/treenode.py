@@ -634,7 +634,7 @@ class NamedNode(TreeNode, Generic[Tree]):
             )
 
         this_path = NodePath(self.path)
-        if other.path in list(parent.path for parent in self.parents):
+        if other.path in list(parent.path for parent in (self, *self.parents)):
             return str(this_path.relative_to(other.path))
         else:
             common_ancestor = self.find_common_ancestor(other)
