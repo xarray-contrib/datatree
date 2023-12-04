@@ -121,8 +121,7 @@ class TreeNode(Generic[Tree]):
                 )
 
     def _is_descendant_of(self, node: Tree) -> bool:
-        _self, *parents = list(node.parents)
-        return any(n is self for n in parents)
+        return any(n is self for n in node.parents)
 
     def _detach(self, parent: Tree | None) -> None:
         if parent is not None:
@@ -236,28 +235,23 @@ class TreeNode(Generic[Tree]):
         """Method call after attaching `children`."""
         pass
 
-    def iter_parents(self: Tree) -> Iterator[Tree]:
+    def _iter_parents(self: Tree) -> Iterator[Tree]:
         """Iterate up the tree, starting from the current node."""
-        node: Tree | None = self
+        node: Tree | None = self.parent
         while node is not None:
             yield node
             node = node.parent
 
-    def iter_lineage(self: Tree) -> Iterator[Tree]:
+    def iter_lineage(self: Tree) -> Tuple[Tree, ...]:
         """Iterate up the tree, starting from the current node."""
         from warnings import warn
 
         warn(
             "`iter_lineage` has been deprecated, and in the future will raise an error."
-            "Please use `iter_parents` from now on.",
+            "Please use `parents` from now on.",
             DeprecationWarning,
         )
-        yield from self.iter_parents()
-
-    @property
-    def parents(self: Tree) -> Tuple[Tree, ...]:
-        """All parent nodes and their parent nodes, starting with the closest."""
-        return tuple(self.iter_parents())
+        return tuple((self, *self.parents))
 
     @property
     def lineage(self: Tree) -> Tuple[Tree, ...]:
@@ -269,7 +263,12 @@ class TreeNode(Generic[Tree]):
             "Please use `parents` from now on.",
             DeprecationWarning,
         )
-        return self.parents
+        return self.iter_lineage()
+
+    @property
+    def parents(self: Tree) -> Tuple[Tree, ...]:
+        """All parent nodes and their parent nodes, starting with the closest."""
+        return tuple(self._iter_parents())
 
     @property
     def ancestors(self: Tree) -> Tuple[Tree, ...]:
@@ -647,7 +646,7 @@ class NamedNode(TreeNode, Generic[Tree]):
         Raise ValueError if they are not in the same tree.
         """
         common_ancestor = None
-        for node in other.iter_parents():
+        for node in (other, *other.parents):
             if node.path in [ancestor.path for ancestor in self.ancestors]:
                 common_ancestor = node
                 break

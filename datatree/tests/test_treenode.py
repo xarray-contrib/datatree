@@ -281,18 +281,13 @@ class TestIterators:
 class TestAncestry:
     def test_parents(self):
         _, leaf = create_test_tree()
-        parents = leaf.parents
-        expected = ["f", "e", "b", "a"]
-        for node, expected_name in zip(parents, expected):
-            assert node.name == expected_name
+        expected = ["e", "b", "a"]
+        assert [node.name for node in leaf.parents] == expected
 
     def test_lineage(self):
         _, leaf = create_test_tree()
-        assert leaf.lineage == leaf.parents
-
-    def test_iter_lineage(self):
-        _, leaf = create_test_tree()
-        assert tuple(leaf.iter_lineage()) == tuple(leaf.parents)
+        expected = ["f", "e", "b", "a"]
+        assert [node.name for node in leaf.lineage] == expected
 
     def test_ancestors(self):
         _, leaf = create_test_tree()
