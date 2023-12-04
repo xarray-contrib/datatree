@@ -281,7 +281,7 @@ class TreeNode(Generic[Tree]):
             "Please use `parents`. Example: `tuple(reversed(node.parents))`",
             DeprecationWarning,
         )
-        return tuple(reversed(self.parents))
+        return tuple((*reversed(self.parents), self))
 
     @property
     def root(self: Tree) -> Tree:
