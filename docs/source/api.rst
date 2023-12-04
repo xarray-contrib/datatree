@@ -95,7 +95,6 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
    DataTree.same_tree
    DataTree.relative_to
    DataTree.iter_lineage
-   DataTree.iter_parents
    DataTree.find_common_ancestor
    DataTree.map_over_subtree
    map_over_subtree
