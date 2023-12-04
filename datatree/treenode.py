@@ -273,6 +273,14 @@ class TreeNode(Generic[Tree]):
     @property
     def ancestors(self: Tree) -> Tuple[Tree, ...]:
         """All parent nodes and their parent nodes, starting with the most distant."""
+
+        from warnings import warn
+
+        warn(
+            "`ancestors` has been deprecated, and in the future will raise an error."
+            "Please use `parents`. Example: `tuple(reversed(node.parents))`",
+            DeprecationWarning,
+        )
         return tuple(reversed(self.parents))
 
     @property
@@ -369,7 +377,7 @@ class TreeNode(Generic[Tree]):
         depth
         width
         """
-        return len(self.ancestors)
+        return len(self.parents)
 
     @property
     def depth(self: Tree) -> int:
@@ -609,7 +617,7 @@ class NamedNode(TreeNode, Generic[Tree]):
         if self.is_root:
             return "/"
         else:
-            root, *ancestors = self.ancestors
+            root, *ancestors = tuple(reversed(self.parents))
             # don't include name of root because (a) root might not have a name & (b) we want path relative to root.
             names = [*(node.name for node in ancestors), self.name]
             return "/" + "/".join(names)
@@ -660,7 +668,7 @@ class NamedNode(TreeNode, Generic[Tree]):
             raise NotFoundInTreeError(
                 "Cannot find relative path to ancestor because nodes do not lie within the same tree"
             )
-        if ancestor.path not in list(a.path for a in (*self.ancestors, self)):
+        if ancestor.path not in list(a.path for a in (self, *self.parents)):
             raise NotFoundInTreeError(
                 "Cannot find relative path to ancestor because given node is not an ancestor of this node"
             )
