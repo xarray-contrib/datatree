@@ -273,11 +273,7 @@ class TreeNode(Generic[Tree]):
     @property
     def ancestors(self: Tree) -> Tuple[Tree, ...]:
         """All parent nodes and their parent nodes, starting with the most distant."""
-        if self.parent is None:
-            return (self,)
-        else:
-            ancestors = tuple(reversed(list(self.parents)))
-            return ancestors
+        return tuple(reversed(self.parents))
 
     @property
     def root(self: Tree) -> Tree:
@@ -373,7 +369,7 @@ class TreeNode(Generic[Tree]):
         depth
         width
         """
-        return len(self.ancestors) - 1
+        return len(self.ancestors)
 
     @property
     def depth(self: Tree) -> int:
@@ -615,7 +611,7 @@ class NamedNode(TreeNode, Generic[Tree]):
         else:
             root, *ancestors = self.ancestors
             # don't include name of root because (a) root might not have a name & (b) we want path relative to root.
-            names = [node.name for node in ancestors]
+            names = [*(node.name for node in ancestors), self.name]
             return "/" + "/".join(names)
 
     def relative_to(self: NamedNode, other: NamedNode) -> str:
@@ -630,7 +626,7 @@ class NamedNode(TreeNode, Generic[Tree]):
             )
 
         this_path = NodePath(self.path)
-        if other.path in list(ancestor.path for ancestor in self.parents):
+        if other.path in list(parent.path for parent in self.parents):
             return str(this_path.relative_to(other.path))
         else:
             common_ancestor = self.find_common_ancestor(other)
@@ -645,18 +641,17 @@ class NamedNode(TreeNode, Generic[Tree]):
 
         Raise ValueError if they are not in the same tree.
         """
-        common_ancestor = None
-        for node in (other, *other.parents):
-            if node.path in [ancestor.path for ancestor in self.ancestors]:
-                common_ancestor = node
-                break
+        if self is other:
+            return self
 
-        if not common_ancestor:
-            raise NotFoundInTreeError(
-                "Cannot find common ancestor because nodes do not lie within the same tree"
-            )
+        other_paths = [op.path for op in other.parents]
+        for parent in (self, *self.parents):
+            if parent.path in other_paths:
+                return parent
 
-        return common_ancestor
+        raise NotFoundInTreeError(
+            "Cannot find common ancestor because nodes do not lie within the same tree"
+        )
 
     def _path_to_ancestor(self, ancestor: NamedNode) -> NodePath:
         """Return the relative path from this node to the given ancestor node"""
@@ -665,12 +660,12 @@ class NamedNode(TreeNode, Generic[Tree]):
             raise NotFoundInTreeError(
                 "Cannot find relative path to ancestor because nodes do not lie within the same tree"
             )
-        if ancestor.path not in list(a.path for a in self.ancestors):
+        if ancestor.path not in list(a.path for a in (*self.ancestors, self)):
             raise NotFoundInTreeError(
                 "Cannot find relative path to ancestor because given node is not an ancestor of this node"
             )
 
-        parents_paths = list(ancestor.path for ancestor in self.parents)
+        parents_paths = list(parent.path for parent in (self, *self.parents))
         generation_gap = list(parents_paths).index(ancestor.path)
-        path_upwards = "../" * generation_gap if generation_gap > 0 else "/"
+        path_upwards = "../" * generation_gap if generation_gap > 0 else "."
         return NodePath(path_upwards)

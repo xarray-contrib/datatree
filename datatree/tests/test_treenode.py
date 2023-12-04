@@ -95,8 +95,8 @@ class TestFamilyTree:
         michael = TreeNode(children={"Tony": tony})
         vito = TreeNode(children={"Michael": michael})
         assert tony.root is vito
-        assert tony.parents == (tony, michael, vito)
-        assert tony.ancestors == (vito, michael, tony)
+        assert tony.parents == (michael, vito)
+        assert tony.ancestors == (vito, michael)
 
 
 class TestGetNodes:
