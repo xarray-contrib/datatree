@@ -44,6 +44,9 @@ Bug fixes
 
 Documentation
 ~~~~~~~~~~~~~
+- Use ``napoleon`` instead of ``numpydoc`` to align with xarray documentation
+  (:issue:`284`, :pull:`298`).
+  By `Etienne Schalk <https://github.com/etienneschalk>`_.
 
 Internal Changes
 ~~~~~~~~~~~~~~~~
