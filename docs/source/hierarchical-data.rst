@@ -600,7 +600,7 @@ Notice that corresponding tree nodes do not need to have the same name or contai
 Arithmetic Between Multiple Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Arithmetic operations like multiplication are binary operations, so as long as we have wo isomorphic trees,
+Arithmetic operations like multiplication are binary operations, so as long as we have two isomorphic trees,
 we can do arithmetic between them.
 
 .. ipython:: python
