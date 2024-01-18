@@ -393,6 +393,7 @@ We can use :py:meth:`DataTree.match` for this:
         }
     )
     result = dt.match("*/B")
+    result
 
 We can also subset trees by the contents of the nodes.
 :py:meth:`DataTree.filter` retains only the nodes of a tree that meet a certain condition.
@@ -599,7 +600,7 @@ Notice that corresponding tree nodes do not need to have the same name or contai
 Arithmetic Between Multiple Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Arithmetic operations like multiplication are binary operations, so as long as we have wo isomorphic trees,
+Arithmetic operations like multiplication are binary operations, so as long as we have two isomorphic trees,
 we can do arithmetic between them.
 
 .. ipython:: python
