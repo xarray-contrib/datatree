@@ -393,6 +393,7 @@ We can use :py:meth:`DataTree.match` for this:
         }
     )
     result = dt.match("*/B")
+    result
 
 We can also subset trees by the contents of the nodes.
 :py:meth:`DataTree.filter` retains only the nodes of a tree that meet a certain condition.
