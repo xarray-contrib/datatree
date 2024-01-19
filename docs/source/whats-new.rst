@@ -15,10 +15,188 @@ What's New
 
     np.random.seed(123456)
 
+.. _whats-new.v0.0.14:
+
+v0.0.14 (unreleased)
+--------------------
+
+New Features
+~~~~~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+- Minimum required version of xarray is now 2023.12.0, i.e. the latest version.
+  This is required to prevent recent changes to xarray's internals from breaking datatree.
+  (:issue:`293`, :pull:`294`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Change default write mode of :py:meth:`DataTree.to_zarr` to ``'w-'`` to match ``xarray``
+  default and prevent accidental directory overwrites. (:issue:`274`, :pull:`275`)
+  By `Sam Levang <https://github.com/slevang>`_.
+
+Deprecations
+~~~~~~~~~~~~
+
+Bug fixes
+~~~~~~~~~
+- Keep attributes on nodes containing no data in :py:func:`map_over_subtree`. (:issue:`278`, :pull:`279`)
+  By `Sam Levang <https://github.com/slevang>`_.
+
+Documentation
+~~~~~~~~~~~~~
+- Use ``napoleon`` instead of ``numpydoc`` to align with xarray documentation
+  (:issue:`284`, :pull:`298`).
+  By `Etienne Schalk <https://github.com/etienneschalk>`_.
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
+.. _whats-new.v0.0.13:
+
+v0.0.13 (27/10/2023)
+--------------------
+
+New Features
+~~~~~~~~~~~~
+
+- New :py:meth:`DataTree.match` method for glob-like pattern matching of node paths. (:pull:`267`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- New :py:meth:`DataTree.is_hollow` property for checking if data is only contained at the leaf nodes. (:pull:`272`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Indicate which node caused the problem if error encountered while applying user function using :py:func:`map_over_subtree`
+  (:issue:`190`, :pull:`264`). Only works when using python 3.11 or later.
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+- Nodes containing only attributes but no data are now ignored by :py:func:`map_over_subtree` (:issue:`262`, :pull:`263`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Disallow altering of given dataset inside function called by :py:func:`map_over_subtree` (:pull:`269`, reverts part of :pull:`194`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Bug fixes
+~~~~~~~~~
+
+- Fix unittests on i386. (:pull:`249`)
+  By `Antonio Valentino <https://github.com/avalentino>`_.
+- Ensure nodepath class is compatible with python 3.12 (:pull:`260`)
+  By `Max Grover <https://github.com/mgrover1>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+- Added new sections to page on ``Working with Hierarchical Data`` (:pull:`180`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
+* No longer use the deprecated `distutils` package.
+
+.. _whats-new.v0.0.12:
+
+v0.0.12 (03/07/2023)
+--------------------
+
+New Features
+~~~~~~~~~~~~
+
+- Added a :py:func:`DataTree.level`, :py:func:`DataTree.depth`, and :py:func:`DataTree.width` property (:pull:`208`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Allow dot-style (or "attribute-like") access to child nodes and variables, with ipython autocomplete. (:issue:`189`, :pull:`98`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Deprecations
+~~~~~~~~~~~~
+
+- Dropped support for python 3.8 (:issue:`212`, :pull:`214`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Bug fixes
+~~~~~~~~~
+
+- Allow for altering of given dataset inside function called by :py:func:`map_over_subtree` (:issue:`188`, :pull:`194`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- copy subtrees without creating ancestor nodes (:pull:`201`)
+  By `Justus Magin <https://github.com/keewis>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
+.. _whats-new.v0.0.11:
+
+v0.0.11 (01/09/2023)
+--------------------
+
+Big update with entirely new pages in the docs,
+new methods (``.drop_nodes``, ``.filter``, ``.leaves``, ``.descendants``), and bug fixes!
+
+New Features
+~~~~~~~~~~~~
+
+- Added a :py:meth:`DataTree.drop_nodes` method (:issue:`161`, :pull:`175`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- New, more specific exception types for tree-related errors (:pull:`169`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Added a new :py:meth:`DataTree.descendants` property (:pull:`170`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Added a :py:meth:`DataTree.leaves` property (:pull:`177`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Added a :py:meth:`DataTree.filter` method (:pull:`184`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+- :py:meth:`DataTree.copy` copy method now only copies the subtree, not the parent nodes (:pull:`171`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Grafting a subtree onto another tree now leaves name of original subtree object unchanged (:issue:`116`, :pull:`172`, :pull:`178`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Changed the :py:meth:`DataTree.assign` method to just work on the local node (:pull:`181`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Deprecations
+~~~~~~~~~~~~
+
+Bug fixes
+~~~~~~~~~
+
+- Fix bug with :py:meth:`DataTree.relative_to` method (:issue:`133`, :pull:`160`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Fix links to API docs in all documentation (:pull:`183`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Documentation
+~~~~~~~~~~~~~
+
+- Changed docs theme to match xarray's main documentation. (:pull:`173`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Added ``Terminology`` page. (:pull:`174`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Added page on ``Working with Hierarchical Data`` (:pull:`179`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Added context content to ``Index`` page (:pull:`182`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Updated the README (:pull:`187`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
+
 .. _whats-new.v0.0.10:
 
-v0.0.10 (unreleased)
--------------------
+v0.0.10 (12/07/2022)
+--------------------
+
+Adds accessors and a `.pipe()` method.
 
 New Features
 ~~~~~~~~~~~~
@@ -37,11 +215,21 @@ Deprecations
 Bug fixes
 ~~~~~~~~~
 
+- Allow ``Datatree`` objects as values in :py:meth:`DataTree.from_dict` (:pull:`159`).
+  By `Justus Magin <https://github.com/keewis>`_.
+
 Documentation
 ~~~~~~~~~~~~~
 
+- Added ``Reading and Writing Files`` page. (:pull:`158`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
 Internal Changes
 ~~~~~~~~~~~~~~~~
+
+- Avoid reading from same file twice with fsspec3 (:pull:`130`)
+  By `William Roberts <https://github.com/wroberts4>`_.
+
 
 .. _whats-new.v0.0.9:
 
@@ -180,7 +368,7 @@ Breaking changes
 - Removes the option to delete all data in a node by assigning None to the node (in favour of deleting data by replacing
   the node's ``.ds`` attribute with an empty Dataset), or to create a new empty node in the same way (in favour of
   assigning an empty DataTree object instead).
-- Removes the ability to create a new node by assigning a ``Dataset`` object to ``DataTree.__setitem__`.
+- Removes the ability to create a new node by assigning a ``Dataset`` object to ``DataTree.__setitem__``.
 - Several other minor API changes such as ``.pathstr`` -> ``.path``, and ``from_dict``'s dictionary argument now being
   required. (:pull:`76`)
   By `Tom Nicholas <https://github.com/TomNicholas>`_.

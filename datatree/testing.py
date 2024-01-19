@@ -1,4 +1,4 @@
-from xarray.testing import ensure_warnings
+from xarray.testing.assertions import ensure_warnings
 
 from .datatree import DataTree
 from .formatting import diff_tree_repr
@@ -34,7 +34,7 @@ def assert_isomorphic(a: DataTree, b: DataTree, from_root: bool = False):
     assert_identical
     """
     __tracebackhide__ = True
-    assert type(a) == type(b)
+    assert isinstance(a, type(b))
 
     if isinstance(a, DataTree):
         if from_root:
@@ -71,7 +71,7 @@ def assert_equal(a: DataTree, b: DataTree, from_root: bool = True):
     assert_identical
     """
     __tracebackhide__ = True
-    assert type(a) == type(b)
+    assert isinstance(a, type(b))
 
     if isinstance(a, DataTree):
         if from_root:
@@ -109,7 +109,7 @@ def assert_identical(a: DataTree, b: DataTree, from_root: bool = True):
     """
 
     __tracebackhide__ = True
-    assert type(a) == type(b)
+    assert isinstance(a, type(b))
     if isinstance(a, DataTree):
         if from_root:
             a = a.root

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import sys
 from itertools import repeat
 from textwrap import dedent
 from typing import TYPE_CHECKING, Callable, Tuple
@@ -109,8 +110,8 @@ def map_over_subtree(func: Callable) -> Callable:
 
     Applies a function to every dataset in one or more subtrees, returning new trees which store the results.
 
-    The function will be applied to any non-empty dataset stored in any of the nodes in the trees. The returned trees
-    will have the same structure as the supplied trees.
+    The function will be applied to any data-containing dataset stored in any of the nodes in the trees. The returned
+    trees will have the same structure as the supplied trees.
 
     `func` needs to return one Datasets, DataArrays, or None in order to be able to rebuild the subtrees after
     mapping, as each result will be assigned to its respective node of a new tree via `DataTree.__setitem__`. Any
@@ -201,13 +202,21 @@ def map_over_subtree(func: Callable) -> Callable:
                     ],
                 )
             )
+            func_with_error_context = _handle_errors_with_path_context(
+                node_of_first_tree.path
+            )(func)
 
-            # Now we can call func on the data in this particular set of corresponding nodes
-            results = (
-                func(*node_args_as_datasetviews, **node_kwargs_as_datasetviews)
-                if not node_of_first_tree.is_empty
-                else None
-            )
+            if node_of_first_tree.has_data:
+                # call func on the data in this particular set of corresponding nodes
+                results = func_with_error_context(
+                    *node_args_as_datasetviews, **node_kwargs_as_datasetviews
+                )
+            elif node_of_first_tree.has_attrs:
+                # propagate attrs
+                results = node_of_first_tree.ds
+            else:
+                # nothing to propagate so use fastpath to create empty node in new tree
+                results = None
 
             # TODO implement mapping over multiple trees in-place using if conditions from here on?
             out_data_objects[node_of_first_tree.path] = results
@@ -248,6 +257,34 @@ def map_over_subtree(func: Callable) -> Callable:
             return tuple(result_trees)
 
     return _map_over_subtree
+
+
+def _handle_errors_with_path_context(path):
+    """Wraps given function so that if it fails it also raises path to node on which it failed."""
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                if sys.version_info >= (3, 11):
+                    # Add the context information to the error message
+                    e.add_note(
+                        f"Raised whilst mapping function over node with path {path}"
+                    )
+                raise
+
+        return wrapper
+
+    return decorator
+
+
+def add_note(err: BaseException, msg: str) -> None:
+    # TODO: remove once python 3.10 can be dropped
+    if sys.version_info < (3, 11):
+        err.__notes__ = getattr(err, "__notes__", []) + [msg]  # type: ignore[attr-defined]
+    else:
+        err.add_note(msg)
 
 
 def _check_single_set_return_values(path_to_node, obj):

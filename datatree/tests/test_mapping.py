@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import xarray as xr
 
@@ -68,8 +69,9 @@ class TestCheckTreesIsomorphic:
     def test_checking_from_root(self, create_test_datatree):
         dt1 = create_test_datatree()
         dt2 = create_test_datatree()
-        real_root = DataTree()
-        real_root["fake_root"] = dt2
+        real_root = DataTree(name="real root")
+        dt2.name = "not_real_root"
+        dt2.parent = real_root
         with pytest.raises(TreeIsomorphismError):
             check_isomorphic(dt1, dt2, check_from_root=True)
 
@@ -249,6 +251,90 @@ class TestMapOverSubTree:
         expected = create_test_datatree(modify=lambda ds: 10.0 * ds)["set1"]
         result_tree = times_ten(subtree)
         assert_equal(result_tree, expected, from_root=False)
+
+    def test_skip_empty_nodes_with_attrs(self, create_test_datatree):
+        # inspired by xarray-datatree GH262
+        dt = create_test_datatree()
+        dt["set1/set2"].attrs["foo"] = "bar"
+
+        def check_for_data(ds):
+            # fails if run on a node that has no data
+            assert len(ds.variables) != 0
+            return ds
+
+        dt.map_over_subtree(check_for_data)
+
+    def test_keep_attrs_on_empty_nodes(self, create_test_datatree):
+        # GH278
+        dt = create_test_datatree()
+        dt["set1/set2"].attrs["foo"] = "bar"
+
+        def empty_func(ds):
+            return ds
+
+        result = dt.map_over_subtree(empty_func)
+        assert result["set1/set2"].attrs == dt["set1/set2"].attrs
+
+    @pytest.mark.xfail(
+        reason="probably some bug in pytests handling of exception notes"
+    )
+    def test_error_contains_path_of_offending_node(self, create_test_datatree):
+        dt = create_test_datatree()
+        dt["set1"]["bad_var"] = 0
+        print(dt)
+
+        def fail_on_specific_node(ds):
+            if "bad_var" in ds:
+                raise ValueError("Failed because 'bar_var' present in dataset")
+
+        with pytest.raises(
+            ValueError, match="Raised whilst mapping function over node /set1"
+        ):
+            dt.map_over_subtree(fail_on_specific_node)
+
+
+class TestMutableOperations:
+    def test_construct_using_type(self):
+        # from datatree GH issue #188
+        # xarray's .weighted is unusual because it uses type() to create a Dataset/DataArray
+
+        a = xr.DataArray(
+            np.random.rand(3, 4, 10),
+            dims=["x", "y", "time"],
+            coords={"area": (["x", "y"], np.random.rand(3, 4))},
+        ).to_dataset(name="data")
+        b = xr.DataArray(
+            np.random.rand(2, 6, 14),
+            dims=["x", "y", "time"],
+            coords={"area": (["x", "y"], np.random.rand(2, 6))},
+        ).to_dataset(name="data")
+        dt = DataTree.from_dict({"a": a, "b": b})
+
+        def weighted_mean(ds):
+            return ds.weighted(ds.area).mean(["x", "y"])
+
+        dt.map_over_subtree(weighted_mean)
+
+    def test_alter_inplace_forbidden(self):
+        simpsons = DataTree.from_dict(
+            d={
+                "/": xr.Dataset({"age": 83}),
+                "/Herbert": xr.Dataset({"age": 40}),
+                "/Homer": xr.Dataset({"age": 39}),
+                "/Homer/Bart": xr.Dataset({"age": 10}),
+                "/Homer/Lisa": xr.Dataset({"age": 8}),
+                "/Homer/Maggie": xr.Dataset({"age": 1}),
+            },
+            name="Abe",
+        )
+
+        def fast_forward(ds: xr.Dataset, years: float) -> xr.Dataset:
+            """Add some years to the age, but by altering the given dataset"""
+            ds["age"] = ds["age"] + years
+            return ds
+
+        with pytest.raises(AttributeError):
+            simpsons.map_over_subtree(fast_forward, years=10)
 
 
 @pytest.mark.xfail

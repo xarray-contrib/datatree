@@ -30,7 +30,12 @@ Attributes relating to the recursive tree-like structure of a ``DataTree``.
    DataTree.root
    DataTree.is_root
    DataTree.is_leaf
+   DataTree.leaves
+   DataTree.level
+   DataTree.depth
+   DataTree.width
    DataTree.subtree
+   DataTree.descendants
    DataTree.siblings
    DataTree.lineage
    DataTree.ancestors
@@ -52,18 +57,13 @@ This interface echoes that of ``xarray.Dataset``.
    DataTree.attrs
    DataTree.encoding
    DataTree.indexes
-   DataTree.chunks
    DataTree.nbytes
    DataTree.ds
    DataTree.to_dataset
    DataTree.has_data
    DataTree.has_attrs
    DataTree.is_empty
-
-..
-
-   Missing:
-   ``DataTree.chunksizes``
+   DataTree.is_hollow
 
 Dictionary interface
 --------------------
@@ -95,8 +95,11 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
    DataTree.relative_to
    DataTree.iter_lineage
    DataTree.find_common_ancestor
+   DataTree.map_over_subtree
    map_over_subtree
    DataTree.pipe
+   DataTree.match
+   DataTree.filter
 
 DataTree Contents
 -----------------
@@ -107,7 +110,6 @@ Manipulate the contents of all nodes in a tree simultaneously.
    :toctree: generated/
 
    DataTree.copy
-   DataTree.assign
    DataTree.assign_coords
    DataTree.merge
    DataTree.rename
@@ -124,6 +126,12 @@ DataTree Node Contents
 ----------------------
 
 Manipulate the contents of a single DataTree node.
+
+.. autosummary::
+   :toctree: generated/
+
+   DataTree.assign
+   DataTree.drop_nodes
 
 Comparisons
 ===========
@@ -231,7 +239,7 @@ Aggregate data in all nodes in the subtree simultaneously.
 ndarray methods
 ===============
 
-Methods copied from `np.ndarray` objects, here applying to the data in all nodes in the subtree.
+Methods copied from :py:class:`numpy.ndarray` objects, here applying to the data in all nodes in the subtree.
 
 .. autosummary::
    :toctree: generated/
@@ -241,9 +249,7 @@ Methods copied from `np.ndarray` objects, here applying to the data in all nodes
    DataTree.clip
    DataTree.conj
    DataTree.conjugate
-   DataTree.imag
    DataTree.round
-   DataTree.real
    DataTree.rank
 
 Reshaping and reorganising
@@ -309,6 +315,8 @@ Exceptions raised when manipulating trees.
    :toctree: generated/
 
    TreeIsomorphismError
+   InvalidTreeError
+   NotFoundInTreeError
 
 Advanced API
 ============
@@ -323,4 +331,5 @@ Relatively advanced API for users or developers looking to understand the intern
 
 ..
 
+   Missing:
    ``DataTree.set_close``

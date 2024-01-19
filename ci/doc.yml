@@ -3,17 +3,23 @@ channels:
   - conda-forge
 dependencies:
   - pip
-  - python>=3.8
+  - python>=3.9
   - netcdf4
   - scipy
-  - sphinx
+  - sphinx>=4.2.0
   - sphinx-copybutton
-  - numpydoc
+  - sphinx-panels
   - sphinx-autosummary-accessors
+  - sphinx-book-theme >= 0.0.38
+  - nbsphinx
+  - sphinxcontrib-srclinks
+  - pickleshare
+  - pydata-sphinx-theme>=0.4.3
   - ipython
   - h5netcdf
   - zarr
+  - xarray
   - pip:
-      - git+https://github.com/xarray-contrib/datatree
-      - pangeo-sphinx-book-theme
-      - xarray>=2022.05.0.dev0
+      - -e ..
+      - sphinxext-rediraffe
+      - sphinxext-opengraph

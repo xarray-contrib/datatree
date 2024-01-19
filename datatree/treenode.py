@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from collections import OrderedDict
 from pathlib import PurePosixPath
 from typing import (
@@ -19,29 +20,30 @@ if TYPE_CHECKING:
     from xarray.core.types import T_DataArray
 
 
-class TreeError(Exception):
-    """Exception type raised when user attempts to create an invalid tree in some way."""
+class InvalidTreeError(Exception):
+    """Raised when user attempts to create an invalid tree in some way."""
 
-    ...
+
+class NotFoundInTreeError(ValueError):
+    """Raised when operation can't be completed because one node is part of the expected tree."""
 
 
 class NodePath(PurePosixPath):
     """Represents a path from one node to another within a tree."""
 
-    def __new__(cls, *args: str | "NodePath") -> "NodePath":
-        obj = super().__new__(cls, *args)
-
-        if obj.drive:
+    def __init__(self, *pathsegments):
+        if sys.version_info >= (3, 12):
+            super().__init__(*pathsegments)
+        else:
+            super().__new__(PurePosixPath, *pathsegments)
+        if self.drive:
             raise ValueError("NodePaths cannot have drives")
 
-        if obj.root not in ["/", ""]:
+        if self.root not in ["/", ""]:
             raise ValueError(
                 'Root of NodePath can only be either "/" or "", with "" meaning the path is relative.'
             )
-
         # TODO should we also forbid suffixes to avoid node names with dots in them?
-
-        return obj
 
 
 Tree = TypeVar("Tree", bound="TreeNode")
@@ -76,7 +78,7 @@ class TreeNode(Generic[Tree]):
     _parent: Optional[Tree]
     _children: OrderedDict[str, Tree]
 
-    def __init__(self, children: Mapping[str, Tree] = None):
+    def __init__(self, children: Optional[Mapping[str, Tree]] = None):
         """Create a parentless node."""
         self._parent = None
         self._children = OrderedDict()
@@ -88,7 +90,9 @@ class TreeNode(Generic[Tree]):
         """Parent of this node."""
         return self._parent
 
-    def _set_parent(self, new_parent: Tree | None, child_name: str = None) -> None:
+    def _set_parent(
+        self, new_parent: Tree | None, child_name: Optional[str] = None
+    ) -> None:
         # TODO is it possible to refactor in a way that removes this private method?
 
         if new_parent is not None and not isinstance(new_parent, TreeNode):
@@ -107,12 +111,12 @@ class TreeNode(Generic[Tree]):
         """Checks that assignment of this new parent will not create a cycle."""
         if new_parent is not None:
             if new_parent is self:
-                raise TreeError(
+                raise InvalidTreeError(
                     f"Cannot set parent, as node {self} cannot be a parent of itself."
                 )
 
             if self._is_descendant_of(new_parent):
-                raise TreeError(
+                raise InvalidTreeError(
                     "Cannot set parent, as intended parent is already a descendant of this node."
                 )
 
@@ -134,7 +138,7 @@ class TreeNode(Generic[Tree]):
             self._parent = None
             self._post_detach(parent)
 
-    def _attach(self, parent: Tree | None, child_name: str = None) -> None:
+    def _attach(self, parent: Tree | None, child_name: Optional[str] = None) -> None:
         if parent is not None:
             if child_name is None:
                 raise ValueError(
@@ -209,7 +213,7 @@ class TreeNode(Generic[Tree]):
             if childid not in seen:
                 seen.add(childid)
             else:
-                raise TreeError(
+                raise InvalidTreeError(
                     f"Cannot add same node {name} multiple times as different children."
                 )
 
@@ -234,7 +238,6 @@ class TreeNode(Generic[Tree]):
 
     def iter_lineage(self: Tree) -> Iterator[Tree]:
         """Iterate up the tree, starting from the current node."""
-        # TODO should this instead return an OrderedDict, so as to include node names?
         node: Tree | None = self
         while node is not None:
             yield node
@@ -264,13 +267,26 @@ class TreeNode(Generic[Tree]):
 
     @property
     def is_root(self) -> bool:
-        """Whether or not this node is the tree root."""
+        """Whether this node is the tree root."""
         return self.parent is None
 
     @property
     def is_leaf(self) -> bool:
-        """Whether or not this node is a leaf node."""
+        """
+        Whether this node is a leaf node.
+
+        Leaf nodes are defined as nodes which have no children.
+        """
         return self.children == {}
+
+    @property
+    def leaves(self: Tree) -> Tuple[Tree, ...]:
+        """
+        All leaf nodes.
+
+        Leaf nodes are defined as nodes which have no children.
+        """
+        return tuple([node for node in self.subtree if node.is_leaf])
 
     @property
     def siblings(self: Tree) -> OrderedDict[str, Tree]:
@@ -294,10 +310,84 @@ class TreeNode(Generic[Tree]):
         An iterator over all nodes in this tree, including both self and all descendants.
 
         Iterates depth-first.
+
+        See Also
+        --------
+        DataTree.descendants
         """
         from . import iterators
 
         return iterators.PreOrderIter(self)
+
+    @property
+    def descendants(self: Tree) -> Tuple[Tree, ...]:
+        """
+        Child nodes and all their child nodes.
+
+        Returned in depth-first order.
+
+        See Also
+        --------
+        DataTree.subtree
+        """
+        all_nodes = tuple(self.subtree)
+        this_node, *descendants = all_nodes
+        return tuple(descendants)
+
+    @property
+    def level(self: Tree) -> int:
+        """
+        Level of this node.
+
+        Level means number of parent nodes above this node before reaching the root.
+        The root node is at level 0.
+
+        Returns
+        -------
+        level : int
+
+        See Also
+        --------
+        depth
+        width
+        """
+        return len(self.ancestors) - 1
+
+    @property
+    def depth(self: Tree) -> int:
+        """
+        Maximum level of this tree.
+
+        Measured from the root, which has a depth of 0.
+
+        Returns
+        -------
+        depth : int
+
+        See Also
+        --------
+        level
+        width
+        """
+        return max(node.level for node in self.root.subtree)
+
+    @property
+    def width(self: Tree) -> int:
+        """
+        Number of nodes at this level in the tree.
+
+        Includes number of immediate siblings, but also "cousins" in other branches and so-on.
+
+        Returns
+        -------
+        depth : int
+
+        See Also
+        --------
+        level
+        depth
+        """
+        return len([node for node in self.root.subtree if node.level == self.level])
 
     def _pre_detach(self: Tree, parent: Tree) -> None:
         """Method call before detaching from `parent`."""
@@ -315,7 +405,7 @@ class TreeNode(Generic[Tree]):
         """Method call after attaching to `parent`."""
         pass
 
-    def get(self: Tree, key: str, default: Tree = None) -> Optional[Tree]:
+    def get(self: Tree, key: str, default: Optional[Tree] = None) -> Optional[Tree]:
         """
         Return the child node with the specified key.
 
@@ -452,42 +542,9 @@ class TreeNode(Generic[Tree]):
         else:
             raise KeyError("Cannot delete")
 
-    def update(self: Tree, other: Mapping[str, Tree]) -> None:
-        """
-        Update this node's children.
-
-        Just like `dict.update` this is an in-place operation.
-        """
-        new_children = {**self.children, **other}
-        self.children = new_children
-
     def same_tree(self, other: Tree) -> bool:
         """True if other node is in the same tree as this node."""
         return self.root is other.root
-
-    def find_common_ancestor(self, other: Tree) -> Tree:
-        """
-        Find the first common ancestor of two nodes in the same tree.
-
-        Raise ValueError if they are not in the same tree.
-        """
-        common_ancestor = None
-        for node in other.iter_lineage():
-            if node in self.ancestors:
-                common_ancestor = node
-                break
-
-        if not common_ancestor:
-            raise ValueError(
-                "Cannot find relative path because nodes do not lie within the same tree"
-            )
-
-        return common_ancestor
-
-    def _path_to_ancestor(self, ancestor: Tree) -> NodePath:
-        generation_gap = list(self.lineage).index(ancestor)
-        path_upwards = "../" * generation_gap if generation_gap > 0 else "/"
-        return NodePath(path_upwards)
 
 
 class NamedNode(TreeNode, Generic[Tree]):
@@ -546,12 +603,12 @@ class NamedNode(TreeNode, Generic[Tree]):
         If other is not in this tree, or it's otherwise impossible, raise a ValueError.
         """
         if not self.same_tree(other):
-            raise ValueError(
+            raise NotFoundInTreeError(
                 "Cannot find relative path because nodes do not lie within the same tree"
             )
 
         this_path = NodePath(self.path)
-        if other in self.lineage:
+        if other.path in list(ancestor.path for ancestor in self.lineage):
             return str(this_path.relative_to(other.path))
         else:
             common_ancestor = self.find_common_ancestor(other)
@@ -559,3 +616,39 @@ class NamedNode(TreeNode, Generic[Tree]):
             return str(
                 path_to_common_ancestor / this_path.relative_to(common_ancestor.path)
             )
+
+    def find_common_ancestor(self, other: NamedNode) -> NamedNode:
+        """
+        Find the first common ancestor of two nodes in the same tree.
+
+        Raise ValueError if they are not in the same tree.
+        """
+        common_ancestor = None
+        for node in other.iter_lineage():
+            if node.path in [ancestor.path for ancestor in self.ancestors]:
+                common_ancestor = node
+                break
+
+        if not common_ancestor:
+            raise NotFoundInTreeError(
+                "Cannot find common ancestor because nodes do not lie within the same tree"
+            )
+
+        return common_ancestor
+
+    def _path_to_ancestor(self, ancestor: NamedNode) -> NodePath:
+        """Return the relative path from this node to the given ancestor node"""
+
+        if not self.same_tree(ancestor):
+            raise NotFoundInTreeError(
+                "Cannot find relative path to ancestor because nodes do not lie within the same tree"
+            )
+        if ancestor.path not in list(a.path for a in self.ancestors):
+            raise NotFoundInTreeError(
+                "Cannot find relative path to ancestor because given node is not an ancestor of this node"
+            )
+
+        lineage_paths = list(ancestor.path for ancestor in self.lineage)
+        generation_gap = list(lineage_paths).index(ancestor.path)
+        path_upwards = "../" * generation_gap if generation_gap > 0 else "/"
+        return NodePath(path_upwards)
