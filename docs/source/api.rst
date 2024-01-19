@@ -41,6 +41,7 @@ Attributes relating to the recursive tree-like structure of a ``DataTree``.
    DataTree.descendants
    DataTree.siblings
    DataTree.lineage
+   DataTree.parents
    DataTree.ancestors
    DataTree.groups
 
@@ -276,9 +277,7 @@ Methods copied from :py:class:`numpy.ndarray` objects, here applying to the data
    DataTree.clip
    DataTree.conj
    DataTree.conjugate
-   DataTree.imag
    DataTree.round
-   DataTree.real
    DataTree.rank
 
 Reshaping and reorganising
