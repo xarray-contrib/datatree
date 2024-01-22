@@ -29,6 +29,12 @@ New Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+- Renamed `DataTree.lineage` to `DataTree.parents` to match `pathlib` vocabulary
+  (:issue:`283`, :pull:`286`)
+- Minimum required version of xarray is now 2023.12.0, i.e. the latest version.
+  This is required to prevent recent changes to xarray's internals from breaking datatree.
+  (:issue:`293`, :pull:`294`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 - Change default write mode of :py:meth:`DataTree.to_zarr` to ``'w-'`` to match ``xarray``
   default and prevent accidental directory overwrites. (:issue:`274`, :pull:`275`)
   By `Sam Levang <https://github.com/slevang>`_.
@@ -36,11 +42,20 @@ Breaking changes
 Deprecations
 ~~~~~~~~~~~~
 
+- Renamed `DataTree.lineage` to `DataTree.parents` to match `pathlib` vocabulary
+  (:issue:`283`, :pull:`286`). `lineage` is now deprecated and use of `parents` is encouraged.
+  By `Etienne Schalk <https://github.com/etienneschalk>`_.
+
 Bug fixes
 ~~~~~~~~~
+- Keep attributes on nodes containing no data in :py:func:`map_over_subtree`. (:issue:`278`, :pull:`279`)
+  By `Sam Levang <https://github.com/slevang>`_.
 
 Documentation
 ~~~~~~~~~~~~~
+- Use ``napoleon`` instead of ``numpydoc`` to align with xarray documentation
+  (:issue:`284`, :pull:`298`).
+  By `Etienne Schalk <https://github.com/etienneschalk>`_.
 
 Internal Changes
 ~~~~~~~~~~~~~~~~
@@ -362,7 +377,7 @@ Breaking changes
 - Removes the option to delete all data in a node by assigning None to the node (in favour of deleting data by replacing
   the node's ``.ds`` attribute with an empty Dataset), or to create a new empty node in the same way (in favour of
   assigning an empty DataTree object instead).
-- Removes the ability to create a new node by assigning a ``Dataset`` object to ``DataTree.__setitem__`.
+- Removes the ability to create a new node by assigning a ``Dataset`` object to ``DataTree.__setitem__``.
 - Several other minor API changes such as ``.pathstr`` -> ``.path``, and ``from_dict``'s dictionary argument now being
   required. (:pull:`76`)
   By `Tom Nicholas <https://github.com/TomNicholas>`_.

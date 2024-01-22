@@ -10,10 +10,13 @@ DataTree
 Creating a DataTree
 -------------------
 
+Methods of creating a datatree.
+
 .. autosummary::
    :toctree: generated/
 
    DataTree
+   DataTree.from_dict
 
 Tree Attributes
 ---------------
@@ -38,6 +41,7 @@ Attributes relating to the recursive tree-like structure of a ``DataTree``.
    DataTree.descendants
    DataTree.siblings
    DataTree.lineage
+   DataTree.parents
    DataTree.ancestors
    DataTree.groups
 
@@ -65,7 +69,7 @@ This interface echoes that of ``xarray.Dataset``.
    DataTree.is_empty
    DataTree.is_hollow
 
-Dictionary interface
+Dictionary Interface
 --------------------
 
 ``DataTree`` objects also have a dict-like interface mapping keys to either ``xarray.DataArray``s or to child ``DataTree`` nodes.
@@ -100,6 +104,30 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
    DataTree.pipe
    DataTree.match
    DataTree.filter
+
+Pathlib-like Interface
+----------------------
+
+``DataTree`` objects deliberately echo some of the API of `pathlib.PurePath`.
+
+.. autosummary::
+   :toctree: generated/
+
+   DataTree.name
+   DataTree.parent
+   DataTree.parents
+   DataTree.relative_to
+
+Missing:
+
+..
+
+   ``DataTree.glob``
+   ``DataTree.joinpath``
+   ``DataTree.with_name``
+   ``DataTree.walk``
+   ``DataTree.rename``
+   ``DataTree.replace``
 
 DataTree Contents
 -----------------
@@ -249,9 +277,7 @@ Methods copied from :py:class:`numpy.ndarray` objects, here applying to the data
    DataTree.clip
    DataTree.conj
    DataTree.conjugate
-   DataTree.imag
    DataTree.round
-   DataTree.real
    DataTree.rank
 
 Reshaping and reorganising
@@ -277,13 +303,12 @@ Plotting
 I/O
 ===
 
-Create or
+Open a datatree from an on-disk store or serialize the tree.
 
 .. autosummary::
    :toctree: generated/
 
    open_datatree
-   DataTree.from_dict
    DataTree.to_dict
    DataTree.to_netcdf
    DataTree.to_zarr
