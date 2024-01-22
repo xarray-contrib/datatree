@@ -582,6 +582,7 @@ For example, we can calculate the Root Mean Square value of these signals:
     def rms(signal):
         return np.sqrt(np.mean(signal**2))
 
+
     voltages.map_over_subtree(rms)
 
 We can alternatively use the :py:func:`map_over_subtree` decorator to promote a function which accepts datasets into one which
