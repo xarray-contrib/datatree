@@ -436,7 +436,7 @@ Now let's filter out the minors:
 
 .. ipython:: python
 
-    simpsons.filter(lambda node: node["age"] => 18)
+    simpsons.filter(lambda node: node["age"] >= 18)
 
 The result is a new tree, containing only the nodes matching the condition.
 
