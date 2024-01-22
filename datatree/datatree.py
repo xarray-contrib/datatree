@@ -36,6 +36,7 @@ from xarray.core.utils import (
     HybridMappingProxy,
     _default,
     either_dict_or_kwargs,
+    maybe_wrap_array,
 )
 from xarray.core.variable import Variable
 
@@ -107,13 +108,10 @@ class DatasetView(Dataset):
     An immutable Dataset-like view onto the data in a single DataTree node.
 
     In-place operations modifying this object should raise an AttributeError.
+    This requires overriding all inherited constructors.
 
     Operations returning a new result will return a new xarray.Dataset object.
     This includes all API on Dataset, which will be inherited.
-
-    This requires overriding all inherited private constructors.
-
-    We leave the public init constructor because it is used by type() in some xarray code (see datatree GH issue #188)
     """
 
     # TODO what happens if user alters (in-place) a DataArray they extracted from this object?
@@ -128,6 +126,14 @@ class DatasetView(Dataset):
         "_indexes",
         "_variables",
     )
+
+    def __init__(
+        self,
+        data_vars: Optional[Mapping[Any, Any]] = None,
+        coords: Optional[Mapping[Any, Any]] = None,
+        attrs: Optional[Mapping[Any, Any]] = None,
+    ):
+        raise AttributeError("DatasetView objects are not to be initialized directly")
 
     @classmethod
     def _from_node(
@@ -149,14 +155,16 @@ class DatasetView(Dataset):
 
     def __setitem__(self, key, val) -> None:
         raise AttributeError(
-            "Mutation of the DatasetView is not allowed, please use __setitem__ on the wrapping DataTree node, "
-            "or use `DataTree.to_dataset()` if you want a mutable dataset"
+            "Mutation of the DatasetView is not allowed, please use `.__setitem__` on the wrapping DataTree node, "
+            "or use `dt.to_dataset()` if you want a mutable dataset. If calling this from within `map_over_subtree`,"
+            "use `.copy()` first to get a mutable version of the input dataset."
         )
 
     def update(self, other) -> None:
         raise AttributeError(
-            "Mutation of the DatasetView is not allowed, please use .update on the wrapping DataTree node, "
-            "or use `DataTree.to_dataset()` if you want a mutable dataset"
+            "Mutation of the DatasetView is not allowed, please use `.update` on the wrapping DataTree node, "
+            "or use `dt.to_dataset()` if you want a mutable dataset. If calling this from within `map_over_subtree`,"
+            "use `.copy()` first to get a mutable version of the input dataset."
         )
 
     # FIXME https://github.com/python/mypy/issues/7328
@@ -234,6 +242,65 @@ class DatasetView(Dataset):
             encoding=encoding,
             inplace=inplace,
         )
+
+    def map(
+        self,
+        func: Callable,
+        keep_attrs: bool | None = None,
+        args: Iterable[Any] = (),
+        **kwargs: Any,
+    ) -> Dataset:
+        """Apply a function to each data variable in this dataset
+
+        Parameters
+        ----------
+        func : callable
+            Function which can be called in the form `func(x, *args, **kwargs)`
+            to transform each DataArray `x` in this dataset into another
+            DataArray.
+        keep_attrs : bool or None, optional
+            If True, both the dataset's and variables' attributes (`attrs`) will be
+            copied from the original objects to the new ones. If False, the new dataset
+            and variables will be returned without copying the attributes.
+        args : iterable, optional
+            Positional arguments passed on to `func`.
+        **kwargs : Any
+            Keyword arguments passed on to `func`.
+
+        Returns
+        -------
+        applied : Dataset
+            Resulting dataset from applying ``func`` to each data variable.
+
+        Examples
+        --------
+        >>> da = xr.DataArray(np.random.randn(2, 3))
+        >>> ds = xr.Dataset({"foo": da, "bar": ("x", [-1, 2])})
+        >>> ds
+        <xarray.Dataset>
+        Dimensions:  (dim_0: 2, dim_1: 3, x: 2)
+        Dimensions without coordinates: dim_0, dim_1, x
+        Data variables:
+            foo      (dim_0, dim_1) float64 1.764 0.4002 0.9787 2.241 1.868 -0.9773
+            bar      (x) int64 -1 2
+        >>> ds.map(np.fabs)
+        <xarray.Dataset>
+        Dimensions:  (dim_0: 2, dim_1: 3, x: 2)
+        Dimensions without coordinates: dim_0, dim_1, x
+        Data variables:
+            foo      (dim_0, dim_1) float64 1.764 0.4002 0.9787 2.241 1.868 0.9773
+            bar      (x) float64 1.0 2.0
+        """
+
+        # Copied from xarray.Dataset so as not to call type(self), which causes problems (see datatree GH188).
+        # TODO Refactor xarray upstream to avoid needing to overwrite this.
+        # TODO This copied version will drop all attrs - the keep_attrs stuff should be re-instated
+        variables = {
+            k: maybe_wrap_array(v, func(v, *args, **kwargs))
+            for k, v in self.data_vars.items()
+        }
+        # return type(self)(variables, attrs=attrs)
+        return Dataset(variables)
 
 
 class DataTree(
@@ -437,6 +504,11 @@ class DataTree(
     def is_empty(self) -> bool:
         """False if node contains any data or attrs. Does not look at children."""
         return not (self.has_data or self.has_attrs)
+
+    @property
+    def is_hollow(self) -> bool:
+        """True if only leaf nodes contain data."""
+        return not any(node.has_data for node in self.subtree if not node.is_leaf)
 
     @property
     def variables(self) -> Mapping[Hashable, Variable]:
@@ -1175,8 +1247,13 @@ class DataTree(
         filterfunc: function
             A function which accepts only one DataTree - the node on which filterfunc will be called.
 
+        Returns
+        -------
+        DataTree
+
         See Also
         --------
+        match
         pipe
         map_over_subtree
         """
@@ -1184,6 +1261,51 @@ class DataTree(
             node.path: node.ds for node in self.subtree if filterfunc(node)
         }
         return DataTree.from_dict(filtered_nodes, name=self.root.name)
+
+    def match(self, pattern: str) -> DataTree:
+        """
+        Return nodes with paths matching pattern.
+
+        Uses unix glob-like syntax for pattern-matching.
+
+        Parameters
+        ----------
+        pattern: str
+            A pattern to match each node path against.
+
+        Returns
+        -------
+        DataTree
+
+        See Also
+        --------
+        filter
+        pipe
+        map_over_subtree
+
+        Examples
+        --------
+        >>> dt = DataTree.from_dict(
+        ...     {
+        ...         "/a/A": None,
+        ...         "/a/B": None,
+        ...         "/b/A": None,
+        ...         "/b/B": None,
+        ...     }
+        ... )
+        >>> dt.match("*/B")
+        DataTree('None', parent=None)
+        ├── DataTree('a')
+        │   └── DataTree('B')
+        └── DataTree('b')
+            └── DataTree('B')
+        """
+        matching_nodes = {
+            node.path: node.ds
+            for node in self.subtree
+            if NodePath(node.path).match(pattern)
+        }
+        return DataTree.from_dict(matching_nodes, name=self.root.name)
 
     def map_over_subtree(
         self,
@@ -1374,7 +1496,12 @@ class DataTree(
         )
 
     def to_zarr(
-        self, store, mode: str = "w", encoding=None, consolidated: bool = True, **kwargs
+        self,
+        store,
+        mode: str = "w-",
+        encoding=None,
+        consolidated: bool = True,
+        **kwargs,
     ):
         """
         Write datatree contents to a Zarr store.
@@ -1383,7 +1510,7 @@ class DataTree(
         ----------
         store : MutableMapping, str or Path, optional
             Store or path to directory in file system
-        mode : {{"w", "w-", "a", "r+", None}, default: "w"
+        mode : {{"w", "w-", "a", "r+", None}, default: "w-"
             Persistence mode: “w” means create (overwrite if exists); “w-” means create (fail if exists);
             “a” means override existing variables (create if does not exist); “r+” means modify existing
             array values only (raise an error if any metadata or shapes would change). The default mode

@@ -15,9 +15,9 @@ What's New
 
     np.random.seed(123456)
 
-.. _whats-new.v0.0.13:
+.. _whats-new.v0.0.14:
 
-v0.0.13 (unreleased)
+v0.0.14 (unreleased)
 --------------------
 
 New Features
@@ -26,20 +26,79 @@ New Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+- Renamed `DataTree.lineage` to `DataTree.parents` to match `pathlib` vocabulary
+  (:issue:`283`, :pull:`286`)
+- Minimum required version of xarray is now 2023.12.0, i.e. the latest version.
+  This is required to prevent recent changes to xarray's internals from breaking datatree.
+  (:issue:`293`, :pull:`294`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Change default write mode of :py:meth:`DataTree.to_zarr` to ``'w-'`` to match ``xarray``
+  default and prevent accidental directory overwrites. (:issue:`274`, :pull:`275`)
+  By `Sam Levang <https://github.com/slevang>`_.
+
 Deprecations
 ~~~~~~~~~~~~
+
+- Renamed `DataTree.lineage` to `DataTree.parents` to match `pathlib` vocabulary
+  (:issue:`283`, :pull:`286`). `lineage` is now deprecated and use of `parents` is encouraged.
+  By `Etienne Schalk <https://github.com/etienneschalk>`_.
+
+Bug fixes
+~~~~~~~~~
+- Keep attributes on nodes containing no data in :py:func:`map_over_subtree`. (:issue:`278`, :pull:`279`)
+  By `Sam Levang <https://github.com/slevang>`_.
+
+Documentation
+~~~~~~~~~~~~~
+- Use ``napoleon`` instead of ``numpydoc`` to align with xarray documentation
+  (:issue:`284`, :pull:`298`).
+  By `Etienne Schalk <https://github.com/etienneschalk>`_.
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
+.. _whats-new.v0.0.13:
+
+v0.0.13 (27/10/2023)
+--------------------
+
+New Features
+~~~~~~~~~~~~
+
+- New :py:meth:`DataTree.match` method for glob-like pattern matching of node paths. (:pull:`267`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- New :py:meth:`DataTree.is_hollow` property for checking if data is only contained at the leaf nodes. (:pull:`272`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Indicate which node caused the problem if error encountered while applying user function using :py:func:`map_over_subtree`
+  (:issue:`190`, :pull:`264`). Only works when using python 3.11 or later.
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+- Nodes containing only attributes but no data are now ignored by :py:func:`map_over_subtree` (:issue:`262`, :pull:`263`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+- Disallow altering of given dataset inside function called by :py:func:`map_over_subtree` (:pull:`269`, reverts part of :pull:`194`).
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 
 Bug fixes
 ~~~~~~~~~
 
+- Fix unittests on i386. (:pull:`249`)
+  By `Antonio Valentino <https://github.com/avalentino>`_.
 - Ensure nodepath class is compatible with python 3.12 (:pull:`260`)
   By `Max Grover <https://github.com/mgrover1>`_.
 
 Documentation
 ~~~~~~~~~~~~~
 
+- Added new sections to page on ``Working with Hierarchical Data`` (:pull:`180`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
+
 Internal Changes
 ~~~~~~~~~~~~~~~~
+
+* No longer use the deprecated `distutils` package.
 
 .. _whats-new.v0.0.12:
 
@@ -315,7 +374,7 @@ Breaking changes
 - Removes the option to delete all data in a node by assigning None to the node (in favour of deleting data by replacing
   the node's ``.ds`` attribute with an empty Dataset), or to create a new empty node in the same way (in favour of
   assigning an empty DataTree object instead).
-- Removes the ability to create a new node by assigning a ``Dataset`` object to ``DataTree.__setitem__`.
+- Removes the ability to create a new node by assigning a ``Dataset`` object to ``DataTree.__setitem__``.
 - Several other minor API changes such as ``.pathstr`` -> ``.path``, and ``from_dict``'s dictionary argument now being
   required. (:pull:`76`)
   By `Tom Nicholas <https://github.com/TomNicholas>`_.

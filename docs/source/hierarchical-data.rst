@@ -395,8 +395,26 @@ Subsetting Tree Nodes
 
 We can subset our tree to select only nodes of interest in various ways.
 
-The :py:meth:`DataTree.filter` method can be used to retain only the nodes of a tree that meet a certain condition.
-For example, we could recreate the Simpson's family tree with the ages of each individual, then filter for only the adults:
+Similarly to on a real filesystem, matching nodes by common patterns in their paths is often useful.
+We can use :py:meth:`DataTree.match` for this:
+
+.. ipython:: python
+
+    dt = DataTree.from_dict(
+        {
+            "/a/A": None,
+            "/a/B": None,
+            "/b/A": None,
+            "/b/B": None,
+        }
+    )
+    result = dt.match("*/B")
+    result
+
+We can also subset trees by the contents of the nodes.
+:py:meth:`DataTree.filter` retains only the nodes of a tree that meet a certain condition.
+
+For example, we could recreate the Simpson's family tree with the ages of each individual, then filter for only the adults.
 First lets recreate the tree but with an `age` data variable in every node:
 
 .. ipython:: python
@@ -418,12 +436,11 @@ Now let's filter out the minors:
 
 .. ipython:: python
 
-    simpsons.filter(lambda node: node["age"] > 18)
+    simpsons.filter(lambda node: node["age"] => 18)
 
 The result is a new tree, containing only the nodes matching the condition.
 
 (Yes, under the hood :py:meth:`~DataTree.filter` is just syntactic sugar for the pattern we showed you in :ref:`iterating over trees` !)
-
 
 Collapsing Subtrees
 ~~~~~~~~~~~~~~~~~~~
@@ -432,6 +449,25 @@ Merge all nodes in one subtree into a single dataset
 
 Find total number of species
 Find total biomass
+
+.. _Tree Contents:
+
+Tree Contents
+-------------
+
+Hollow Trees
+~~~~~~~~~~~~
+
+A concept that can sometimes be useful is that of a "Hollow Tree", which means a tree with data stored only at the leaf nodes.
+This is useful because certain useful tree manipulation operations only make sense for hollow trees.
+
+You can check if a tree is a hollow tree by using the :py:class:`~DataTree.is_hollow` property.
+We can see that the Simpson's family is not hollow because the data variable ``"age"`` is present at some nodes which
+have children (i.e. Abe and Homer).
+
+.. ipython:: python
+
+    simpsons.is_hollow
 
 .. _tree computation:
 
@@ -529,8 +565,9 @@ See that the same change (fast-forwarding by adding 10 years to the age of each 
 Mapping Custom Functions Over Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can map custom computation over each node in a tree using :py:func:`map_over_subtree`.
-You can map any function, so long as it takes `xarray.Dataset` objects as one (or more) of the input arguments,
+You can map custom computation over each node in a tree using the :py:func:`DataTree.map_over_subtree` method.
+
+Any function can be mapped, so long as it takes `xarray.Dataset` objects as one (or more) of the input arguments,
 and returns one (or more) xarray datasets.
 
 .. note::
@@ -538,14 +575,17 @@ and returns one (or more) xarray datasets.
     Functions passed to :py:func:`map_over_subtree` cannot alter nodes in-place.
     Instead they must return new `xarray.Dataset` objects.
 
-For example, can calculate the Root Mean Square value of these signals:
+For example, we can calculate the Root Mean Square value of these signals:
 
-.. ipython:: ipython
+.. ipython:: python
 
     def rms(signal):
         return np.sqrt(np.mean(signal**2))
 
-    rms(readings)
+    voltages.map_over_subtree(rms)
+
+We can alternatively use the :py:func:`map_over_subtree` decorator to promote a function which accepts datasets into one which
+accepts datatrees.
 
 .. _multiple trees:
 
@@ -563,17 +603,17 @@ each tree needs to have the same structure. Specifically two trees can only be c
 if they have the same number of nodes, and each corresponding node has the same number of children.
 We can check if any two trees are isomorphic using the :py:meth:`DataTree.isomorphic` method.
 
-.. ipython:: ipython
+.. ipython:: python
     :okexcept:
 
-    dt1 = DataTree.from_dict({'a': None, 'a/b': None})
-    dt2 = DataTree.from_dict({'a': None})
+    dt1 = DataTree.from_dict({"a": None, "a/b": None})
+    dt2 = DataTree.from_dict({"a": None})
     dt1.isomorphic(dt2)
 
-    dt3 = DataTree.from_dict({'a': None, 'b': None})
+    dt3 = DataTree.from_dict({"a": None, "b": None})
     dt1.isomorphic(dt3)
 
-    dt4 = DataTree.from_dict({'A': None, 'A/B': xr.Dataset({'foo': 1})})
+    dt4 = DataTree.from_dict({"A": None, "A/B": xr.Dataset({"foo": 1})})
     dt1.isomorphic(dt4)
 
 If the trees are not isomorphic a :py:class:`~TreeIsomorphismError` will be raised.
@@ -582,24 +622,30 @@ Notice that corresponding tree nodes do not need to have the same name or contai
 Arithmetic Between Multiple Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Arithmetic operations like multiplication are binary operations, so as long as we have wo isomorphic trees,
+Arithmetic operations like multiplication are binary operations, so as long as we have two isomorphic trees,
 we can do arithmetic between them.
 
-.. ipython:: ipython
+.. ipython:: python
 
     currents = DataTree.from_dict(
         {
             "/oscilloscope1": xr.Dataset(
                 {
-                    "current": ('time', signal_generator(time_stamps1, f=2, A=1.2, phase=1)),
+                    "current": (
+                        "time",
+                        signal_generator(time_stamps1, f=2, A=1.2, phase=1),
+                    ),
                 },
-                coords={'time': time_stamps1},
+                coords={"time": time_stamps1},
             ),
             "/oscilloscope2": xr.Dataset(
                 {
-                    "current": ('time', signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.7)),
+                    "current": (
+                        "time",
+                        signal_generator(time_stamps2, f=1.6, A=1.6, phase=0.7),
+                    ),
                 },
-                coords={'time': time_stamps2},
+                coords={"time": time_stamps2},
             ),
         }
     )
@@ -607,9 +653,9 @@ we can do arithmetic between them.
 
     currents.isomorphic(voltages)
 
-We could use this feature to quickly calculate the electrical power in our signal, P=IV.
+We could use this feature to quickly calculate the electrical power in our signals, P=IV.
 
-.. ipython:: ipython
+.. ipython:: python
 
     power = currents * voltages
     power

@@ -136,6 +136,16 @@ class TestStoreDatasets:
         john = DataTree(name="john", data=None)
         assert not john.has_data
 
+    def test_is_hollow(self):
+        john = DataTree(data=xr.Dataset({"a": 0}))
+        assert john.is_hollow
+
+        eve = DataTree(children={"john": john})
+        assert eve.is_hollow
+
+        eve.ds = xr.Dataset({"a": 1})
+        assert not eve.is_hollow
+
 
 class TestVariablesChildrenNameCollisions:
     def test_parent_already_has_variable_with_childs_name(self):
@@ -603,6 +613,13 @@ class TestAccess:
         var_keys = list(dt.variables.keys())
         assert all(var_key in key_completions for var_key in var_keys)
 
+    def test_operation_with_attrs_but_no_data(self):
+        # tests bug from xarray-datatree GH262
+        xs = xr.Dataset({"testvar": xr.DataArray(np.ones((2, 3)))})
+        dt = DataTree.from_dict({"node1": xs, "node2": xs})
+        dt.attrs["test_key"] = 1  # sel works fine without this line
+        dt.sel(dim_0=0)
+
 
 class TestRestructuring:
     def test_drop_nodes(self):
@@ -671,6 +688,25 @@ class TestPipe:
 
 
 class TestSubset:
+    def test_match(self):
+        # TODO is this example going to cause problems with case sensitivity?
+        dt = DataTree.from_dict(
+            {
+                "/a/A": None,
+                "/a/B": None,
+                "/b/A": None,
+                "/b/B": None,
+            }
+        )
+        result = dt.match("*/B")
+        expected = DataTree.from_dict(
+            {
+                "/a/B": None,
+                "/b/B": None,
+            }
+        )
+        dtt.assert_identical(result, expected)
+
     def test_filter(self):
         simpsons = DataTree.from_dict(
             d={
