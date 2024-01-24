@@ -374,6 +374,11 @@ You can see this tree is similar to the ``dt`` object above, except that it is m
 Manipulating Trees
 ------------------
 
+Moving Tree Branches
+~~~~~~~~~~~~~~~~~~~~
+
+TODO: pruning, grafting
+
 Subsetting Tree Nodes
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -397,7 +402,8 @@ We can use :py:meth:`DataTree.match` for this:
 
 We can also subset trees by the contents of the nodes.
 :py:meth:`DataTree.filter` retains only the nodes of a tree that meet a certain condition.
-For example, we could recreate the Simpson's family tree with the ages of each individual, then filter for only the adults:
+
+For example, we could recreate the Simpson's family tree with the ages of each individual, then filter for only the adults.
 First lets recreate the tree but with an `age` data variable in every node:
 
 .. ipython:: python
@@ -419,11 +425,16 @@ Now let's filter out the minors:
 
 .. ipython:: python
 
-    simpsons.filter(lambda node: node["age"] > 18)
+    simpsons.filter(lambda node: node["age"] >= 18)
 
 The result is a new tree, containing only the nodes matching the condition.
 
 (Yes, under the hood :py:meth:`~DataTree.filter` is just syntactic sugar for the pattern we showed you in :ref:`iterating over trees` !)
+
+Collapsing Subtrees
+~~~~~~~~~~~~~~~~~~~
+
+TODO: Merge all nodes in one subtree into a single dataset
 
 .. _Tree Contents:
 
@@ -540,8 +551,9 @@ See that the same change (fast-forwarding by adding 10 years to the age of each 
 Mapping Custom Functions Over Trees
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can map custom computation over each node in a tree using :py:meth:`DataTree.map_over_subtree`.
-You can map any function, so long as it takes `xarray.Dataset` objects as one (or more) of the input arguments,
+You can map custom computation over each node in a tree using the :py:func:`DataTree.map_over_subtree` method.
+
+Any function can be mapped, so long as it takes `xarray.Dataset` objects as one (or more) of the input arguments,
 and returns one (or more) xarray datasets.
 
 .. note::
@@ -549,23 +561,20 @@ and returns one (or more) xarray datasets.
     Functions passed to :py:func:`map_over_subtree` cannot alter nodes in-place.
     Instead they must return new `xarray.Dataset` objects.
 
-For example, we can define a function to calculate the Root Mean Square of a timeseries
+For example, we can calculate the Root Mean Square value of these signals:
 
 .. ipython:: python
 
     def rms(signal):
         return np.sqrt(np.mean(signal**2))
 
-Then calculate the RMS value of these signals:
-
-.. ipython:: python
 
     voltages.map_over_subtree(rms)
 
-.. _multiple trees:
-
-We can also use the :py:func:`map_over_subtree` decorator to promote a function which accepts datasets into one which
+We can alternatively use the :py:func:`map_over_subtree` decorator to promote a function which accepts datasets into one which
 accepts datatrees.
+
+.. _multiple trees:
 
 Operating on Multiple Trees
 ---------------------------
@@ -631,9 +640,15 @@ we can do arithmetic between them.
 
     currents.isomorphic(voltages)
 
-We could use this feature to quickly calculate the electrical power in our signal, P=IV.
+We could use this feature to quickly calculate the electrical power in our signals, P=IV.
 
 .. ipython:: python
 
     power = currents * voltages
     power
+
+
+Mapping over Multiple Trees
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TODO: map_over_subtree with binary function

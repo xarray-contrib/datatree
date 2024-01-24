@@ -53,6 +53,8 @@ Documentation
 - Use ``napoleon`` instead of ``numpydoc`` to align with xarray documentation
   (:issue:`284`, :pull:`298`).
   By `Etienne Schalk <https://github.com/etienneschalk>`_.
+- Added new sections to page on ``Working with Hierarchical Data`` (:pull:`265`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 
 Internal Changes
 ~~~~~~~~~~~~~~~~
