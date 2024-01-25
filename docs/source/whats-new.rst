@@ -65,6 +65,9 @@ v0.0.13 (27/10/2023)
 New Features
 ~~~~~~~~~~~~
 
+- New :py:meth:`DataTree.reorder` method for re-ordering levels of all nodes in the tree according to a
+  symbolic pattern such as ``a/b->b/a``. (:pull:`271`)
+  By `Tom Nicholas <https://github.com/TomNicholas>`_.
 - New :py:meth:`DataTree.match` method for glob-like pattern matching of node paths. (:pull:`267`)
   By `Tom Nicholas <https://github.com/TomNicholas>`_.
 - New :py:meth:`DataTree.is_hollow` property for checking if data is only contained at the leaf nodes. (:pull:`272`)

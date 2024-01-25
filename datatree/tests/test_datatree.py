@@ -655,6 +655,58 @@ class TestRestructuring:
         dtt.assert_equal(result, expected)
 
 
+class TestReorder:
+    @pytest.mark.parametrize(
+        "in_dict, reordering, expected_dict",
+        [
+            ({"A": xr.Dataset()}, "a->a", {"A": xr.Dataset()}),
+            ({"A/B": xr.Dataset()}, "a/b->b/a", {"B/A": xr.Dataset()}),
+            ({"A/B/C": xr.Dataset()}, "a/b/c->c/b/a", {"C/B/A": xr.Dataset()}),
+            (
+                {"A/B1": xr.Dataset({"x": 1}), "A/B2": xr.Dataset({"x": 2})},
+                "a/b->b/a",
+                {"B1/A": xr.Dataset({"x": 1}), "B2/A": xr.Dataset({"x": 2})},
+            ),
+        ],
+    )
+    def test_reorder(self, in_dict, reordering, expected_dict):
+        dt = DataTree.from_dict(in_dict)
+        result = dt.reorder(reordering)
+        expected = DataTree.from_dict(expected_dict)
+        dtt.assert_equal(result, expected)
+
+    def test_invalid_order(self):
+        dt = DataTree.from_dict({"A/B/C": None})
+
+        with pytest.raises(ValueError, match="Invalid symbolic reordering"):
+            dt.reorder("a")
+
+        with pytest.raises(ValueError, match="Invalid symbolic reordering"):
+            dt.reorder("a->")
+
+        with pytest.raises(
+            ValueError, match="depth of the symbolic path on each side must be equal"
+        ):
+            dt.reorder("a->a/b")
+
+        with pytest.raises(ValueError, match="only present on one side"):
+            dt.reorder("a->b")
+
+        with pytest.raises(ValueError, match="symbols {'a'} appear more than once"):
+            dt.reorder("a/a/b->a/b/b")
+
+    def test_invalid_tree(self):
+        dt = DataTree.from_dict({"A": None})
+
+        with pytest.raises(ValueError, match="Node A only has depth 1"):
+            dt.reorder("a/b/c->c/b/a")
+
+        dt = DataTree.from_dict({"A": xr.Dataset({"t": 1}), "A/B": None})
+
+        with pytest.raises(ValueError, match="Only hollow trees"):
+            dt.reorder("a/b->b/a")
+
+
 class TestPipe:
     def test_noop(self, create_test_datatree):
         dt = create_test_datatree()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import itertools
+import re
 from collections import OrderedDict
 from html import escape
 from typing import (
@@ -77,6 +78,72 @@ if TYPE_CHECKING:
 
 
 T_Path = Union[str, NodePath]
+
+
+_SYMBOLIC_NODE_NAME = r"\w+"
+_SYMBOLIC_NODEPATH = rf"\/?{_SYMBOLIC_NODE_NAME}(\/{_SYMBOLIC_NODE_NAME})*\/?"
+_SYMBOLIC_REORDERING = f"^{_SYMBOLIC_NODEPATH}->{_SYMBOLIC_NODEPATH}$"
+
+
+def _parse_symbolic_ordering(ordering: str) -> Tuple[List[str], List[str]]:
+    """Parse a symbolic reordering string of the form 'a/b -> b/a'."""
+    if not re.match(_SYMBOLIC_REORDERING, ordering):
+        raise ValueError(f"Invalid symbolic reordering: {ordering}")
+
+    in_txt, out_txt = ordering.split("->")
+    old_symbolic_order = re.findall(_SYMBOLIC_NODE_NAME, in_txt)
+    new_symbolic_order = re.findall(_SYMBOLIC_NODE_NAME, out_txt)
+
+    # Check number of symbols is the same on both sides
+    if len(old_symbolic_order) != len(new_symbolic_order):
+        raise ValueError(
+            "Invalid symbolic reordering. The depth of the symbolic path on each side must be equal, "
+            f"but the left has {len(old_symbolic_order)} parts and the right has {len(new_symbolic_order)}"
+            f" parts."
+        )
+
+    # Check every symbol appears on both sides
+    unmatched_symbols = set(old_symbolic_order).symmetric_difference(new_symbolic_order)
+    if unmatched_symbols:
+        raise ValueError(
+            "Invalid symbolic reordering. Every symbol must be present on both sides, but "
+            f"the symbols {unmatched_symbols} are only present on one side."
+        )
+
+    # Check each symbol appears only once on each side
+    repeated_symbols_in_old_order = set(
+        sym for sym in old_symbolic_order if old_symbolic_order.count(sym) > 1
+    )
+    if repeated_symbols_in_old_order:
+        raise ValueError(
+            "Invalid symbolic reordering. Each symbol must appear only once on each side, "
+            f"but the symbols {repeated_symbols_in_old_order} appear more than once in the left-hand side."
+        )
+    repeated_symbols_in_new_order = set(
+        sym for sym in new_symbolic_order if new_symbolic_order.count(sym) > 1
+    )
+    if repeated_symbols_in_new_order:
+        raise ValueError(
+            "Invalid symbolic reordering. Each symbol must appear only once on each side, "
+            f"but the symbols {repeated_symbols_in_new_order} appear more than once in the right-hand side."
+        )
+
+    return old_symbolic_order, new_symbolic_order
+
+
+def _reorder_path(path: str, old_order: List[str], new_order: List[str]) -> str:
+    """Re-orders the parts of the given path from old_order to match new_order."""
+
+    parts = NodePath(path).parts
+    if len(old_order) > len(parts):
+        raise ValueError(
+            f"Node {path} only has depth {len(parts)}, "
+            f"but the reordering requires depth >= {len(old_order)}"
+        )
+
+    new_order_indices = [new_order.index(el) for el in old_order]
+    reordered_parts = [parts[i] for i in new_order_indices]
+    return str(NodePath(*reordered_parts))
 
 
 def _coerce_to_dataset(data: Dataset | DataArray | None) -> Dataset:
@@ -1307,6 +1374,90 @@ class DataTree(
         }
         return DataTree.from_dict(matching_nodes, name=self.root.name)
 
+    def reorder(self, ordering: str) -> DataTree:
+        """
+        Reorder levels of all leaf nodes in this subtree by rearranging the parts of each of their paths.
+
+        Raises an error on non-hollow trees.
+
+        In general this operation will preserve the depth of each leaf node (and hence depth of the whole subtree),
+        but will not preserve the width at any level.
+
+        Parameters
+        ----------
+        ordering: str
+            String specifying symbolically how to reorder levels of each path, for example:
+                'a/b/c -> b/c/a'
+
+            Generally must be of the form:
+                '{OLD_ORDER} -> {NEW_ORDER}'
+            where OLD_ORDER = 'a/b/***/y/z', representing a symbolic ordering of the parts of the node path,
+            and NEW_ORDER = 'z/a/***/b/y', representing an arbitrary re-ordering of the same number of parts.
+            (Here the triple asterisk stands in for an arbitrary number of parts.)
+
+            Symbols must be unique, and each symbol in the old order must have a corresponding entry in the new order,
+            so the number of symbols must be the same in the new order as in the old order.
+
+            By default paths will be re-ordered starting at the root. To re-order at the leaves instead, an ellipsis can
+            be pre-prended, e.g. '.../a/b -> .../b/a'. The ellipsis can be present in the new order, old order, both,
+            or neither. (Ellipses will have no effect on a node which has a depth equal to the number of symbols.)
+
+        Returns
+        -------
+        reordered: DataTree
+            DataTree object where each node has the same depth as it did originally.
+
+        Examples
+        --------
+        >>> dt = DataTree.from_dict(
+        ...     {"A/B1": xr.Dataset({"x": 1}), "A/B2": xr.Dataset({"x": 2})}
+        ... )
+        >>> dt
+        DataTree('None', parent=None)
+        └── DataTree('A')
+            ├── DataTree('B1')
+            │       Dimensions:  ()
+            │       Data variables:
+            │           x        int64 1
+            └── DataTree('B2')
+                    Dimensions:  ()
+                    Data variables:
+                        x        int64 2
+        >>> dt.reorder("a/b->b/a")
+        DataTree('None', parent=None)
+        ├── DataTree('B1')
+        │   └── DataTree('A')
+        │           Dimensions:  ()
+        │           Data variables:
+        │               x        int64 1
+        └── DataTree('B2')
+            └── DataTree('A')
+                    Dimensions:  ()
+                    Data variables:
+                        x        int64 2
+        """
+        if not self.is_hollow:
+            # TODO can we relax this restriction to only raising if a data-filled node would be moved?
+            raise ValueError("Only hollow trees can be unambiguously reordered.")
+
+        # TODO do we require the root to have a name if we are to reorder from the root?
+
+        old_symbolic_order, new_symbolic_order = _parse_symbolic_ordering(ordering)
+
+        # only re-order the subtree, and return a new copy, to avoid messing up parents of this node
+        reordered_dict = {
+            _reorder_path(
+                node.relative_to(self), old_symbolic_order, new_symbolic_order
+            ): node.ds
+            for node in self.leaves  # hollow trees are defined entirely by their leaves
+        }
+
+        if self.depth > len(new_symbolic_order):
+            # TODO implement this
+            raise NotImplementedError()
+
+        return DataTree.from_dict(reordered_dict)
+
     def map_over_subtree(
         self,
         func: Callable,
@@ -1482,7 +1633,7 @@ class DataTree(
             Note that unlimited_dims may also be set via
             ``dataset.encoding["unlimited_dims"]``.
         kwargs :
-            Addional keyword arguments to be passed to ``xarray.Dataset.to_netcdf``
+            Additional keyword arguments to be passed to ``xarray.Dataset.to_netcdf``
         """
         from .io import _datatree_to_netcdf
 

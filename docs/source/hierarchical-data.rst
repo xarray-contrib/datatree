@@ -25,11 +25,11 @@ Many real-world datasets are composed of multiple differing components,
 and it can often be be useful to think of these in terms of a hierarchy of related groups of data.
 Examples of data which one might want organise in a grouped or hierarchical manner include:
 
-- Simulation data at multiple resolutions,
+- Simulation data at multiple resolutions, or using multiple models,
 - Observational data about the same system but from multiple different types of sensors,
 - Mixed experimental and theoretical data,
 - A systematic study recording the same experiment but with different parameters,
-- Heterogenous data, such as demographic and metereological data,
+- Heterogeneous data, such as demographic and meteorological data,
 
 or even any combination of the above.
 
