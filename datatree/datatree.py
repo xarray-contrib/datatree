@@ -1539,3 +1539,9 @@ class DataTree(
 
     def plot(self):
         raise NotImplementedError
+
+    def move_to(self, new_parent: Tree | None) -> DataTree:
+        self.parent = new_parent
+        # We take advantage of the parent setter implemented above.
+        # the parent setter also calls the _set_parent() method, thus no need to repeat it here.
+        return self
