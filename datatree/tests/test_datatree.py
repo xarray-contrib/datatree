@@ -166,8 +166,7 @@ class TestVariablesChildrenNameCollisions:
             dt.ds = new_ds
 
 
-class TestGet:
-    ...
+class TestGet: ...
 
 
 class TestGetItem:
@@ -450,8 +449,7 @@ class TestSetItem:
         xrt.assert_identical(results.to_dataset(), expected)
 
 
-class TestDictionaryInterface:
-    ...
+class TestDictionaryInterface: ...
 
 
 class TestTreeFromDict:
