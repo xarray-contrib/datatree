@@ -22,9 +22,11 @@ def summarize_children(children: Mapping[str, Any]) -> str:
     lines_callback = lambda n, c, end: _wrap_repr(node_repr(n, c), end=end)
 
     children_html = "".join(
-        lines_callback(n, c, end=False)  # Long lines
-        if i < N_CHILDREN
-        else lines_callback(n, c, end=True)  # Short lines
+        (
+            lines_callback(n, c, end=False)  # Long lines
+            if i < N_CHILDREN
+            else lines_callback(n, c, end=True)
+        )  # Short lines
         for i, (n, c) in enumerate(children.items())
     )
 
