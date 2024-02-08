@@ -606,17 +606,18 @@ class NamedNode(TreeNode, Generic[Tree]):
             raise ValueError("node names cannot contain forward slashes")
 
         parent = self._parent
-        if parent is not None:
-            old_name = self._name
-            if old_name is None:
-                raise ValueError("An unnamed node should not have had a parent")
+        if parent is None:
+            self._name = name
+            return
 
-            # Iterate through the ordered dict to preserve the order of children
-            parent.children = OrderedDict(
-                ((k if k != old_name else name, v) for k, v in parent.children.items())
-            )
+        old_name = self._name
+        if old_name is None:
+            raise ValueError("An unnamed node should not have had a parent")
 
-        self._name = name
+        # Iterate through the ordered dict to preserve the order of children
+        parent.children = OrderedDict(
+            ((k if k != old_name else name, v) for k, v in parent.children.items())
+        )
 
     def __str__(self) -> str:
         return f"NamedNode({self.name})" if self.name else "NamedNode()"
