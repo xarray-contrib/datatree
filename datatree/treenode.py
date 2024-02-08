@@ -91,7 +91,7 @@ class TreeNode(Generic[Tree]):
         return self._parent
 
     def _set_parent(
-        self, new_parent: Tree | None, child_name: Optional[str] = None
+        self, new_parent: Tree | None, child_name: str | None = None
     ) -> None:
         # TODO is it possible to refactor in a way that removes this private method?
 
@@ -601,7 +601,10 @@ class NamedNode(TreeNode, Generic[Tree]):
                 raise TypeError("node name must be a string or None")
             if "/" in name:
                 raise ValueError("node names cannot contain forward slashes")
+        parent = self._parent
+        self.orphan()
         self._name = name
+        self._set_parent(parent, name)
 
     def __str__(self) -> str:
         return f"NamedNode({self.name})" if self.name else "NamedNode()"
@@ -609,7 +612,7 @@ class NamedNode(TreeNode, Generic[Tree]):
     def _post_attach(self: NamedNode, parent: NamedNode) -> None:
         """Ensures child has name attribute corresponding to key under which it has been stored."""
         key = next(k for k, v in parent.children.items() if v is self)
-        self.name = key
+        self._name = key
 
     @property
     def path(self) -> str:

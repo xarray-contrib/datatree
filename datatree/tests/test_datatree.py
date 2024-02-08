@@ -68,6 +68,23 @@ class TestNames:
         mary = DataTree(children={"Sue": sue})  # noqa
         assert sue.name == "Sue"
 
+    def test_setting_node_name_keeps_tree_linkage(self):
+        root = DataTree(name="root")
+        child = DataTree(name="child", parent=root)
+        grandchild = DataTree(name="grandchild", parent=child)
+
+        assert root.name == "root"
+        assert child.name == "child"
+        assert grandchild.name == "grandchild"
+
+        # changing the name of a child node should correctly update the dict key in
+        # its parent's children
+        child.name = "childish"
+
+        assert child.name == "childish"
+        assert "childish" in root
+        assert list(root.children) == ["childish"]
+
 
 class TestPaths:
     def test_path_property(self):
