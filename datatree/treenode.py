@@ -596,25 +596,25 @@ class NamedNode(TreeNode, Generic[Tree]):
 
     @name.setter
     def name(self, name: str | None) -> None:
-        if name is not None:
-            if not isinstance(name, str):
-                raise TypeError("node name must be a string or None")
-            if "/" in name:
-                raise ValueError("node names cannot contain forward slashes")
+        if name is None:
+            self._name = None
+            return
 
-            parent = self._parent
-            if parent is not None:
-                old_name = self._name
-                if old_name is None:
-                    raise ValueError("An unnamed node should not have had a parent")
+        if not isinstance(name, str):
+            raise TypeError("node name must be a string or None")
+        if "/" in name:
+            raise ValueError("node names cannot contain forward slashes")
 
-                # To preserve order of children, iterate in the ordered dict
-                parent.children = OrderedDict(
-                    (
-                        (k if k != old_name else name, v)
-                        for k, v in parent.children.items()
-                    )
-                )
+        parent = self._parent
+        if parent is not None:
+            old_name = self._name
+            if old_name is None:
+                raise ValueError("An unnamed node should not have had a parent")
+
+            # Iterate through the ordered dict to preserve the order of children
+            parent.children = OrderedDict(
+                ((k if k != old_name else name, v) for k, v in parent.children.items())
+            )
 
         self._name = name
 
