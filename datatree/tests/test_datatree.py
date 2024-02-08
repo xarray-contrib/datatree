@@ -85,6 +85,30 @@ class TestNames:
         assert "childish" in root
         assert list(root.children) == ["childish"]
 
+        # changing name of root
+        root.name = "ginger"
+
+        assert root.name == "ginger"
+
+    def test_setting_node_name_keeps_tree_linkage_and_order(self):
+        root = DataTree.from_dict(
+            {
+                "/one": None,
+                "/two": None,
+                "/three": None,
+            }
+        )
+        assert list(root.children) == ["one", "two", "three"]
+
+        second_child = root["/two"]
+        second_child.name = "second"
+
+        assert second_child.name == "second"
+        assert "second" in root
+
+        # Order was preserved
+        assert list(root.children) == ["one", "second", "three"]
+
 
 class TestPaths:
     def test_path_property(self):
