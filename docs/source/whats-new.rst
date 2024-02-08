@@ -47,7 +47,7 @@ Bug fixes
 ~~~~~~~~~
 
 - Renaming a node also update the key of its parent's children
-  (:issue:`309`)
+  (:issue:`309`, :pull:`310`)
   By `Etienne Schalk <https://github.com/etienneschalk>`_.
 - Keep attributes on nodes containing no data in :py:func:`map_over_subtree`. (:issue:`278`, :pull:`279`)
   By `Sam Levang <https://github.com/slevang>`_.
