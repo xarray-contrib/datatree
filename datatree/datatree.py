@@ -103,6 +103,18 @@ def _check_for_name_collisions(
         )
 
 
+def _check_for_slashes_in_names(variables: Iterable[Hashable]) -> None:
+    offending_variable_names = [
+        name for name in variables if isinstance(name, str) and "/" in name
+    ]
+    if len(offending_variable_names) > 0:
+        raise KeyError(
+            f"Given Dataset contains path-like variable names: {offending_variable_names}. "
+            "A Dataset represents a group, and a single group "
+            "cannot have path-like variable names. "
+        )
+
+
 class DatasetView(Dataset):
     """
     An immutable Dataset-like view onto the data in a single DataTree node.
@@ -401,6 +413,7 @@ class DataTree(
             children = {}
         ds = _coerce_to_dataset(data)
         _check_for_name_collisions(children, ds.variables)
+        _check_for_slashes_in_names(ds.variables)
 
         super().__init__(name=name)
 
