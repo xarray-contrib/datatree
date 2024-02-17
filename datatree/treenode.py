@@ -5,6 +5,7 @@ from collections import OrderedDict
 from pathlib import PurePosixPath
 from typing import (
     TYPE_CHECKING,
+    Any,
     Generic,
     Iterator,
     Mapping,
@@ -596,27 +597,21 @@ class NamedNode(TreeNode, Generic[Tree]):
 
     @name.setter
     def name(self, name: str | None) -> None:
-        if name is None:
-            self._name = None
-            return
+        self._validate_name(name)
 
-        if not isinstance(name, str):
-            raise TypeError("node name must be a string or None")
-        if "/" in name:
-            raise ValueError("node names cannot contain forward slashes")
-
-        parent = self._parent
-        if parent is None:
+        if self._parent is None:
             self._name = name
             return
 
-        old_name = self._name
-        if old_name is None:
-            raise ValueError("An unnamed node should not have had a parent")
+        if name is None:
+            raise ValueError("a node with a parent cannot have its name set to None")
 
-        # Iterate through the ordered dict to preserve the order of children
-        parent.children = OrderedDict(
-            ((k if k != old_name else name, v) for k, v in parent.children.items())
+        # Rename node while preserving the order of its parent's children
+        self._parent.children = OrderedDict(
+            (
+                (k if k != self._name else name, v)
+                for k, v in self._parent.children.items()
+            )
         )
 
     def __str__(self) -> str:
@@ -693,3 +688,10 @@ class NamedNode(TreeNode, Generic[Tree]):
         generation_gap = list(parents_paths).index(ancestor.path)
         path_upwards = "../" * generation_gap if generation_gap > 0 else "."
         return NodePath(path_upwards)
+
+    @staticmethod
+    def _validate_name(name: Any):
+        if name is not None and not isinstance(name, str):
+            raise TypeError("node name must be a string or None")
+        if name is not None and "/" in name:
+            raise ValueError("node names cannot contain forward slashes")

@@ -109,6 +109,16 @@ class TestNames:
         # Order was preserved
         assert list(root.children) == ["one", "second", "three"]
 
+    def test_setting_node_to_none(self):
+        root = DataTree(name="root")
+        child = DataTree(name="child", parent=root)
+
+        with pytest.raises(
+            ValueError,
+            match=r"a node with a parent cannot have its name set to None",
+        ):
+            child.name = None
+
 
 class TestPaths:
     def test_path_property(self):

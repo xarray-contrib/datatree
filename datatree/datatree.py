@@ -1482,7 +1482,7 @@ class DataTree(
             Note that unlimited_dims may also be set via
             ``dataset.encoding["unlimited_dims"]``.
         kwargs :
-            Additonal keyword arguments to be passed to ``xarray.Dataset.to_netcdf``
+            Additional keyword arguments to be passed to ``xarray.Dataset.to_netcdf``
         """
         from .io import _datatree_to_netcdf
 
