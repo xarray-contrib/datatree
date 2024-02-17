@@ -5,6 +5,7 @@ from collections import OrderedDict
 from pathlib import PurePosixPath
 from typing import (
     TYPE_CHECKING,
+    Any,
     Generic,
     Iterator,
     Mapping,
@@ -91,7 +92,7 @@ class TreeNode(Generic[Tree]):
         return self._parent
 
     def _set_parent(
-        self, new_parent: Tree | None, child_name: Optional[str] = None
+        self, new_parent: Tree | None, child_name: str | None = None
     ) -> None:
         # TODO is it possible to refactor in a way that removes this private method?
 
@@ -596,12 +597,22 @@ class NamedNode(TreeNode, Generic[Tree]):
 
     @name.setter
     def name(self, name: str | None) -> None:
-        if name is not None:
-            if not isinstance(name, str):
-                raise TypeError("node name must be a string or None")
-            if "/" in name:
-                raise ValueError("node names cannot contain forward slashes")
-        self._name = name
+        self._validate_name(name)
+
+        if self._parent is None:
+            self._name = name
+            return
+
+        if name is None:
+            raise ValueError("a node with a parent cannot have its name set to None")
+
+        # Rename node while preserving the order of its parent's children
+        self._parent.children = OrderedDict(
+            (
+                (k if k != self._name else name, v)
+                for k, v in self._parent.children.items()
+            )
+        )
 
     def __str__(self) -> str:
         return f"NamedNode({self.name})" if self.name else "NamedNode()"
@@ -609,7 +620,7 @@ class NamedNode(TreeNode, Generic[Tree]):
     def _post_attach(self: NamedNode, parent: NamedNode) -> None:
         """Ensures child has name attribute corresponding to key under which it has been stored."""
         key = next(k for k, v in parent.children.items() if v is self)
-        self.name = key
+        self._name = key
 
     @property
     def path(self) -> str:
@@ -677,3 +688,10 @@ class NamedNode(TreeNode, Generic[Tree]):
         generation_gap = list(parents_paths).index(ancestor.path)
         path_upwards = "../" * generation_gap if generation_gap > 0 else "."
         return NodePath(path_upwards)
+
+    @staticmethod
+    def _validate_name(name: Any):
+        if name is not None and not isinstance(name, str):
+            raise TypeError("node name must be a string or None")
+        if name is not None and "/" in name:
+            raise ValueError("node names cannot contain forward slashes")
