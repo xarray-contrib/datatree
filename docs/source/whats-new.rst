@@ -45,6 +45,10 @@ Deprecations
 
 Bug fixes
 ~~~~~~~~~
+
+- Make illegal path-like variable names when constructing a DataTree from a Dataset
+  (:issue:`311`, :pull:`314`)
+  By `Etienne Schalk <https://github.com/etienneschalk>`_.
 - Keep attributes on nodes containing no data in :py:func:`map_over_subtree`. (:issue:`278`, :pull:`279`)
   By `Sam Levang <https://github.com/slevang>`_.
 
