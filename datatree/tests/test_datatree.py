@@ -1,3 +1,4 @@
+import re
 from copy import copy, deepcopy
 
 import numpy as np
@@ -67,6 +68,23 @@ class TestNames:
         sue = DataTree()
         mary = DataTree(children={"Sue": sue})  # noqa
         assert sue.name == "Sue"
+
+    def test_dataset_containing_slashes(self):
+        xda = xr.DataArray(
+            [[1, 2]],
+            coords={"label": ["a"], "R30m/y": [30, 60]},
+        )
+        xds = xr.Dataset({"group/subgroup/my_variable": xda})
+        with pytest.raises(
+            KeyError,
+            match=re.escape(
+                "Given Dataset contains path-like variable names: "
+                "['R30m/y', 'group/subgroup/my_variable']. "
+                "A Dataset represents a group, and a single group cannot "
+                "have path-like variable names. "
+            ),
+        ):
+            DataTree(xds)
 
 
 class TestPaths:
