@@ -616,10 +616,25 @@ class DataTree(
         return list(items)
 
     def __contains__(self, key: object) -> bool:
-        """The 'in' operator will return true or false depending on whether
-        'key' is either an array stored in the datatree or a child node, or neither.
         """
-        return key in self.variables or key in self.children
+        If key is a string rather (than a path), the 'in' operator will return true or false depending on whether
+        'key' is either an array stored in the local datatree node, or a child node, or neither.
+        If key is path-like, the 'in' operator will return true or false depending on whether
+        'key' is an absolute path to any node in the tree.
+        """
+        if isinstance(key, str):
+            if "/" in key:
+                # path-like, so check if this object exists anywhere in the tree
+                pathkey = NodePath(key)
+                return pathkey in tuple(
+                    NodePath(node.path) for node in self.root.subtree
+                )
+            else:
+                return key in self.variables or key in self.children
+        else:
+            raise TypeError(
+                f"DataTree objects can't contain objects under non-string keys, but key {key} is of type {type(key)}"
+            )
 
     def __bool__(self) -> bool:
         return bool(self.ds.data_vars) or bool(self.children)

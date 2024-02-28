@@ -147,6 +147,18 @@ class TestStoreDatasets:
         assert not eve.is_hollow
 
 
+class TestContains:
+    def test_contains_key(self):
+        dat = xr.Dataset({"a": 0})
+        john = DataTree(name="john", data=dat)
+        assert "a" in john
+
+    def test_contains_path(self):
+        # https://github.com/xarray-contrib/datatree/issues/240
+        a = DataTree.from_dict({"a/b/c": None})
+        assert "/a/b" in a
+
+
 class TestVariablesChildrenNameCollisions:
     def test_parent_already_has_variable_with_childs_name(self):
         dt = DataTree(data=xr.Dataset({"a": [0], "b": 1}))
