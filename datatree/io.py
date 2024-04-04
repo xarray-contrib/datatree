@@ -83,6 +83,7 @@ def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
 
 def _open_datatree_zarr(store, **kwargs) -> DataTree:
     import zarr  # type: ignore
+
     zds = zarr.open_group(store, mode="r")
     ds = open_zarr(store, **kwargs)
     tree_root = DataTree.from_dict({"/": ds})
