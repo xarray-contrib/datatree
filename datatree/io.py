@@ -1,4 +1,4 @@
-from xarray import Dataset, open_dataset
+from xarray import Dataset, open_dataset, open_zarr
 
 from .datatree import DataTree, NodePath
 
@@ -83,13 +83,12 @@ def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
 
 def _open_datatree_zarr(store, **kwargs) -> DataTree:
     import zarr  # type: ignore
-
     zds = zarr.open_group(store, mode="r")
-    ds = open_dataset(store, engine="zarr", **kwargs)
+    ds = open_zarr(store, **kwargs)
     tree_root = DataTree.from_dict({"/": ds})
     for path in _iter_zarr_groups(zds):
         try:
-            subgroup_ds = open_dataset(store, engine="zarr", group=path, **kwargs)
+            subgroup_ds = open_zarr(store, group=path, **kwargs)
         except zarr.errors.PathNotFoundError:
             subgroup_ds = Dataset()
 
