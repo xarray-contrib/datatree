@@ -12,5 +12,6 @@ dependencies:
   - pytest-cov
   - h5netcdf
   - zarr
+  - dask
   - pip:
       - xarray>=2022.05.0.dev0
