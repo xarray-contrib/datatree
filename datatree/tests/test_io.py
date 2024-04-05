@@ -118,3 +118,19 @@ class TestIO:
         # with default settings, to_zarr should not overwrite an existing dir
         with pytest.raises(zarr.errors.ContainsGroupError):
             simple_datatree.to_zarr(tmpdir)
+
+    @requires_zarr
+    def test_chunk_size_from_zarr(self, tmpdir, simple_datatree):
+        # adding chunk information to a and set2.b variables
+        a = simple_datatree.a.chunk({'y': 1})
+        set2_b = simple_datatree.set2.b.chunk({'x': 2})
+        simple_datatree['/a'] = a
+        simple_datatree['/set2/b'] = set2_b
+        # saving simple datatree using zarr
+        simple_datatree.to_zarr(tmpdir)
+        # opening datatree back
+        dtree = open_datatree(tmpdir, engine='zarr')
+        # checking chunk sizes
+        assert (simple_datatree.a.chunksizes == dtree.a.chunksizes)
+        assert (simple_datatree.set2.b.chunksizes == dtree.set2.b.chunksizes)
+
