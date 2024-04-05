@@ -51,6 +51,9 @@ Bug fixes
   By `Alfonso Ladino <https://github.com/aladinor>`_.
 _ Fixing AssertionError when running test in :py:func:`test_diff_node_data`. (:issue:`327`, pull:`328`)
   By `Alfonso Ladino <https://github.com/aladinor>`_.
+_ Adding test to check chunk sizes when opening datatree stored in zarr :py:func:`test_chunk_size_from_zarr`.
+  (:issue:`327`, pull:`328`)
+  By `Alfonso Ladino <https://github.com/aladinor>`_.
 
 Documentation
 ~~~~~~~~~~~~~
