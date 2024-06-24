@@ -34,7 +34,7 @@ def _get_nc_dataset_class(engine):
     return Dataset
 
 
-def open_datatree(filename_or_obj, engine=None, **kwargs) -> DataTree:
+def open_datatree(filename_or_obj, engine=None, groups=None, **kwargs) -> DataTree:
     """
     Open and decode a dataset from a file or file-like object, creating one Tree node for each group in the file.
 
@@ -44,6 +44,8 @@ def open_datatree(filename_or_obj, engine=None, **kwargs) -> DataTree:
         Strings and Path objects are interpreted as a path to a netCDF file or Zarr store.
     engine : str, optional
         Xarray backend engine to us. Valid options include `{"netcdf4", "h5netcdf", "zarr"}`.
+    groups : sequence of str, optional
+        The sequence of groups to read from the file. By default groups is None, which means reading all the groups.
     kwargs :
         Additional keyword arguments passed to ``xarray.open_dataset`` for each group.
 
@@ -53,20 +55,24 @@ def open_datatree(filename_or_obj, engine=None, **kwargs) -> DataTree:
     """
 
     if engine == "zarr":
-        return _open_datatree_zarr(filename_or_obj, **kwargs)
+        return _open_datatree_zarr(filename_or_obj, groups=groups, **kwargs)
     elif engine in [None, "netcdf4", "h5netcdf"]:
-        return _open_datatree_netcdf(filename_or_obj, engine=engine, **kwargs)
+        return _open_datatree_netcdf(
+            filename_or_obj, engine=engine, groups=groups, **kwargs
+        )
     else:
         raise ValueError("Unsupported engine")
 
 
-def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
+def _open_datatree_netcdf(filename: str, groups=None, **kwargs) -> DataTree:
     ncDataset = _get_nc_dataset_class(kwargs.get("engine", None))
 
     ds = open_dataset(filename, **kwargs)
     tree_root = DataTree.from_dict({"/": ds})
     with ncDataset(filename, mode="r") as ncds:
-        for path in _iter_nc_groups(ncds):
+        if groups is None:
+            groups = _iter_nc_groups(ncds)
+        for path in groups:
             subgroup_ds = open_dataset(filename, group=path, **kwargs)
 
             # TODO refactor to use __setitem__ once creation of new nodes by assigning Dataset works again
@@ -81,13 +87,15 @@ def _open_datatree_netcdf(filename: str, **kwargs) -> DataTree:
     return tree_root
 
 
-def _open_datatree_zarr(store, **kwargs) -> DataTree:
+def _open_datatree_zarr(store, groups=None, **kwargs) -> DataTree:
     import zarr  # type: ignore
 
     zds = zarr.open_group(store, mode="r")
     ds = open_dataset(store, engine="zarr", **kwargs)
     tree_root = DataTree.from_dict({"/": ds})
-    for path in _iter_zarr_groups(zds):
+    if groups is None:
+        groups = _iter_zarr_groups(zds)
+    for path in groups:
         try:
             subgroup_ds = open_dataset(store, engine="zarr", group=path, **kwargs)
         except zarr.errors.PathNotFoundError:
