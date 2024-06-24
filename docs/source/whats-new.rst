@@ -23,6 +23,9 @@ v0.0.14 (unreleased)
 New Features
 ~~~~~~~~~~~~
 
+- Allow opening datatrees from file for just some selected groups (:pull:`338`)
+  By `Martin Raspaud <https://github.com/mraspaud>` and `Pouria Khalaj <https://github.com/pkhalaj>`
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
