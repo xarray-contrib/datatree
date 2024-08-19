@@ -20,6 +20,8 @@ Datatree is in the process of being merged upstream into xarray (as of [v0.0.14]
 
 Hopefully for users the disruption will be minimal - and just mean that in some future version of xarray you only need to do `from xarray import DataTree` rather than `from datatree import DataTree`. Once the migration is complete this repository will be archived.
 
+PLEASE RAISE NEW ISSUES ON THE XARRAY REPOSITORY UPSTREAM
+
 ### Installation
 You can install datatree via pip:
 ```shell
