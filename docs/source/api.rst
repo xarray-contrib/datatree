@@ -103,6 +103,7 @@ For manipulating, traversing, navigating, or mapping over the tree structure.
    map_over_subtree
    DataTree.pipe
    DataTree.match
+   DataTree.match_names
    DataTree.filter
 
 Pathlib-like Interface

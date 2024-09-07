@@ -23,6 +23,8 @@ v0.0.14 (unreleased)
 New Features
 ~~~~~~~~~~~~
 
+- Added `DataTree.match_names` method to filter a list of specific node names.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
