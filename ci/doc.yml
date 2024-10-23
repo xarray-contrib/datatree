@@ -18,7 +18,7 @@ dependencies:
   - ipython
   - h5netcdf
   - zarr
-  - "xarray>=2022.06.0, <=2024.09.0"
+  - "xarray>=2022.06.0, <=2024.07.0"
   - pip:
       - -e ..
       - sphinxext-rediraffe
