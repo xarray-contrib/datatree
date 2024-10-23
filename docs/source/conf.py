@@ -30,6 +30,11 @@ cwd = os.getcwd()
 parent = os.path.dirname(cwd)
 sys.path.insert(0, parent)
 
+# -- Deprecation Warning banner -----------------------------------------------------
+
+rst_prolog = """.. attention::
+    This repository has been archived. Please use xarray.DataTree instead.
+"""
 
 # -- General configuration -----------------------------------------------------
 
