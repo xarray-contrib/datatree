@@ -6,7 +6,7 @@ dependencies:
   - python>=3.12
   - netcdf4
   - scipy
-  - sphinx>=4.2.0
+  - sphinx>=6.0.0
   - sphinx-copybutton
   - sphinx-panels
   - sphinx-autosummary-accessors
