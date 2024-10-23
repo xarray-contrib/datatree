@@ -14,7 +14,7 @@ that was more flexible than a single `xarray.Dataset` object.
 The initial motivation was to represent netCDF files / Zarr stores with multiple nested groups in a single in-memory object,
 but `datatree.DataTree` objects have many other uses.
 
-# :rotating_light: :bell: :warning: NO LONGER MAINTAINED :rotating_light: :bell: :warning:
+# :rotating_light: :bell: :warning: NO LONGER MAINTAINED :warning: :bell: :rotating_light: 
 
 **This repository has been archived and the code is no longer maintained!**
 
