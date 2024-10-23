@@ -1,3 +1,12 @@
+import warnings
+
+warnings.warn(
+    "The repository `xarray-contrib/datatree` has been archived! It is no longer maintained as of October 2024. " \
+    "Datatree functionality has been migrated upstream to `pydata/xarray`, so please use `xarray.DataTree` instead. " \
+    "To help you migrate there is a guide at https://github.com/pydata/xarray/blob/main/DATATREE_MIGRATION_GUIDE.md",
+    DeprecationWarning,
+)
+
 # import public API
 from .datatree import DataTree
 from .extensions import register_datatree_accessor
