@@ -8,7 +8,7 @@ dependencies:
   - scipy
   - sphinx>=6.0.0
   - sphinx-copybutton
-  - sphinx-panels
+  - sphinx-design
   - sphinx-autosummary-accessors
   - sphinx-book-theme >= 0.0.38
   - nbsphinx
