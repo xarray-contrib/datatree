@@ -177,8 +177,7 @@ class DatasetView(Dataset):
         ...
 
     @overload
-    def __getitem__(self, key: Any) -> Dataset:
-        ...
+    def __getitem__(self, key: Any) -> Dataset: ...
 
     def __getitem__(self, key) -> DataArray:
         # TODO call the `_get_item` method of DataTree to allow path-like access to contents of other nodes
