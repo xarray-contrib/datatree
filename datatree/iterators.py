@@ -60,8 +60,7 @@ class AbstractIter(abc.Iterator):
 
     @staticmethod
     @abstractmethod
-    def _iter(children: List[Tree], filter_, stop, maxlevel) -> Iterator[Tree]:
-        ...
+    def _iter(children: List[Tree], filter_, stop, maxlevel) -> Iterator[Tree]: ...
 
     @staticmethod
     def _abort_at_level(level, maxlevel):

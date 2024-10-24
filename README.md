@@ -14,13 +14,17 @@ that was more flexible than a single `xarray.Dataset` object.
 The initial motivation was to represent netCDF files / Zarr stores with multiple nested groups in a single in-memory object,
 but `datatree.DataTree` objects have many other uses.
 
-### DEPRECATION NOTICE
+# :rotating_light: :bell: :warning: NO LONGER MAINTAINED :warning: :bell: :rotating_light:
 
-Datatree is in the process of being merged upstream into xarray (as of [v0.0.14](https://github.com/xarray-contrib/datatree/releases/tag/v0.0.14), see xarray issue [#8572](https://github.com/pydata/xarray/issues/8572)). We are aiming to preserve the record of contributions to this repository during the migration process. However whilst we will hapily accept new PRs to this repository, this repo will be deprecated and any PRs since [v0.0.14](https://github.com/xarray-contrib/datatree/releases/tag/v0.0.14) might be later copied across to xarray without full git attribution.
+**This repository has been archived and the code is no longer maintained!**
 
-Hopefully for users the disruption will be minimal - and just mean that in some future version of xarray you only need to do `from xarray import DataTree` rather than `from datatree import DataTree`. Once the migration is complete this repository will be archived.
+Datatree has been [merged upstream into `pydata/xarray`](https://github.com/pydata/xarray/issues/8572), and released as of xarray version `2024.10.0`.
 
-PLEASE RAISE NEW ISSUES ON THE XARRAY REPOSITORY UPSTREAM
+There will be no further bugfixes or feature additions to this respository.
+
+Users of this repository should migrate to using `xarray.DataTree` instead, following the [Migration Guide](https://github.com/pydata/xarray/discussions/9680).
+
+The information below is all outdated, and is left only for historical interest.
 
 ### Installation
 You can install datatree via pip:

@@ -3,12 +3,12 @@ channels:
   - conda-forge
 dependencies:
   - pip
-  - python>=3.9
+  - python>=3.12
   - netcdf4
   - scipy
-  - sphinx>=4.2.0
+  - sphinx>=6.0.0
   - sphinx-copybutton
-  - sphinx-panels
+  - sphinx-design
   - sphinx-autosummary-accessors
   - sphinx-book-theme >= 0.0.38
   - nbsphinx
@@ -18,7 +18,7 @@ dependencies:
   - ipython
   - h5netcdf
   - zarr
-  - xarray
+  - "xarray>=2022.06.0, <=2024.07.0"
   - pip:
       - -e ..
       - sphinxext-rediraffe

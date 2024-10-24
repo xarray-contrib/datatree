@@ -5,6 +5,18 @@ Datatree
 
 **Datatree is a prototype implementation of a tree-like hierarchical data structure for xarray.**
 
+# !!! NO LONGER MAINTAINED !!!
+
+**This repository has been archived and the code is no longer maintained!**
+
+Datatree has been `merged upstream into pydata/xarray <https://github.com/pydata/xarray/issues/8572>`_, and released as of xarray version `2024.10.0`.
+
+There will be no further bugfixes or feature additions to this respository.
+
+Users of this repository should migrate to using `xarray.DataTree` instead, following the `Migration Guide <https://github.com/pydata/xarray/discussions/9680>`_.
+
+The information below is all outdated, and is left only for historical interest.
+
 Why Datatree?
 ~~~~~~~~~~~~~
 
