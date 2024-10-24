@@ -22,7 +22,7 @@ Datatree has been [merged upstream into `pydata/xarray`](https://github.com/pyda
 
 There will be no further bugfixes or feature additions to this respository.
 
-Users of this repository should migrate to using `xarray.DataTree` instead, following the [Migration Guide](https://github.com/pydata/xarray/blob/main/DATATREE_MIGRATION_GUIDE.md).
+Users of this repository should migrate to using `xarray.DataTree` instead, following the [Migration Guide](https://github.com/pydata/xarray/discussions/9680).
 
 The information below is all outdated, and is left only for historical interest.
 
